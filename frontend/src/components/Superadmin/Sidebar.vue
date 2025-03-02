@@ -38,7 +38,7 @@
     { name: 'Members', icon: 'pi pi-users', route: '/super-admin/members' },
     { name: 'Events', icon: 'pi pi-calendar', route: '/super-admin/events' },
     { name: 'Applications', icon: 'pi pi-file', route: '/superadmin/applications' },
-    { name: 'Accounts', icon: 'pi pi-user', route: '/superadmin/accounts' },
+    { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
     { name: 'Settings', icon: 'pi pi-cog', route: '/superadmin/settings' },
     { name: 'Support', icon: 'pi pi-question-circle', route: '/superadmin/support' },
     { name: 'Backup & Recovery', icon: 'pi pi-database', route: '/superadmin/backup' },

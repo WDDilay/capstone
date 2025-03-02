@@ -16,7 +16,7 @@ import Register from '../views/auth/Register.vue';
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
 import Dashboard from '../views/Superadmin/Dashboard.vue';
 import Events from '../views/Superadmin/Events.vue';
-
+import Accounts from '../views/Superadmin/Accounts.vue';
 
 
 const routes = [
@@ -29,7 +29,8 @@ const routes = [
     redirect: '/super-admin/super-dashboard', // ✅ Corrected redirect path
     children: [
       { path: 'super-dashboard', component: Dashboard }, // ✅ Removed leading "/"
-      {path: 'events', component: Events }
+      {path: 'events', component: Events },
+      {path: 'accounts', component: Accounts }
 ] 
   },
 ];
