@@ -210,6 +210,8 @@ input:focus {
   color: #8b3dff;
 }
 
+
+
 /* Register Button */
 .register-button {
   background: #8b3dff !important;
