@@ -16,7 +16,7 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#6d28d9",
+          DEFAULT: "#8528d8", // Your custom primary color
           50: "#f5f3ff",
           100: "#ede9fe",
           200: "#ddd6fe",
@@ -53,18 +53,6 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        'primary': '#8528d8',  // Your custom primary color
-        'primary-50': '#f5f3ff',
-        'primary-100': '#ede9fe',
-        'primary-200': '#ddd6fe',
-        'primary-300': '#c4b5fd',
-        'primary-400': '#a78bfa',
-        'primary-500': '#8b5cf6',
-        'primary-600': '#7c3aed',
-        'primary-700': '#6d28d9',
-        'primary-800': '#5b21b6',
-        'primary-900': '#4c1d95',
-        'primary-950': '#2e1065',
         "surface-0": "#ffffff",
         "surface-50": "#f8fafc",
         "surface-100": "#f1f5f9",
@@ -86,4 +74,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};
