@@ -1,0 +1,306 @@
+<template>
+    <div class="login-container">
+      <button class="back-button" @click="goToHome">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+  
+      <Header />
+  
+      <div class="login-form-container">
+        <h1 class="welcome-container">
+          <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
+          Login
+        </h1>
+        <p class="subtitle">Join our community and access the support you need</p>
+        
+        <form @submit.prevent="handleLogin" class="login-form">
+          
+          <!-- Email Input -->
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <div class="input-container">
+              <i class="pi pi-envelope input-icon"></i>
+              <input 
+                type="email" 
+                id="email" 
+                v-model="email" 
+                placeholder="Enter your email"
+                required
+              >
+            </div>
+          </div>
+          
+          <!-- Password Input -->
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-container">
+              <i class="pi pi-lock input-icon"></i>
+              <input 
+                :type="showPassword ? 'text' : 'password'"
+                id="password" 
+                v-model="password" 
+                placeholder="Enter your password"
+                required
+              >
+              <button 
+                type="button" 
+                class="toggle-password"
+                @click="togglePassword"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <i v-if="!showPassword" class="pi pi-eye"></i>
+                <i v-else class="pi pi-eye-slash"></i>
+              </button>
+            </div>
+          </div>
+  
+          <Button 
+  type="submit" 
+  label="Log In" 
+  class="login-button" 
+  :pt="{
+    root: 'custom-login-button'
+  }"
+/>
+
+          
+          <div class="form-footer">
+            <a href="#" class="forgot-password">Forgot Password?</a>
+            <p class="signup-prompt">
+              Don't have an account? <a href="#" class="signup-link" @click="goToSignup">Sign Up</a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </template>
+  
+  <script setup>
+  import { ref } from 'vue';
+  import { useRouter } from 'vue-router';
+  import { useToast } from 'primevue/usetoast';
+  import { auth, db, signInWithEmailAndPassword } from '@/services/firebase';
+  import { doc, getDoc } from "firebase/firestore";
+  import { useUserStore } from '@/stores/user';
+
+  
+  const router = useRouter();
+  const email = ref('');
+  const password = ref('');
+  const showPassword = ref(false);
+  const toast = useToast();
+  
+  const userStore = useUserStore(); // Access Pinia store
+
+  const handleLogin = async () => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
+    const user = userCredential.user;
+
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+
+      // Store UID + Firestore user data
+      userStore.setUser({ uid: user.uid, ...userData });
+
+      // Redirect based on role
+      if (userData.role === "FederationPresident") {
+  router.replace('/super-admin');
+} else if (userData.role === "BarangayPresident") {
+  router.replace('/barangay-dashboard');
+} else {
+  router.replace('/userdash');
+}
+
+    } else {
+      toast.add({ severity: 'error', summary: 'Error', detail: 'User data not found.', life: 3000 });
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    toast.add({ severity: 'error', summary: 'Login Failed', detail: 'Invalid credentials.', life: 3000 });
+  }
+};
+
+
+  
+  const goToSignup = () => {
+    router.push('/register');
+  };
+  
+  const goToHome = () => {
+    router.push('/');
+  };
+  
+  const togglePassword = () => {
+    showPassword.value = !showPassword.value;
+  };
+  </script>
+  
+  <style scoped>
+  .login-container {
+    min-height: 100vh;
+    background: #f0e6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+  }
+  
+  .back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+  }
+  
+  .back-button:hover {
+    color: #8b3dff;
+  }
+  
+  .login-form-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .welcome-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .logo-img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-label {
+    font-weight: 500;
+    color: #333;
+    text-align: left;
+  }
+  
+  /* 🔹 Input container for icon alignment */
+  .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* 🔹 Input field */
+  input {
+    padding: 0.75rem;
+    padding-left: 2.5rem; /* Space for the icon */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* 🔹 Icon inside input */
+  .input-icon {
+    position: absolute;
+    left: 10px;
+    color: #666;
+    font-size: 1.2rem;
+  }
+  
+  /* 🔹 Password toggle button */
+  .toggle-password {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+  }
+  
+  .toggle-password:hover {
+    color: #8b3dff;
+  }
+  
+  .toggle-password i {
+    font-size: 1.2rem;
+  }
+  
+  .custom-login-button {
+  background: #8b3dff !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 15px !important;
+  font-size: 1rem !important;
+  padding: 1rem !important;
+  width: 100% !important;
+  max-width: 200px !important;
+  margin: 0 auto !important;
+  display: block !important;
+  transition: background 0.3s ease-in-out !important;
+}
+
+.custom-login-button:hover {
+  background: #6e00ff !important;
+}
+
+.signup-link {
+  color: #8b3dff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: text-decoration 0.3s ease-in-out;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+  
+  .form-footer {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .forgot-password, .signup-link {
+    color: #8b3dff;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  @media (max-width: 768px) {
+    .login-form-container {
+      margin: 2rem 1rem;
+    }
+  }
+  </style>
+  
