@@ -20,6 +20,10 @@ import Avatar from 'primevue/avatar';
 import ToastService from 'primevue/toastservice'; 
 import ConfirmDialog from 'primevue/confirmdialog';
 import ConfirmationService from 'primevue/confirmationservice';
+import Dropdown from 'primevue/dropdown';
+
+// Register components
+
 
 // Create Vue app
 const app = createApp(App)
@@ -38,6 +42,7 @@ app.component('Button', Button);
 app.component('Card', Card);
 app.component('Avatar', Avatar);
 app.component('ConfirmDialog', ConfirmDialog);
+app.component('Dropdown', Dropdown);
 
 // Mount the app
 app.use(router)

@@ -3,31 +3,31 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useUserStore } from '@/stores/user';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { getAuth, signOut } from 'firebase/auth';
+import { db, auth } from '@/services/firebase'; // Import from firebase.js
+import { getDoc, doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { useConfirm } from 'primevue/useconfirm';
 
 const userStore = useUserStore();
 const sidebarStore = useSidebarStore();
 const route = useRoute();
 const router = useRouter();
-const db = getFirestore();
-const auth = getAuth();
 const confirm = useConfirm();
 
 const userName = ref('User');
 const showNotifications = ref(false);
 const showUserMenu = ref(false);
 
+// Fetch user details from Firestore
 const fetchUserName = async () => {
-  if (userStore.user && userStore.user.uid) {
+  if (userStore.user?.uid) {
     try {
-      const userRef = doc(db, 'users', userStore.user.uid);
+      const userRef = doc(db, 'admins', userStore.user.uid); // Using 'admins' collection
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         userName.value = userSnap.data().name;
       } else {
-        console.error('User document not found.');
+        console.warn('User document not found in the admins collection.');
       }
     } catch (error) {
       console.error('Error fetching user name:', error);
@@ -37,6 +37,7 @@ const fetchUserName = async () => {
 
 onMounted(fetchUserName);
 
+// Toggle Notifications and User Menu
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value;
   if (showNotifications.value) showUserMenu.value = false;
@@ -47,6 +48,7 @@ const toggleUserMenu = () => {
   if (showUserMenu.value) showNotifications.value = false;
 };
 
+// Sign Out Function
 const handleSignOut = () => {
   confirm.require({
     message: 'Are you sure you want to sign out?',
@@ -71,6 +73,7 @@ const handleSignOut = () => {
   });
 };
 
+// Dynamic Page Title
 const currentPage = computed(() => {
   const path = route.path;
   if (path.includes('/dashboard')) return 'Dashboard';
@@ -84,6 +87,8 @@ const currentPage = computed(() => {
   return 'Dashboard';
 });
 </script>
+
+
 
 <template>
   <div class="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b shadow-md">

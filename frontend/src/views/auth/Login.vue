@@ -97,29 +97,45 @@
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
     const user = userCredential.user;
 
-    const userDocRef = doc(db, "users", user.uid);
-    const userDocSnap = await getDoc(userDocRef);
+    console.log("✅ User Logged In:", user); // 🔍 Check if login works
 
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data();
+    let userData = null;
+    let userRole = null;
 
-      // Store UID + Firestore user data
+    // Check in "admin" collection
+    const adminDocRef = doc(db, "admins", user.uid);
+    const adminDocSnap = await getDoc(adminDocRef);
+
+    if (adminDocSnap.exists()) {
+      userData = adminDocSnap.data();
+      userRole = userData.role;
+    } else {
+      // Check in "users" collection
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        userData = userDocSnap.data();
+        userRole = userData.role;
+      }
+    }
+
+    if (userData) {
+
       userStore.setUser({ uid: user.uid, ...userData });
 
       // Redirect based on role
-      if (userData.role === "FederationPresident") {
-  router.replace('/super-admin');
-} else if (userData.role === "BarangayPresident") {
-  router.replace('/barangay-dashboard');
-} else {
-  router.replace('/userdash');
-}
-
+      if (userRole === "FederationPresident") {
+        router.replace('/super-admin');
+      } else if (userRole === "BarangayPresident") {
+        router.replace('/barangay-dashboard');
+      } else {
+        router.replace('/userdash');
+      }
     } else {
       toast.add({ severity: 'error', summary: 'Error', detail: 'User data not found.', life: 3000 });
     }
   } catch (error) {
-    console.error("Login error:", error);
     toast.add({ severity: 'error', summary: 'Login Failed', detail: 'Invalid credentials.', life: 3000 });
   }
 };

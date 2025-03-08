@@ -20,15 +20,21 @@ import Accounts from '../views/Superadmin/Accounts.vue';
 
 
 const routes = [
+
+  // Landing Page routes
   { path: '/', name: 'LandPage', component: LandPage },
   { path: '/home', name: 'Home', component: Home },
   { path: '/about', name: 'About', component: About },
+
+  // Authentication routes
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
+
+  //Super Admin routes
   { path: '/super-admin', component: SuperAdmin, 
-    redirect: '/super-admin/super-dashboard', // ✅ Corrected redirect path
+    redirect: '/super-admin/super-dashboard', 
     children: [
-      { path: 'super-dashboard', component: Dashboard }, // ✅ Removed leading "/"
+      { path: 'super-dashboard', component: Dashboard },
       {path: 'events', component: Events },
       {path: 'accounts', component: Accounts }
 ] 
@@ -40,16 +46,15 @@ const router = createRouter({
   routes,
 });
 
-// 🔹 Navigation Guard: Prevent logged-in users from accessing Login & Landing Page
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore(); // Access user state
-  const isAuthenticated = userStore.user !== null; // Check if logged in
+  const userStore = useUserStore(); 
+  const isAuthenticated = userStore.user !== null; 
 
-  // If logged in, prevent access to login/register/landing page
+  
   if (isAuthenticated && (to.path === '/' || to.path === '/login' || to.path === '/register')) {
-    next('/super-admin'); // Redirect to the dashboard or admin panel
+    next('/super-admin'); 
   } else {
-    next(); // Continue navigation
+    next(); 
   }
 });
 
