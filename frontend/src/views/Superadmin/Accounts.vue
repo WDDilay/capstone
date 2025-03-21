@@ -120,15 +120,14 @@
         <div class="field mb-4">
           <label for="barangay" class="block text-sm font-medium mb-1 text-gray-700">Barangay</label>
           <Dropdown 
-  id="barangay" 
   v-model="account.barangay" 
   :options="barangays" 
   optionLabel="name" 
-  optionValue="name" 
-  placeholder="Select a Barangay" 
-  :class="{'p-invalid': submitted && !account.barangay, 'white-bg-dropdown': true}" 
+  placeholder="Select Barangay"
   :virtualScrollerOptions="{ itemSize: 38 }"
+  class="w-full"
 />
+
 
           <small class="p-error" v-show="submitted && !account.barangay">Barangay is required.</small>
         </div>
@@ -187,10 +186,9 @@ const fetchBarangays = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "barangays"));
     barangays.value = querySnapshot.docs.map(doc => ({ name: doc.data().name }));
-    console.log("Barangays fetched:", barangays.value); // Debugging
+    console.log("Barangays fetched:", barangays.value);
   } catch (error) {
     console.error("Error fetching barangays:", error);
-    toast.add({ severity: "error", summary: "Error", detail: "Failed to fetch barangays", life: 3000 });
   }
 };
 

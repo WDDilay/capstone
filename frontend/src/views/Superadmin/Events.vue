@@ -39,22 +39,57 @@
               <h2 class="text-xl font-semibold">
                 {{ formatMonthYear(date) }}
               </h2>
-              <Button 
-                @click="setToday" 
-                label="Today" 
-                class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300"
-              />
+              <div class="flex gap-2">
+                <Button 
+                  @click="previousMonth" 
+                  icon="pi pi-chevron-left" 
+                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300"
+                />
+                <Button 
+                  @click="nextMonth" 
+                  icon="pi pi-chevron-right" 
+                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300"
+                />
+                <Button 
+                  @click="setToday" 
+                  label="Today" 
+                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300 ml-2"
+                />
+              </div>
             </div>
           </div>
           
-          <div class="p-4">
-            <Calendar 
+          <div class="p-4 relative">
+            <DatePicker
               v-model="date" 
               :inline="true" 
               :showWeek="true" 
               @date-select="handleDateSelect"
               class="custom-calendar w-full"
+              ref="datepicker"
             />
+            
+            <!-- Event Indicators -->
+            <div v-for="(dayEvents, index) in calendarEventsByDay" :key="index">
+              <div 
+                v-if="dayEvents.length > 0"
+                :class="[
+                  'event-day-indicator', 
+                  `day-${index + 1}`
+                ]"
+              >
+                <div 
+                  v-for="(event, eventIndex) in dayEvents.slice(0, 3)" 
+                  :key="`${index}-${eventIndex}`"
+                  :class="[
+                    'event-indicator', 
+                    getEventTypeColor(event.type).replace('bg-', 'event-')
+                  ]"
+                  :title="event.title"
+                ></div>
+                <div v-if="dayEvents.length > 3" class="more-events">+{{ dayEvents.length - 3 }}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -78,8 +113,13 @@
                     <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
                     <div class="flex items-center text-sm text-surface-500 mt-1">
                       <i class="pi pi-clock mr-1 text-xs"></i>
-                      {{ formatDate(event.date) }}
+                      {{ formatDateTime(event.date) }}
                     </div>
+                    <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
+                      <i class="pi pi-map-marker mr-1 text-xs"></i>
+                      {{ event.location }}
+                    </div>
+                    <p v-if="event.description" class="text-xs text-surface-500 mt-1 line-clamp-2">{{ event.description }}</p>
                   </div>
                 </div>
               </div>
@@ -102,6 +142,14 @@
                   <span :class="`${getEventTypeColor(event.type)} w-3 h-3 rounded-full mt-1.5`"></span>
                   <div>
                     <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
+                    <div class="flex items-center text-sm text-surface-500 mt-1">
+                      <i class="pi pi-clock mr-1 text-xs"></i>
+                      {{ formatTime(event.date) }}
+                    </div>
+                    <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
+                      <i class="pi pi-map-marker mr-1 text-xs"></i>
+                      {{ event.location }}
+                    </div>
                     <p v-if="event.description" class="text-sm text-surface-500 mt-1">{{ event.description }}</p>
                   </div>
                 </div>
@@ -111,12 +159,12 @@
         </div>
       </div>
 
-      <!-- Enhanced Event Dialog -->
+      <!-- Enhanced Event Dialog with Time and Location -->
       <Dialog 
         v-model:visible="eventDialog" 
         :header="editMode ? 'Edit Event' : 'Add New Event'" 
         :modal="true" 
-        class="p-fluid custom-dialog" 
+        class="p-fluid no-scrollbar-dialog" 
         :style="{width: '550px'}"
         :showHeader="false"
         :dismissableMask="true"
@@ -148,10 +196,38 @@
             />
           </div>
           
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <div class="field">
+              <label for="eventDate" class="block text-sm font-medium text-surface-700 mb-2">Date</label>
+              <DatePicker 
+                id="eventDate" 
+                v-model="newEvent.date" 
+                dateFormat="yy-mm-dd" 
+                showIcon 
+                @date-select="updateEventDate" 
+              />
+            </div>
+            
+            <div class="field">
+              <label for="eventTime" class="block text-sm font-medium text-surface-700 mb-2">Time</label>
+              <DatePicker
+                id="eventTime" 
+                v-model="newEvent.date" 
+                timeOnly 
+                hourFormat="12"
+                showIcon
+              />
+            </div>
+          </div>
+          
           <div class="field mb-5">
-            <label for="eventDate" class="block text-sm font-medium text-surface-700 mb-2">Date</label>
-            <Calendar id="eventDate" v-model="newEvent.date" dateFormat="yy-mm-dd" showIcon @date-select="updateEventDate" />
-
+            <label for="eventLocation" class="block text-sm font-medium text-surface-700 mb-2">Location</label>
+            <InputText 
+              id="eventLocation" 
+              v-model="newEvent.location" 
+              class="w-full p-inputtext-sm rounded-lg border-surface-200 shadow-sm"
+              placeholder="Enter event location"
+            />
           </div>
           
           <div class="field mb-5">
@@ -195,6 +271,13 @@
           
           <div class="flex justify-end gap-3 mt-6">
             <Button 
+              v-if="editMode"
+              label="Delete" 
+              icon="pi pi-trash" 
+              class="p-button-danger p-button-text mr-auto" 
+              @click="confirmDeleteEvent" 
+            />
+            <Button 
               label="Cancel" 
               icon="pi pi-times" 
               class="p-button-text" 
@@ -209,18 +292,36 @@
           </div>
         </div>
       </Dialog>
+
+      <!-- Confirmation Dialog for Delete -->
+      <Dialog 
+        v-model:visible="deleteDialog" 
+        header="Confirm Delete" 
+        :modal="true" 
+        :style="{width: '450px'}"
+      >
+        <div class="confirmation-content">
+          <i class="pi pi-exclamation-triangle mr-3 text-yellow-500 text-2xl" style="vertical-align: middle;"></i>
+          <span>Are you sure you want to delete this event?</span>
+        </div>
+        <template #footer>
+          <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteDialog = false" />
+          <Button label="Yes" icon="pi pi-check" class="p-button-danger" @click="deleteEvent" />
+        </template>
+      </Dialog>
     </div>
   </div>
 </template>
+
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { format, isSameDay, isAfter, startOfDay } from 'date-fns';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, parseISO } from 'date-fns';
 import { db } from '@/services/firebase'; // Ensure this points to your Firebase configuration
-import { collection, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { useUserStore } from "@/stores/user"; 
 
 // Import PrimeVue components
-import Calendar from 'primevue/calendar';
+import DatePicker from 'primevue/datepicker'; // Changed from Calendar to DatePicker
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
@@ -232,14 +333,19 @@ const events = ref([]);
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const eventDialog = ref(false);
+const deleteDialog = ref(false);
 const editMode = ref(false);
+const datepicker = ref(null);
 const newEvent = ref({
   id: '',
   title: '',
   date: new Date(),
-  type: '',
+  type: 'Meeting', // Default type
   isHoliday: false,
-  description: ''
+  description: '',
+  location: '',
+  createdBy: '',
+  barangay: ''
 });
 
 const selectedDateEvents = ref([]);
@@ -252,29 +358,138 @@ const eventTypes = [
 ];
 
 // Fetch events from Firestore on component mount
-const fetchEvents = () => {
-  if (!user.value) return;
-
-  const eventsCollection = collection(db, "announcements");
-  let filters = [where("createdBy", "==", "FederationPresident")];
-
-  if (user.value.role === "BarangayPresident" || user.value.role === "Member") {
-    filters.push(where("barangay", "==", user.value.barangay));
+const fetchEvents = async () => {
+  try {
+    console.log("Fetching events...");
+    console.log("Current user:", user.value);
+    
+    const eventsCollection = collection(db, "announcements");
+    
+    // Create a basic query without filters first
+    let q = query(eventsCollection, orderBy("date", "asc"));
+    
+    console.log("Executing query...");
+    const querySnapshot = await getDocs(q);
+    
+    console.log("Query results:", querySnapshot.size, "documents found");
+    
+    // Process the results
+    const fetchedEvents = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      console.log("Document data:", data);
+      
+      // Handle different date formats
+      let eventDate;
+      if (data.date instanceof Timestamp) {
+        eventDate = data.date.toDate();
+      } else if (data.date && typeof data.date === 'string') {
+        eventDate = new Date(data.date);
+      } else {
+        eventDate = new Date();
+      }
+      
+      // Determine event type
+      let eventType = data.type || 'Meeting';
+      if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
+        eventType = 'Meeting'; // Default type
+      }
+      
+      fetchedEvents.push({
+        id: doc.id,
+        title: data.title || 'Untitled Event',
+        date: eventDate,
+        type: eventType,
+        isHoliday: data.isHoliday || false,
+        description: data.description || '',
+        location: data.location || '',
+        createdBy: data.createdBy || '',
+        barangay: data.barangay || ''
+      });
+    });
+    
+    console.log("Processed events:", fetchedEvents);
+    events.value = fetchedEvents;
+    
+    // Update calendar event indicators after events are loaded
+    nextTick(() => {
+      updateCalendarEventIndicators();
+    });
+  } catch (error) {
+    console.error("Error fetching events:", error);
   }
-
-  const q = query(eventsCollection, ...filters);
-
-  onSnapshot(q, (snapshot) => {
-    events.value = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || new Date(),
-    }));
-  });
 };
 
+// Set up real-time updates
+const setupRealtimeUpdates = () => {
+  try {
+    const eventsCollection = collection(db, "announcements");
+    const q = query(eventsCollection, orderBy("date", "asc"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log("Real-time update received");
+      
+      const updatedEvents = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        
+        // Handle different date formats
+        let eventDate;
+        if (data.date instanceof Timestamp) {
+          eventDate = data.date.toDate();
+        } else if (data.date && typeof data.date === 'string') {
+          eventDate = new Date(data.date);
+        } else {
+          eventDate = new Date();
+        }
+        
+        // Determine event type
+        let eventType = data.type || 'Meeting';
+        if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
+          eventType = 'Meeting'; // Default type
+        }
+        
+        updatedEvents.push({
+          id: doc.id,
+          title: data.title || 'Untitled Event',
+          date: eventDate,
+          type: eventType,
+          isHoliday: data.isHoliday || false,
+          description: data.description || '',
+          location: data.location || '',
+          createdBy: data.createdBy || '',
+          barangay: data.barangay || ''
+        });
+      });
+      
+      events.value = updatedEvents;
+      
+      // Update calendar event indicators after events are loaded
+      nextTick(() => {
+        updateCalendarEventIndicators();
+      });
+    }, (error) => {
+      console.error("Error in real-time updates:", error);
+    });
+    
+    // Return the unsubscribe function
+    return unsubscribe;
+  } catch (error) {
+    console.error("Error setting up real-time updates:", error);
+    return () => {}; // Return empty function if setup fails
+  }
+};
 
-onMounted(fetchEvents);
+onMounted(() => {
+  console.log("Component mounted");
+  fetchEvents();
+  const unsubscribe = setupRealtimeUpdates();
+  
+  // Clean up the subscription when the component is unmounted
+  return () => {
+    unsubscribe();
+  };
+});
 
 // Watchers to update selected date events
 watch(date, updateSelectedDateEvents);
@@ -282,9 +497,38 @@ watch(events, updateSelectedDateEvents, { deep: true });
 
 // Computed property for upcoming events
 const upcomingEvents = computed(() => {
+  const today = startOfDay(new Date());
   return events.value
-    .filter(event => isAfter(new Date(event.date), startOfDay(new Date())))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter(event => {
+      const eventDate = new Date(event.date);
+      return isAfter(eventDate, today) || isSameDay(eventDate, today);
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 5); // Limit to 5 upcoming events
+});
+
+// Computed property to organize events by calendar day
+const calendarEventsByDay = computed(() => {
+  const currentMonth = date.value;
+  const firstDay = startOfMonth(currentMonth);
+  const lastDay = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
+  
+  // Initialize array with empty arrays for each day
+  const eventsByDay = Array(daysInMonth.length).fill().map(() => []);
+  
+  // Populate events for each day
+  events.value.forEach(event => {
+    const eventDate = new Date(event.date);
+    if (isSameMonth(eventDate, currentMonth)) {
+      const dayOfMonth = getDate(eventDate) - 1; // Adjust for 0-based index
+      if (eventsByDay[dayOfMonth]) {
+        eventsByDay[dayOfMonth].push(event);
+      }
+    }
+  });
+  
+  return eventsByDay;
 });
 
 // Function to update selected date events
@@ -304,15 +548,66 @@ function setToday() {
   date.value = new Date();
 }
 
+// Functions to navigate between months
+function nextMonth() {
+  date.value = addMonths(date.value, 1);
+  nextTick(() => {
+    updateCalendarEventIndicators();
+  });
+}
+
+function previousMonth() {
+  date.value = subMonths(date.value, 1);
+  nextTick(() => {
+    updateCalendarEventIndicators();
+  });
+}
+
+// Function to update calendar event indicators
+function updateCalendarEventIndicators() {
+  nextTick(() => {
+    if (datepicker.value) {
+      const datepickerEl = datepicker.value.$el;
+      const dayElements = datepickerEl.querySelectorAll('.p-datepicker-calendar td[data-pc-section="day"]');
+      
+      dayElements.forEach(dayEl => {
+        const dateAttr = dayEl.getAttribute('data-date');
+        if (dateAttr) {
+          try {
+            const cellDate = new Date(dateAttr);
+            if (!isNaN(cellDate.getTime())) {
+              const dayOfMonth = cellDate.getDate();
+              
+              // Check if this date has events
+              const hasEvents = calendarEventsByDay.value[dayOfMonth - 1]?.length > 0;
+              
+              if (hasEvents) {
+                dayEl.classList.add('has-events');
+              } else {
+                dayEl.classList.remove('has-events');
+              }
+            }
+          } catch (e) {
+            console.error("Error processing date:", e);
+          }
+        }
+      });
+    }
+  });
+}
+
 // Open New Event Dialog
 const openNewEventDialog = () => {
   newEvent.value = { 
     id: '',
     title: '', 
     date: date.value, 
-    type: '', 
+    type: 'Meeting', 
     isHoliday: false,
-    description: ''
+    description: '',
+    location: '',
+    createdBy: user.value?.role || '',
+    barangay: user.value?.barangay || ''
   };
   editMode.value = false;
   eventDialog.value = true;
@@ -330,45 +625,114 @@ const hideEventDialog = () => {
   eventDialog.value = false;
 };
 
-// Save Event to Firestore (Add or Update)
-const saveEvent = async () => {
-  if (!newEvent.value.title.trim()) return;
-
-  const eventsCollection = collection(db, 'announcements');
-
-  try {
-    if (editMode.value) {
-      // Update existing event
-      const eventRef = doc(db, 'announcements', newEvent.value.id);
-      await updateDoc(eventRef, newEvent.value);
-    } else {
-      // Add new event
-      const docRef = await addDoc(eventsCollection, newEvent.value);
-      newEvent.value.id = docRef.id;
-    }
-    eventDialog.value = false;
-  } catch (error) {
-    console.error('Error saving event:', error);
-  }
+// Confirm Delete Event
+const confirmDeleteEvent = () => {
+  deleteDialog.value = true;
 };
 
 // Delete Event
-const deleteEvent = async (eventId) => {
-  if (!confirm("Are you sure you want to delete this event?")) return;
-
+const deleteEvent = async () => {
   try {
-    await deleteDoc(doc(db, 'announcements', eventId));
-    events.value = events.value.filter(event => event.id !== eventId);
+    await deleteDoc(doc(db, 'announcements', newEvent.value.id));
+    deleteDialog.value = false;
+    eventDialog.value = false;
   } catch (error) {
     console.error('Error deleting event:', error);
   }
 };
 
+// Save Event to Firestore (Add or Update)
+const saveEvent = async () => {
+  if (!newEvent.value.title.trim()) {
+    alert("Please enter an event title");
+    return;
+  }
+  
+  if (!newEvent.value.type) {
+    newEvent.value.type = 'Meeting'; // Default type
+  }
+
+  try {
+    if (editMode.value) {
+      // Update existing event
+      const eventRef = doc(db, 'announcements', newEvent.value.id);
+      await updateDoc(eventRef, {
+        title: newEvent.value.title,
+        date: newEvent.value.date,
+        type: newEvent.value.type,
+        isHoliday: newEvent.value.type === 'Holiday',
+        description: newEvent.value.description,
+        location: newEvent.value.location
+      });
+      console.log("Event updated successfully");
+    } else {
+      // Add new event
+      const eventsCollection = collection(db, 'announcements');
+      const docRef = await addDoc(eventsCollection, {
+        title: newEvent.value.title,
+        date: newEvent.value.date,
+        type: newEvent.value.type,
+        isHoliday: newEvent.value.type === 'Holiday',
+        description: newEvent.value.description,
+        location: newEvent.value.location,
+        createdBy: user.value?.role || '',
+        barangay: user.value?.barangay || '',
+        createdAt: new Date()
+      });
+      console.log("Event added successfully with ID:", docRef.id);
+    }
+    eventDialog.value = false;
+  } catch (error) {
+    console.error('Error saving event:', error);
+    alert("Error saving event: " + error.message);
+  }
+};
 
 // Format date functions
-const formatDate = (date) => format(new Date(date), 'MMM dd, yyyy');
-const formatFullDate = (date) => format(new Date(date), 'MMMM d, yyyy');
-const formatMonthYear = (date) => format(new Date(date), 'MMMM yyyy');
+const formatDate = (date) => {
+  try {
+    return format(new Date(date), 'MMM dd, yyyy');
+  } catch (e) {
+    console.error("Date formatting error:", e);
+    return "Invalid date";
+  }
+};
+
+const formatTime = (date) => {
+  try {
+    return format(new Date(date), 'h:mm a');
+  } catch (e) {
+    console.error("Time formatting error:", e);
+    return "Invalid time";
+  }
+};
+
+const formatDateTime = (date) => {
+  try {
+    return format(new Date(date), 'MMM dd, yyyy h:mm a');
+  } catch (e) {
+    console.error("DateTime formatting error:", e);
+    return "Invalid date/time";
+  }
+};
+
+const formatFullDate = (date) => {
+  try {
+    return format(new Date(date), 'MMMM d, yyyy');
+  } catch (e) {
+    console.error("Full date formatting error:", e);
+    return "Invalid date";
+  }
+};
+
+const formatMonthYear = (date) => {
+  try {
+    return format(new Date(date), 'MMMM yyyy');
+  } catch (e) {
+    console.error("Month/year formatting error:", e);
+    return "Invalid date";
+  }
+};
 
 // Get event type color
 const getEventTypeColor = (type) => {
@@ -388,7 +752,19 @@ const getEventTypeLabel = (value) => {
 };
 
 const updateEventDate = (value) => {
-  newEvent.value.date = startOfDay(value);
+  // Preserve the time when updating just the date
+  const currentTime = newEvent.value.date;
+  const newDate = new Date(value);
+  
+  if (currentTime) {
+    newDate.setHours(
+      currentTime.getHours(),
+      currentTime.getMinutes(),
+      currentTime.getSeconds()
+    );
+  }
+  
+  newEvent.value.date = newDate;
 };
 </script>
 
@@ -397,6 +773,7 @@ const updateEventDate = (value) => {
 .custom-calendar {
   width: 100%;
   border-radius: 12px;
+  position: relative;
 }
 
 :deep(.p-datepicker) {
@@ -427,6 +804,7 @@ const updateEventDate = (value) => {
 
 :deep(.p-datepicker-calendar td) {
   padding: 0.25rem;
+  position: relative;
 }
 
 :deep(.p-datepicker-calendar td > span) {
@@ -434,6 +812,8 @@ const updateEventDate = (value) => {
   height: 2.5rem;
   border-radius: 9999px;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 :deep(.p-datepicker-calendar td > span.p-highlight) {
@@ -452,6 +832,102 @@ const updateEventDate = (value) => {
   background-color: var(--primary-600, #4f46e5);
   color: white;
 }
+
+/* Google Calendar-like event indicators */
+.event-indicators-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.event-day-indicator {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 80%;
+}
+
+.event-indicator {
+  height: 4px;
+  width: 80%;
+  border-radius: 2px;
+}
+
+.event-blue-500 {
+  background-color: #3b82f6;
+}
+
+.event-purple-500 {
+  background-color: #8b5cf6;
+}
+
+.event-red-500 {
+  background-color: #ef4444;
+}
+
+.event-amber-500 {
+  background-color: #f59e0b;
+}
+
+.event-gray-500 {
+  background-color: #6b7280;
+}
+
+.more-events {
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* Position event indicators for each day */
+:deep(.p-datepicker-calendar tr) {
+  position: relative;
+}
+
+:deep(.p-datepicker-calendar td) {
+  position: relative;
+}
+
+/* Generate day-X classes for all possible days */
+.day-1 { left: calc(0% + 2.5rem / 2); }
+.day-2 { left: calc(100% / 7 + 2.5rem / 2); }
+.day-3 { left: calc(200% / 7 + 2.5rem / 2); }
+.day-4 { left: calc(300% / 7 + 2.5rem / 2); }
+.day-5 { left: calc(400% / 7 + 2.5rem / 2); }
+.day-6 { left: calc(500% / 7 + 2.5rem / 2); }
+.day-7 { left: calc(600% / 7 + 2.5rem / 2); }
+.day-8 { left: calc(0% + 2.5rem / 2); }
+.day-9 { left: calc(100% / 7 + 2.5rem / 2); }
+.day-10 { left: calc(200% / 7 + 2.5rem / 2); }
+.day-11 { left: calc(300% / 7 + 2.5rem / 2); }
+.day-12 { left: calc(400% / 7 + 2.5rem / 2); }
+.day-13 { left: calc(500% / 7 + 2.5rem / 2); }
+.day-14 { left: calc(600% / 7 + 2.5rem / 2); }
+.day-15 { left: calc(0% + 2.5rem / 2); }
+.day-16 { left: calc(100% / 7 + 2.5rem / 2); }
+.day-17 { left: calc(200% / 7 + 2.5rem / 2); }
+.day-18 { left: calc(300% / 7 + 2.5rem / 2); }
+.day-19 { left: calc(400% / 7 + 2.5rem / 2); }
+.day-20 { left: calc(500% / 7 + 2.5rem / 2); }
+.day-21 { left: calc(600% / 7 + 2.5rem / 2); }
+.day-22 { left: calc(0% + 2.5rem / 2); }
+.day-23 { left: calc(100% / 7 + 2.5rem / 2); }
+.day-24 { left: calc(200% / 7 + 2.5rem / 2); }
+.day-25 { left: calc(300% / 7 + 2.5rem / 2); }
+.day-26 { left: calc(400% / 7 + 2.5rem / 2); }
+.day-27 { left: calc(500% / 7 + 2.5rem / 2); }
+.day-28 { left: calc(600% / 7 + 2.5rem / 2); }
+.day-29 { left: calc(0% + 2.5rem / 2); }
+.day-30 { left: calc(100% / 7 + 2.5rem / 2); }
+.day-31 { left: calc(200% / 7 + 2.5rem / 2); }
 
 /* Custom button styling */
 :deep(.p-button) {
@@ -495,42 +971,9 @@ const updateEventDate = (value) => {
 }
 
 :deep(.p-dialog-content) {
+  overflow: visible;
   padding: 0;
   border-radius: 1rem;
-}
-
-/* Add event indicators to calendar */
-:deep(.p-datepicker-calendar td) {
-  position: relative;
-}
-
-:deep(.p-datepicker-calendar td[data-pc-section="day"]) {
-  position: relative;
-}
-
-/* We'll add custom JS to add these classes to days with events */
-:deep(.has-event:not(.p-highlight)) span::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--blue-500, #3b82f6);
-}
-
-:deep(.has-holiday:not(.p-highlight)) span::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--red-500, #ef4444);
 }
 
 /* Custom scrollbar */
@@ -564,25 +1007,33 @@ const updateEventDate = (value) => {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Custom dialog styling */
-.custom-dialog {
-  max-height: 90vh;
-  overflow-y: auto;
+/* No scrollbar dialog styling */
+.no-scrollbar-dialog {
+  max-height: none;
+  overflow: visible;
 }
 
-.custom-dialog::-webkit-scrollbar {
-  width: 6px;
+:deep(.no-scrollbar-dialog .p-dialog-content) {
+  overflow: visible;
+  padding: 0;
+  border-radius: 1rem;
 }
 
-.custom-dialog::-webkit-scrollbar-track {
-  background: var(--surface-100, #f1f5f9);
-  border-radius: 10px;
+/* Add has-events styling */
+:deep(.has-events) {
+  position: relative;
 }
 
-.custom-dialog::-webkit-scrollbar-thumb {
-  background-color: var(--primary-400, #818cf8);
-  border-radius: 20px;
-  border: 2px solid var(--surface-100, #f1f5f9);
+:deep(.has-events::after) {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--primary-500, #6366f1);
 }
 
 /* CSS Variables for primary colors with RGB values for box-shadow */
@@ -594,50 +1045,3 @@ const updateEventDate = (value) => {
   --primary-600-rgb: 79, 70, 229;
 }
 </style>
-
-<script>
-// Add this script section to add event indicators to calendar days
-export default {
-  mounted() {
-    this.addEventIndicators();
-  },
-  updated() {
-    this.$nextTick(() => {
-      this.addEventIndicators();
-    });
-  },
-  methods: {
-    addEventIndicators() {
-      // Get all calendar day cells
-      const dayCells = document.querySelectorAll('.p-datepicker-calendar td[data-pc-section="day"]');
-      
-      // Reset classes
-      dayCells.forEach(cell => {
-        cell.classList.remove('has-event', 'has-holiday');
-      });
-      
-      // Add event indicators
-      dayCells.forEach(cell => {
-        const cellDate = new Date(cell.getAttribute('data-date'));
-        if (!cellDate || isNaN(cellDate.getTime())) return;
-        
-        // Check if this date has events
-        const hasEvent = this.events.some(event => 
-          isSameDay(new Date(event.date), cellDate)
-        );
-        
-        // Check if this date has holidays
-        const hasHoliday = this.events.some(event => 
-          isSameDay(new Date(event.date), cellDate) && event.isHoliday
-        );
-        
-        if (hasHoliday) {
-          cell.classList.add('has-holiday');
-        } else if (hasEvent) {
-          cell.classList.add('has-event');
-        }
-      });
-    }
-  }
-}
-</script>

@@ -18,6 +18,14 @@ import Dashboard from '../views/Superadmin/Dashboard.vue';
 import Events from '../views/Superadmin/Events.vue';
 import Accounts from '../views/Superadmin/Accounts.vue';
 
+// Barangay Admin
+import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
+import Data from '../views/BarangayAdmin/Data.vue';
+import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
+import Messages from '../views/BarangayAdmin/Message.vue';
+
+// User Guard
+
 
 const routes = [
 
@@ -37,6 +45,15 @@ const routes = [
       { path: 'super-dashboard', component: Dashboard },
       {path: 'events', component: Events },
       {path: 'accounts', component: Accounts }
+] 
+  },
+
+  { path: '/barangay-admin', component: BarangayAdmin, 
+    redirect: '/barangay-admin/dashboard', 
+    children: [
+      { path: 'dashboard', component: BarangayDashboard },
+      {path: 'data', component: Data },
+      {path: 'messages', component: Messages }
 ] 
   },
 ];
