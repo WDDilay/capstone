@@ -97,48 +97,66 @@
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
     const user = userCredential.user;
 
-    console.log("✅ User Logged In:", user); // 🔍 Check if login works
+    console.log("✅ User Logged In:", user.uid); // Debugging
 
     let userData = null;
     let userRole = null;
 
-    // Check in "admin" collection
+    // Check in "admins" collection
     const adminDocRef = doc(db, "admins", user.uid);
     const adminDocSnap = await getDoc(adminDocRef);
 
     if (adminDocSnap.exists()) {
       userData = adminDocSnap.data();
       userRole = userData.role;
+      console.log("🔹 Found in Admins Collection:", userRole);
     } else {
-      // Check in "users" collection
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      // Check in "barangay_presidents" collection
+      const barangayDocRef = doc(db, "barangay_presidents", user.uid);
+      const barangayDocSnap = await getDoc(barangayDocRef);
 
-      if (userDocSnap.exists()) {
-        userData = userDocSnap.data();
+      if (barangayDocSnap.exists()) {
+        userData = barangayDocSnap.data();
         userRole = userData.role;
+        console.log("🔹 Found in Barangay Presidents Collection:", userRole);
+      } else {
+        // Check in "users" collection
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          userData = userDocSnap.data();
+          userRole = userData.role;
+          console.log("🔹 Found in Users Collection:", userRole);
+        }
       }
     }
 
-    if (userData) {
-
+    if (userData && userRole) {
       userStore.setUser({ uid: user.uid, ...userData });
 
-      // Redirect based on role
-      if (userRole === "FederationPresident") {
-        router.replace('/super-admin');
-      } else if (userRole === "BarangayPresident") {
-        router.replace('/barangay-dashboard');
-      } else {
-        router.replace('/userdash');
+      // ✅ Redirect based on role
+      switch (userRole) {
+        case "FederationPresident":
+          router.replace('/super-admin');
+          break;
+        case "BarangayPresident":
+          router.replace('/barangay-admin');
+          break;
+        default:
+          router.replace('/userdash'); // Redirect general users
+          break;
       }
     } else {
-      toast.add({ severity: 'error', summary: 'Error', detail: 'User data not found.', life: 3000 });
+      console.error("❌ Error: User role not found.");
+      toast.add({ severity: 'error', summary: 'Error', detail: 'User role not found.', life: 3000 });
     }
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Login Failed', detail: 'Invalid credentials.', life: 3000 });
+    console.error("❌ Login Error:", error.message);
+    toast.add({ severity: 'error', summary: 'Login Failed', detail: error.message, life: 3000 });
   }
 };
+
 
 
   

@@ -1,48 +1,107 @@
 <template>
-    <div class="fixed top-0 left-0 h-screen bg-primary text-white transition-all duration-300"
-     :class="{ 'w-72': !sidebarStore.collapsed, 'w-16': sidebarStore.collapsed }">
-
-      <div class="h-full px-3 py-4 overflow-y-auto bg-primary text-white">
-        <div class="flex items-center justify-between mb-5 pl-2">
-          <div class="flex items-center gap-3" v-if="!sidebarStore.collapsed">
-            <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
-            <span class="text-xl font-semibold whitespace-nowrap">Solo Parent</span>
-          </div>
-          <button @click="sidebarStore.toggle" class="p-1 rounded-lg hover:bg-primary-600 focus:outline-none">
-            <i :class="sidebarStore.collapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'" class="text-xl"></i>
-          </button>
+  <div>
+    <!-- Mobile overlay -->
+    <div v-if="isOpen" 
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+         @click="toggleSidebar"></div>
+         
+    <aside class="w-64 bg-white h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
+           :class="{
+             'translate-x-0': isOpen,
+             '-translate-x-full md:translate-x-0': !isOpen
+           }">
+      <div class="p-4 border-b">
+        <div class="flex items-center gap-2">
+          <img :src="spfLogo" alt="Logo" class="w-8 h-8 rounded-full" />
+          <h1 class="text-primary-600 text-lg font-semibold">Solo Parent Federation</h1>
         </div>
-        
-        <ul class="space-y-2 font-medium">
-          <li v-for="(item, index) in menuItems" :key="index">
-            <router-link :to="item.route" class="flex items-center p-2 rounded-lg hover:bg-primary-600 group"
-               :class="{ 'justify-center': sidebarStore.collapsed }">
-              <i :class="item.icon" class="text-xl"></i>
-              <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
-            </router-link>
-          </li>
-        </ul>
       </div>
-    </div>
-  </template>
+      
+      <nav class="p-4 space-y-2">
+        <router-link v-for="item in filteredMenuItems" 
+                     :key="item.path" 
+                     :to="item.path"
+                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                     :class="{'bg-primary-50 text-primary-600': isActive(item.path)}">
+          <i :class="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </router-link>
+      </nav>
+    </aside>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import spfLogo from '@/assets/SPFLOGO.png';
+import { auth } from '@/services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+
+const route = useRoute();
+const router = useRouter();
+const isOpen = ref(window.innerWidth >= 768); // Default open on desktop, closed on mobile
+const currentUser = ref(null);
+
+// Watch for window resize to handle responsive behavior
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    isOpen.value = true;
+  } else if (!wasManuallyToggled.value) {
+    isOpen.value = false;
+  }
+};
+
+// Track if sidebar was manually toggled
+const wasManuallyToggled = ref(false);
+
+const toggleSidebar = () => {
+  isOpen.value = !isOpen.value;
+  wasManuallyToggled.value = true;
   
-  <script setup>
-  import { ref } from 'vue';
-  import { useSidebarStore } from '@/stores/sidebar';
-  import spfLogo from '@/assets/SPFLOGO.png'; // Import the logo
+  // Reset the manual toggle flag after a delay
+  setTimeout(() => {
+    wasManuallyToggled.value = false;
+  }, 1000);
+};
+
+// Set up resize listener
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
   
-  const sidebarStore = useSidebarStore();
+  // Set up auth state listener
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    currentUser.value = user;
+    
+    // If user is not logged in and trying to access protected route, redirect to login
+    if (!user && route.meta.requiresAuth) {
+      router.push('/login');
+    }
+  });
   
-  const menuItems = ref([
-    { name: 'Dashboard', icon: 'pi pi-home', route: '/super-admin/super-dashboard' },
-    { name: 'Members', icon: 'pi pi-users', route: '/super-admin/members' },
-    { name: 'Events', icon: 'pi pi-calendar', route: '/super-admin/events' },
-    { name: 'Applications', icon: 'pi pi-file', route: '/superadmin/applications' },
-    { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
-    { name: 'Settings', icon: 'pi pi-cog', route: '/superadmin/settings' },
-    { name: 'Support', icon: 'pi pi-question-circle', route: '/superadmin/support' },
-    { name: 'Backup & Recovery', icon: 'pi pi-database', route: '/superadmin/backup' },
-  ]);
-  </script>
-  
-  
+  // Clean up auth listener on unmount
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+    unsubscribe();
+  });
+});
+
+const menuItems = [
+  { label: 'Dashboard', path: '/barangay-admin/dashboard', icon: 'pi pi-home' },
+  { label: 'Data Information', path: '/barangay-admin/data', icon: 'pi pi-database' },
+  { label: 'Announcement', path: '/barangay-admin/announcement', icon: 'pi pi-megaphone' },
+  { label: 'Resource Inventory', path: '/barangay-admin/inventory', icon: 'pi pi-box' },
+  { label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
+  { label: 'Block', path: '/barangay-admin/block', icon: 'pi pi-ban' },
+  { label: 'Logout', path: '/logout', icon: 'pi pi-sign-out' }
+];
+
+// Only show menu items if user is authenticated
+const filteredMenuItems = computed(() => {
+  return currentUser.value ? menuItems : [];
+});
+
+const isActive = (path) => route.path === path;
+
+defineExpose({ toggleSidebar, isOpen });
+</script>

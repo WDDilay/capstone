@@ -17,6 +17,7 @@ import SuperAdmin from '../views/Superadmin/Superadmin.vue';
 import Dashboard from '../views/Superadmin/Dashboard.vue';
 import Events from '../views/Superadmin/Events.vue';
 import Accounts from '../views/Superadmin/Accounts.vue';
+import Members from '../views/Superadmin/Members.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -44,7 +45,9 @@ const routes = [
     children: [
       { path: 'super-dashboard', component: Dashboard },
       {path: 'events', component: Events },
-      {path: 'accounts', component: Accounts }
+      {path: 'accounts', component: Accounts },
+      {path: 'members', component: Members }
+
 ] 
   },
 
@@ -64,14 +67,48 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore(); 
-  const isAuthenticated = userStore.user !== null; 
-
+  const userStore = useUserStore();
+  const isAuthenticated = userStore.user !== null;
+  const userRole = isAuthenticated ? userStore.user.role : null;
   
-  if (isAuthenticated && (to.path === '/' || to.path === '/login' || to.path === '/register')) {
-    next('/super-admin'); 
+  // Check if route requires authentication
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  
+  // Check if route should redirect authenticated users
+  const redirectIfAuth = to.matched.some(record => record.meta.redirectIfAuth);
+  
+  // Check if route requires a specific role
+  const requiredRole = to.matched.find(record => record.meta.role)?.meta.role;
+  
+  // Handle authentication and role-based access
+  if (requiresAuth && !isAuthenticated) {
+    // Route requires auth but user is not authenticated
+    next('/login');
+  } else if (redirectIfAuth && isAuthenticated) {
+    // User is authenticated but trying to access login/register
+    // Redirect to appropriate dashboard based on role
+    if (userRole === 'SuperAdmin') {
+      next('/super-admin/super-dashboard');
+    } else if (userRole === 'BarangayPresident') {
+      next('/barangay-admin/dashboard');
+    } else {
+      // Default fallback if role is unknown
+      next('/');
+    }
+  } else if (requiresAuth && requiredRole && userRole !== requiredRole) {
+    // User is authenticated but doesn't have the required role
+    // Redirect to appropriate dashboard based on their actual role
+    if (userRole === 'SuperAdmin') {
+      next('/super-admin/super-dashboard');
+    } else if (userRole === 'BarangayPresident') {
+      next('/barangay-admin/dashboard');
+    } else {
+      // If role is unknown, redirect to home
+      next('/');
+    }
   } else {
-    next(); 
+    // All checks passed, proceed to the requested route
+    next();
   }
 });
 

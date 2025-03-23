@@ -1,434 +1,474 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <header class="mb-8 animate-fade-in">
-        <div class="flex justify-between items-center">
-          <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900">
-            <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-700">
-              Barangay President Accounts
-            </span>
-          </h1>
-        </div>
-        <p class="mt-2 text-xl text-gray-600">
-          Manage accounts for Solo Parent program administrators
-        </p>
-      </header>
-
-      <div class="mb-6 flex justify-between items-center animate-fade-in" style="animation-delay: 0.2s;">
-        <!-- Enhanced Add Account Button -->
-        <Button 
-          @click="openNewAccountDialog" 
-          icon="pi pi-plus" 
-          label="Add Account" 
-          class="p-button-rounded bg-gradient-to-r from-primary-500 to-primary-700 border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 px-6 py-3 text-lg font-semibold"
+  <div class="p-6">
+    <!-- Top Bar -->
+    <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+      <!-- Search Bar -->
+      <div class="relative flex-1">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by name or username..."
+          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
         />
-        
-        <span class="text-gray-600 text-lg">
-          Total Accounts: {{ accounts.length }}
-        </span>
       </div>
-
-      <!-- Enhanced DataTable -->
-      <div class="rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out animate-fade-in bg-white">
-        <DataTable 
-          :value="paginatedAccounts" 
-          :rows="rows" 
-          :first="first"
-          responsive-layout="scroll"
-          :global-filter-fields="['name', 'username', 'barangay']" 
-          v-model:filters="filters"
-          :paginator="false"
-          class="p-datatable-accounts"
+      
+      <!-- Sort Dropdown -->
+      <div class="flex items-center gap-2">
+        <span class="text-gray-600">Sort by:</span>
+        <select 
+          v-model="sortOption" 
+          @change="handleSort"
+          class="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-100"
         >
-          <template #header>
-            <div class="flex justify-between items-center py-3 px-4">
-              <h2 class="text-xl font-semibold text-gray-800">
-                Account List
-              </h2>
-              <span class="p-input-icon-left">
-                <i class="pi pi-search text-gray-500" />
-                <InputText 
-                  v-model="filters['global'].value" 
-                  placeholder="Search accounts" 
-                  class="p-inputtext-sm border-0 bg-gray-100 rounded-full px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all duration-300"
-                />
-              </span>
-            </div>
-          </template>
-          
-          <Column field="name" header="Name" sortable>
-            <template #body="slotProps">
-              <span class="font-medium text-gray-900">{{ slotProps.data.name }}</span>
-            </template>
-          </Column>
-          <Column field="username" header="Username" sortable>
-            <template #body="slotProps">
-              <span class="font-mono text-sm text-gray-600">
-                {{ slotProps.data.username }}
-              </span>
-            </template>
-          </Column>
-          <Column field="barangay" header="Barangay" sortable>
-            <template #body="slotProps">
-              <span :class="['px-3 py-1 rounded-full text-xs font-semibold', ]">
-                {{ slotProps.data.barangay }}
-              </span>
-            </template>
-          </Column>
-          <Column header="Actions" :exportable="false" style="min-width:8rem">
-            <template #body="slotProps">
-              <Button icon="pi pi-pencil" class="p-button-rounded p-button-text mr-2 text-blue-600 hover:bg-blue-100" @click="editAccount(slotProps.data)" />
-              <Button icon="pi pi-trash" class="p-button-rounded p-button-text p-button-danger hover:bg-red-100" @click="confirmDeleteAccount(slotProps.data)" />
-            </template>
-          </Column>
-        </DataTable>
-        
-        <!-- Separate Paginator component -->
-        <Paginator 
-          v-model:first="first" 
-          v-model:rows="rows" 
-          :total-records="filteredAccounts.length" 
-          :rows-per-page-options="[5, 10, 20, 50]"
-          template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-          class="border-t border-gray-200"
-        />
+          <option value="name-asc">Name (A-Z)</option>
+          <option value="name-desc">Name (Z-A)</option>
+          <option value="username-asc">Username (A-Z)</option>
+          <option value="username-desc">Username (Z-A)</option>
+          <option value="barangay-asc">Barangay (A-Z)</option>
+          <option value="barangay-desc">Barangay (Z-A)</option>
+        </select>
       </div>
 
-      <!-- Add/Edit Account Dialog -->
-      <Dialog 
-        v-model:visible="accountDialog" 
-        :style="{width: '450px'}" 
-        :header="editMode ? 'Edit Account' : 'Add New Account'" 
-        :modal="true" 
-        class="p-fluid custom-dialog"
+      <!-- Add Account Button -->
+      <button 
+        @click="openNewAccountDialog" 
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
       >
-        <div class="field mb-4">
-          <label for="name" class="block text-sm font-medium mb-1 text-gray-700">Name</label>
-          <InputText id="name" v-model.trim="account.name" required autofocus :class="{'p-invalid': submitted && !account.name}" />
-          <small class="p-error" v-if="submitted && !account.name">Name is required.</small>
-        </div>
-        <div class="field mb-4">
-          <label for="username" class="block text-sm font-medium mb-1 text-gray-700">Username</label>
-          <InputText id="username" v-model.trim="account.username" required :class="{'p-invalid': submitted && !account.username}" />
-          <small class="p-error" v-if="submitted && !account.username">Username is required.</small>
-        </div>
-        <div class="field mb-4">
-          <label for="password" class="block text-sm font-medium mb-1 text-gray-700">Password</label>
-          <Password id="password" v-model="account.password" required :class="{'p-invalid': submitted && !account.password}" :feedback="false" toggleMask />
-          <small class="p-error" v-if="submitted && !account.password">Password is required.</small>
-        </div>
-        <div class="field mb-4">
-          <label for="barangay" class="block text-sm font-medium mb-1 text-gray-700">Barangay</label>
-          <Dropdown 
-  v-model="account.barangay" 
-  :options="barangays" 
-  optionLabel="name" 
-  placeholder="Select Barangay"
-  :virtualScrollerOptions="{ itemSize: 38 }"
-  class="w-full"
-/>
+        <PlusCircle class="w-5 h-5" />
+        Add Account
+      </button>
+    </div>
 
-
-          <small class="p-error" v-show="submitted && !account.barangay">Barangay is required.</small>
+    <!-- Table -->
+    <div class="bg-white rounded-lg overflow-x-auto shadow-md">
+      <div class="hidden md:grid grid-cols-4 gap-4 py-4 px-6 border-b">
+        <div class="text-gray-600 font-medium cursor-pointer flex items-center gap-1" @click="toggleSort('name')">
+          Name
+          <ArrowUpDown class="w-4 h-4" />
         </div>
-        <template #footer>
-          <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-          <Button label="Save" icon="pi pi-check" class="p-button-primary bg-gradient-to-r from-primary-500 to-primary-700 border-none" @click="saveAccount" />
-        </template>
-      </Dialog>
-
-      <!-- Delete Confirmation Dialog -->
-      <Dialog v-model:visible="deleteAccountDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
-        <div class="confirmation-content">
-          <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-          <span v-if="account" class="text-gray-700">Are you sure you want to delete <b>{{ account.name }}</b>'s account?</span>
+        <div class="text-gray-600 font-medium cursor-pointer flex items-center gap-1" @click="toggleSort('username')">
+          Username
+          <ArrowUpDown class="w-4 h-4" />
         </div>
-        <template #footer>
-          <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteAccountDialog = false" />
-          <Button label="Yes" icon="pi pi-check" class="p-button-danger" @click="deleteAccount" />
-        </template>
-      </Dialog>
+        <div class="text-gray-600 font-medium cursor-pointer flex items-center gap-1" @click="toggleSort('barangay')">
+          Barangay
+          <ArrowUpDown class="w-4 h-4" />
+        </div>
+        <div class="text-gray-600 font-medium">Actions</div>
+      </div>
+
+      <!-- Table Body for Larger Screens -->
+      <div class="hidden md:block divide-y">
+        <div v-for="account in paginatedAccounts" :key="account.id" class="grid grid-cols-4 gap-4 py-4 px-6 items-center hover:bg-gray-50">
+          <div>{{ account.name }}</div>
+          <div class="font-mono text-sm">{{ account.username }}</div>
+          <div>{{ account.barangay }}</div>
+          <div class="flex gap-2">
+            <button @click="openEditModal(account)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button @click="confirmDeleteAccount(account)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile View (Cards) -->
+      <div class="md:hidden space-y-4 p-4">
+        <div v-for="account in paginatedAccounts" :key="account.id" class="bg-gray-50 p-4 rounded-lg">
+          <p class="text-lg font-semibold">{{ account.name }}</p>
+          <p class="text-sm font-mono text-gray-600">{{ account.username }}</p>
+          <p class="text-sm text-gray-600">Barangay: {{ account.barangay }}</p>
+          <div class="flex gap-2 mt-2">
+            <button @click="openEditModal(account)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button @click="confirmDeleteAccount(account)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-6 py-4 border-t">
+      <button @click="prevPage" :disabled="currentPage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50">
+        <ChevronLeft class="w-5 h-5" />
+      </button>
+      <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button @click="nextPage" :disabled="currentPage === totalPages" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50">
+        <ChevronRight class="w-5 h-5" />
+      </button>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <h2 class="text-xl font-semibold mb-4">{{ editMode ? 'Edit Account' : 'Add New Account' }}</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input 
+              v-model="editForm.name" 
+              type="text" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+            />
+            <p v-if="submitted && !editForm.name" class="mt-1 text-sm text-red-600">Name is required</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input 
+              v-model="editForm.username" 
+              type="text" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              :disabled="editMode"
+            />
+            <p v-if="submitted && !editForm.username" class="mt-1 text-sm text-red-600">Username is required</p>
+          </div>
+          
+          <div v-if="!editMode">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div class="relative">
+              <input 
+                v-model="editForm.password" 
+                :type="showPassword ? 'text' : 'password'" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              />
+              <button 
+                @click="showPassword = !showPassword" 
+                type="button" 
+                class="absolute right-2 top-1/2 -translate-y-1/2"
+              >
+                <Eye v-if="!showPassword" class="w-5 h-5 text-gray-500" />
+                <EyeOff v-else class="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <p v-if="submitted && !editForm.password" class="mt-1 text-sm text-red-600">Password is required</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
+            <select 
+              v-model="editForm.barangay" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+            >
+              <option value="" disabled>Select Barangay</option>
+              <option v-for="barangay in barangays" :key="barangay.name" :value="barangay.name">
+                {{ barangay.name }}
+              </option>
+            </select>
+            <p v-if="submitted && !editForm.barangay" class="mt-1 text-sm text-red-600">Barangay is required</p>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 mt-6">
+          <button 
+            @click="closeModal" 
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="saveAccount" 
+            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+            :disabled="isProcessing"
+          >
+            {{ isProcessing ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <h2 class="text-xl font-semibold mb-4">Confirm Delete</h2>
+        <p class="text-gray-700 mb-6">Are you sure you want to delete the account for <span class="font-semibold">{{ editForm.name }}</span>?</p>
+        
+        <div class="flex justify-end gap-2">
+          <button 
+            @click="showDeleteModal = false" 
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="deleteAccount" 
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            :disabled="isProcessing"
+          >
+            {{ isProcessing ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Dropdown from 'primevue/dropdown';
-import Password from 'primevue/password';
-import Paginator from 'primevue/paginator';
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { db, auth } from "@/services/firebase";
-import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
-
-const toast = useToast();
+import { ref, computed, onMounted } from 'vue';
+import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
+import { collection, getDocs, doc, updateDoc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
+import { 
+  Search, 
+  Pencil, 
+  Trash2, 
+  ChevronLeft, 
+  ChevronRight, 
+  ArrowUpDown, 
+  PlusCircle,
+  Eye,
+  EyeOff
+} from 'lucide-vue-next';
 
 // State
 const accounts = ref([]);
-const accountDialog = ref(false);
-const deleteAccountDialog = ref(false);
-const account = ref({ barangay: null }); // Initialize barangay to null
-const submitted = ref(false);
-const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
-const editMode = ref(false);
-const first = ref(0);
-const rows = ref(10);
 const barangays = ref([]);
+const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = 5;
+const showModal = ref(false);
+const showDeleteModal = ref(false);
+const editMode = ref(false);
+const submitted = ref(false);
+const isProcessing = ref(false);
+const showPassword = ref(false);
+
+// Sorting
+const sortOption = ref('name-asc');
+const sortField = ref('name');
+const sortDirection = ref('asc');
+
+// Form
+const editForm = ref({
+  id: '',
+  name: '',
+  username: '',
+  password: '',
+  barangay: ''
+});
 
 // Fetch barangays from Firestore
 const fetchBarangays = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, "barangays"));
+    const querySnapshot = await getDocs(collection(db, 'barangays'));
     barangays.value = querySnapshot.docs.map(doc => ({ name: doc.data().name }));
-    console.log("Barangays fetched:", barangays.value);
   } catch (error) {
-    console.error("Error fetching barangays:", error);
+    console.error('Error fetching barangays:', error);
   }
 };
 
-// Fetch accounts in real-time
+// Fetch accounts from Firestore
 const fetchAccounts = () => {
   try {
-    const unsubscribe = onSnapshot(collection(db, "barangay_presidents"), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'barangay_presidents'), (snapshot) => {
       accounts.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      sortAccounts(); // Sort initially
     });
-    return unsubscribe; // Cleanup on component unmount
+    return unsubscribe; // Return unsubscribe function for cleanup
   } catch (error) {
-    console.error("Error fetching accounts:", error);
-    toast.add({ severity: "error", summary: "Error", detail: "Failed to fetch accounts", life: 3000 });
+    console.error('Error fetching accounts:', error);
   }
 };
 
-// Computed properties
-const filteredAccounts = computed(() => {
-  if (!filters.value.global.value) return accounts.value;
-  return accounts.value.filter(account => {
-    return ['name', 'username', 'barangay'].some(field => {
-      return String(account[field]).toLowerCase().includes(filters.value.global.value.toLowerCase());
-    });
+// Sorting functions
+const handleSort = () => {
+  const [field, direction] = sortOption.value.split('-');
+  sortField.value = field;
+  sortDirection.value = direction;
+  sortAccounts();
+};
+
+const toggleSort = (field) => {
+  if (sortField.value === field) {
+    // Toggle direction if same field
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    // New field, default to ascending
+    sortField.value = field;
+    sortDirection.value = 'asc';
+  }
+  
+  // Update the select dropdown to match
+  sortOption.value = `${sortField.value}-${sortDirection.value}`;
+  sortAccounts();
+};
+
+const sortAccounts = () => {
+  const field = sortField.value;
+  const direction = sortDirection.value;
+  
+  accounts.value.sort((a, b) => {
+    let valueA = a[field]?.toLowerCase?.() || '';
+    let valueB = b[field]?.toLowerCase?.() || '';
+    
+    if (direction === 'asc') {
+      return valueA > valueB ? 1 : -1;
+    } else {
+      return valueA < valueB ? 1 : -1;
+    }
   });
+};
+
+// Filtered accounts based on search
+const filteredAccounts = computed(() => {
+  if (!searchQuery.value) return accounts.value;
+  const query = searchQuery.value.toLowerCase();
+  return accounts.value.filter(account => 
+    account.name?.toLowerCase().includes(query) ||
+    account.username?.toLowerCase().includes(query) ||
+    account.barangay?.toLowerCase().includes(query)
+  );
 });
 
+// Paginated accounts
 const paginatedAccounts = computed(() => {
-  const startIndex = first.value;
-  const endIndex = startIndex + rows.value;
-  return filteredAccounts.value.slice(startIndex, endIndex);
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredAccounts.value.slice(start, end);
 });
 
-// Watch for filter changes
-watch(() => filters.value.global.value, () => {
-  first.value = 0;
+// Calculate total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredAccounts.value.length / itemsPerPage) || 1;
 });
 
-// Open dialog for new account
+// Pagination methods
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+
+// Modal functions
 const openNewAccountDialog = () => {
-  account.value = { barangay: null }; // Reset barangay to null
-  submitted.value = false;
-  accountDialog.value = true;
+  editForm.value = { id: '', name: '', username: '', password: '', barangay: '' };
   editMode.value = false;
-};
-
-// Hide dialog
-const hideDialog = () => {
-  accountDialog.value = false;
   submitted.value = false;
+  showModal.value = true;
 };
 
-// Save or update account
+const openEditModal = (account) => {
+  editForm.value = { ...account };
+  editMode.value = true;
+  submitted.value = false;
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  editForm.value = { id: '', name: '', username: '', password: '', barangay: '' };
+};
+
+const confirmDeleteAccount = (account) => {
+  editForm.value = { ...account };
+  showDeleteModal.value = true;
+  console.log('Account to delete:', editForm.value); // Debug log
+};
+
+// CRUD operations
 const saveAccount = async () => {
   submitted.value = true;
 
-  if (account.value.name && account.value.username && account.value.password && account.value.barangay) {
-    try {
-      if (editMode.value) {
-        // Update logic (unchanged)
-      } else {
-        // Create user in Firebase Authentication
-        const userCredential = await createUserWithEmailAndPassword(auth, account.value.username, account.value.password);
-        const user = userCredential.user;
+  // Validation for new account
+  if (!editMode.value && (!editForm.value.name || !editForm.value.username || !editForm.value.password || !editForm.value.barangay)) {
+    console.error('Missing required fields for new account');
+    return;
+  }
 
-        // Set display name in Firebase Auth
-        await updateProfile(user, { displayName: account.value.name });
+  // Validation for edit account
+  if (editMode.value && (!editForm.value.name || !editForm.value.barangay)) {
+    console.error('Missing required fields for edit');
+    return;
+  }
 
-        // Save user data in Firestore
-        const newUser = {
-          id: user.uid,
-          name: account.value.name,
-          username: account.value.username,
-          barangay: account.value.barangay,
-          role: "BarangayPresident"
-        };
+  isProcessing.value = true;
 
-        await addDoc(collection(db, "barangay_presidents"), newUser);
-        await addDoc(collection(db, "admins"), newUser);
-
-        toast.add({ severity: "success", summary: "Successful", detail: "Account Created", life: 3000 });
-      }
-
-      accountDialog.value = false;
-      account.value = { barangay: null }; // Reset barangay to null
-      editMode.value = false;
-    } catch (error) {
-      console.error("Error saving account:", error);
-      toast.add({ severity: "error", summary: "Error", detail: "Failed to save account", life: 3000 });
+  try {
+    if (editMode.value) {
+      // Update existing account in Firestore
+      await updateDoc(doc(db, 'barangay_presidents', editForm.value.id), {
+        name: editForm.value.name,
+        barangay: editForm.value.barangay,
+        updatedAt: new Date()
+      });
+      
+      console.log('Account updated successfully');
+    } else {
+      // Create Firebase Auth User
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        editForm.value.username, 
+        editForm.value.password
+      );
+      
+      const user = userCredential.user;
+      
+      // Update Display Name
+      await updateProfile(user, { 
+        displayName: editForm.value.name 
+      });
+      
+      // Add to Firestore with UID as Document ID
+      await setDoc(doc(db, 'barangay_presidents', user.uid), {
+        name: editForm.value.name,
+        username: editForm.value.username,
+        barangay: editForm.value.barangay,
+        role: "BarangayPresident",
+        createdAt: new Date()
+      });
+      
+      console.log('Account added successfully with matching UID');
     }
+    
+    closeModal();
+  } catch (error) {
+    console.error('Error saving account:', error.message);
+    alert(`Error: ${error.message}`);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+const deleteAccount = async () => {
+  if (!editForm.value.id || isProcessing.value) return;
+
+  isProcessing.value = true;
+
+  try {
+    // First, sign in as admin to get permission to delete the user
+    // Note: This requires your admin account to have sufficient permissions
+    // You may need to implement a different approach based on your security rules
+    
+    // Delete the Firestore document
+    await deleteDoc(doc(db, 'barangay_presidents', editForm.value.id));
+    
+    console.log('Account document deleted successfully');
+    
+    // Note: Deleting the actual Firebase Auth user requires admin SDK or Cloud Functions
+    // This client-side approach has limitations due to security restrictions
+    // Consider implementing a Cloud Function for this purpose
+    
+    showDeleteModal.value = false;
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    isProcessing.value = false;
   }
 };
 
 // Lifecycle hooks
 onMounted(() => {
   fetchBarangays();
-  fetchAccounts();
+  const unsubscribe = fetchAccounts();
+  
+  // Cleanup on component unmount
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
 });
 </script>
-
-<style scoped>
-/* Custom scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: theme('colors.primary.400') theme('colors.gray.200');
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: theme('colors.gray.200');
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: theme('colors.primary.400');
-  border-radius: 20px;
-  border: 3px solid theme('colors.gray.200');
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* Custom dialog styling */
-.custom-dialog {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.custom-dialog::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-dialog::-webkit-scrollbar-track {
-  background: theme('colors.gray.200');
-}
-
-.custom-dialog::-webkit-scrollbar-thumb {
-  background-color: theme('colors.primary.400');
-  border-radius: 20px;
-  border: 3px solid theme('colors.gray.200');
-}
-
-:deep(.white-bg-dropdown .p-dropdown) {
-  background-color: white !important;
-  border: 1px solid #e2e8f0;
-}
-
-:deep(.white-bg-dropdown .p-dropdown-panel) {
-  background-color: white !important;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-
-/* Enhanced DataTable styling */
-:deep(.p-datatable-accounts) {
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-:deep(.p-datatable-accounts .p-datatable-header) {
-  background: #f9fafb;
-  border: none;
-  padding: 1.5rem;
-}
-
-:deep(.p-datatable-accounts .p-datatable-thead > tr > th) {
-  background: #f3f4f6;
-  border: none;
-  color: #4b5563;
-  font-weight: 600;
-  padding: 1rem 1.5rem;
-  white-space: nowrap;
-}
-
-:deep(.p-datatable-accounts .p-datatable-tbody > tr) {
-  transition: background-color 0.2s ease;
-}
-
-:deep(.p-datatable-accounts .p-datatable-tbody > tr:hover) {
-  background-color: #f3f4f6;
-}
-
-:deep(.p-datatable-accounts .p-datatable-tbody > tr > td) {
-  border: none;
-  padding: 1rem 1.5rem;
-  color: #1f2937;
-}
-
-/* Enhanced pagination styling */
-:deep(.p-paginator) {
-  background: #f9fafb;
-  border: none;
-  padding: 1rem;
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page) {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  margin: 0 0.25rem;
-  border-radius: 9999px;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
-  background-color: theme('colors.primary.500');
-  color: white;
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover) {
-  background-color: theme('colors.gray.200');
-}
-
-:deep(.p-paginator .p-paginator-first),
-:deep(.p-paginator .p-paginator-prev),
-:deep(.p-paginator .p-paginator-next),
-:deep(.p-paginator .p-paginator-last) {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  margin: 0 0.25rem;
-  border-radius: 9999px;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover) {
-  background-color: theme('colors.gray.200');
-}
-</style>
-

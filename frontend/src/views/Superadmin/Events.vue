@@ -60,34 +60,53 @@
           </div>
           
           <div class="p-4 relative">
-            <DatePicker
-              v-model="date" 
-              :inline="true" 
-              :showWeek="true" 
-              @date-select="handleDateSelect"
-              class="custom-calendar w-full"
-              ref="datepicker"
-            />
-            
-            <!-- Event Indicators -->
-            <div v-for="(dayEvents, index) in calendarEventsByDay" :key="index">
-              <div 
-                v-if="dayEvents.length > 0"
-                :class="[
-                  'event-day-indicator', 
-                  `day-${index + 1}`
-                ]"
-              >
+            <!-- Custom Calendar View -->
+            <div class="custom-calendar">
+              <!-- Calendar Header -->
+              <div class="calendar-header">
+                <div v-for="day in weekDays" :key="day" class="weekday">{{ day }}</div>
+              </div>
+              
+              <!-- Calendar Days -->
+              <div class="calendar-days">
                 <div 
-                  v-for="(event, eventIndex) in dayEvents.slice(0, 3)" 
-                  :key="`${index}-${eventIndex}`"
+                  v-for="(day, index) in calendarDays" 
+                  :key="index" 
                   :class="[
-                    'event-indicator', 
-                    getEventTypeColor(event.type).replace('bg-', 'event-')
+                    'calendar-day',
+                    { 'current-month': day.currentMonth },
+                    { 'today': isToday(day.date) },
+                    { 'selected': isSameDay(day.date, date) }
                   ]"
-                  :title="event.title"
-                ></div>
-                <div v-if="dayEvents.length > 3" class="more-events">+{{ dayEvents.length - 3 }}</div>
+                  @click="selectDate(day.date)"
+                >
+                  <div class="day-number">{{ day.dayNumber }}</div>
+                  
+                  <!-- Events for this day -->
+                  <div class="day-events">
+                    <div 
+                      v-for="(event, eventIndex) in getDayEvents(day.date).slice(0, 3)" 
+                      :key="eventIndex" 
+                      :class="[
+                        'day-event',
+                        getEventTypeColor(event.type).replace('bg-', '')
+                      ]"
+                      @click.stop="openEditEventDialog(event)"
+                    >
+                      <div class="event-title">{{ event.title }}</div>
+                      <div class="event-time">{{ formatTime(event.date) }}</div>
+                    </div>
+                    
+                    <!-- Show +X more if there are more than 3 events -->
+                    <div 
+                      v-if="getDayEvents(day.date).length > 3" 
+                      class="more-events"
+                      @click.stop="showMoreEvents(day.date)"
+                    >
+                      +{{ getDayEvents(day.date).length - 3 }} more
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -309,13 +328,49 @@
           <Button label="Yes" icon="pi pi-check" class="p-button-danger" @click="deleteEvent" />
         </template>
       </Dialog>
+      
+      <!-- More Events Dialog -->
+      <Dialog 
+        v-model:visible="moreEventsDialog" 
+        :header="moreEventsDate ? formatFullDate(moreEventsDate) : 'Events'" 
+        :modal="true" 
+        :style="{width: '500px'}"
+      >
+        <div v-if="moreEventsDate && moreEventsList.length > 0" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar p-3">
+          <div 
+            v-for="event in moreEventsList" 
+            :key="event.id" 
+            class="p-3 rounded-lg hover:bg-surface-50 transition-all duration-300 ease-in-out border border-surface-100 cursor-pointer"
+            @click="openEditEventDialog(event); moreEventsDialog = false;"
+          >
+            <div class="flex items-start gap-3">
+              <span :class="`${getEventTypeColor(event.type)} w-3 h-3 rounded-full mt-1.5`"></span>
+              <div>
+                <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
+                <div class="flex items-center text-sm text-surface-500 mt-1">
+                  <i class="pi pi-clock mr-1 text-xs"></i>
+                  {{ formatTime(event.date) }}
+                </div>
+                <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
+                  <i class="pi pi-map-marker mr-1 text-xs"></i>
+                  {{ event.location }}
+                </div>
+                <p v-if="event.description" class="text-sm text-surface-500 mt-1">{{ event.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="p-4 text-center text-surface-500">
+          No events for this day
+        </div>
+      </Dialog>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, parseISO } from 'date-fns';
+import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, parseISO, addDays, getMonth, getYear, isToday as dateFnsIsToday, startOfWeek, endOfWeek } from 'date-fns';
 import { db } from '@/services/firebase'; // Ensure this points to your Firebase configuration
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { useUserStore } from "@/stores/user"; 
@@ -335,7 +390,6 @@ const user = computed(() => userStore.user);
 const eventDialog = ref(false);
 const deleteDialog = ref(false);
 const editMode = ref(false);
-const datepicker = ref(null);
 const newEvent = ref({
   id: '',
   title: '',
@@ -348,6 +402,14 @@ const newEvent = ref({
   barangay: ''
 });
 
+// For more events dialog
+const moreEventsDialog = ref(false);
+const moreEventsDate = ref(null);
+const moreEventsList = ref([]);
+
+// Weekday headers
+const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
 const selectedDateEvents = ref([]);
 
 const eventTypes = [
@@ -356,6 +418,45 @@ const eventTypes = [
   { value: 'Holiday', label: 'Holiday' },
   { value: 'Reminder', label: 'Reminder' }
 ];
+
+// Generate calendar days for the current month view
+const calendarDays = computed(() => {
+  const currentMonth = date.value;
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  
+  return days.map(day => ({
+    date: day,
+    dayNumber: getDate(day),
+    currentMonth: isSameMonth(day, currentMonth)
+  }));
+});
+
+// Function to check if a date is today
+const isToday = (dateToCheck) => {
+  return dateFnsIsToday(dateToCheck);
+};
+
+// Function to select a date
+const selectDate = (selectedDate) => {
+  date.value = selectedDate;
+};
+
+// Function to get events for a specific day
+const getDayEvents = (day) => {
+  return events.value.filter(event => isSameDay(new Date(event.date), day));
+};
+
+// Function to show more events dialog
+const showMoreEvents = (dayDate) => {
+  moreEventsDate.value = dayDate;
+  moreEventsList.value = getDayEvents(dayDate);
+  moreEventsDialog.value = true;
+};
 
 // Fetch events from Firestore on component mount
 const fetchEvents = async () => {
@@ -563,37 +664,11 @@ function previousMonth() {
   });
 }
 
-// Function to update calendar event indicators
+// Function to update calendar event indicators - simplified since we're using our custom calendar
 function updateCalendarEventIndicators() {
-  nextTick(() => {
-    if (datepicker.value) {
-      const datepickerEl = datepicker.value.$el;
-      const dayElements = datepickerEl.querySelectorAll('.p-datepicker-calendar td[data-pc-section="day"]');
-      
-      dayElements.forEach(dayEl => {
-        const dateAttr = dayEl.getAttribute('data-date');
-        if (dateAttr) {
-          try {
-            const cellDate = new Date(dateAttr);
-            if (!isNaN(cellDate.getTime())) {
-              const dayOfMonth = cellDate.getDate();
-              
-              // Check if this date has events
-              const hasEvents = calendarEventsByDay.value[dayOfMonth - 1]?.length > 0;
-              
-              if (hasEvents) {
-                dayEl.classList.add('has-events');
-              } else {
-                dayEl.classList.remove('has-events');
-              }
-            }
-          } catch (e) {
-            console.error("Error processing date:", e);
-          }
-        }
-      });
-    }
-  });
+  // We don't need this function anymore since we're showing events directly in our custom calendar
+  // But we'll keep it as a no-op for compatibility with existing code
+  console.log("Calendar events updated");
 }
 
 // Open New Event Dialog
@@ -776,6 +851,144 @@ const updateEventDate = (value) => {
   position: relative;
 }
 
+/* Calendar header with weekday names */
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  padding: 8px;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* Calendar days grid */
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  padding: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calendar-day:hover {
+  background-color: #f1f5f9;
+}
+
+.calendar-day.current-month {
+  background-color: #ffffff;
+}
+
+.calendar-day:not(.current-month) {
+  background-color: #f8fafc;
+}
+
+.calendar-day.today {
+  background-color: #eff6ff;
+  border: 1px solid #3b82f6;
+}
+
+.calendar-day.selected {
+  background-color: #dbeafe;
+}
+
+.day-number {
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-align: center;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.today .day-number {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Events styling */
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.day-event {
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.day-event:hover {
+  filter: brightness(1.1);
+}
+
+.day-event .event-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-event .event-time {
+  font-size: 0.6rem;
+  opacity: 0.9;
+}
+
+.more-events {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: center;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.more-events:hover {
+  text-decoration: underline;
+}
+
+/* Event colors */
+.blue-500 {
+  background-color: #3b82f6;
+}
+
+.purple-500 {
+  background-color: #8b5cf6;
+}
+
+.red-500 {
+  background-color: #ef4444;
+}
+
+.amber-500 {
+  background-color: #f59e0b;
+}
+
+.gray-500 {
+  background-color: #6b7280;
+}
+
+/* Original styles from your code */
 :deep(.p-datepicker) {
   background-color: white;
   border-radius: 12px;
@@ -833,149 +1046,6 @@ const updateEventDate = (value) => {
   color: white;
 }
 
-/* Google Calendar-like event indicators */
-.event-indicators-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.event-day-indicator {
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  width: 80%;
-}
-
-.event-indicator {
-  height: 4px;
-  width: 80%;
-  border-radius: 2px;
-}
-
-.event-blue-500 {
-  background-color: #3b82f6;
-}
-
-.event-purple-500 {
-  background-color: #8b5cf6;
-}
-
-.event-red-500 {
-  background-color: #ef4444;
-}
-
-.event-amber-500 {
-  background-color: #f59e0b;
-}
-
-.event-gray-500 {
-  background-color: #6b7280;
-}
-
-.more-events {
-  font-size: 9px;
-  color: #64748b;
-  margin-top: 1px;
-}
-
-/* Position event indicators for each day */
-:deep(.p-datepicker-calendar tr) {
-  position: relative;
-}
-
-:deep(.p-datepicker-calendar td) {
-  position: relative;
-}
-
-/* Generate day-X classes for all possible days */
-.day-1 { left: calc(0% + 2.5rem / 2); }
-.day-2 { left: calc(100% / 7 + 2.5rem / 2); }
-.day-3 { left: calc(200% / 7 + 2.5rem / 2); }
-.day-4 { left: calc(300% / 7 + 2.5rem / 2); }
-.day-5 { left: calc(400% / 7 + 2.5rem / 2); }
-.day-6 { left: calc(500% / 7 + 2.5rem / 2); }
-.day-7 { left: calc(600% / 7 + 2.5rem / 2); }
-.day-8 { left: calc(0% + 2.5rem / 2); }
-.day-9 { left: calc(100% / 7 + 2.5rem / 2); }
-.day-10 { left: calc(200% / 7 + 2.5rem / 2); }
-.day-11 { left: calc(300% / 7 + 2.5rem / 2); }
-.day-12 { left: calc(400% / 7 + 2.5rem / 2); }
-.day-13 { left: calc(500% / 7 + 2.5rem / 2); }
-.day-14 { left: calc(600% / 7 + 2.5rem / 2); }
-.day-15 { left: calc(0% + 2.5rem / 2); }
-.day-16 { left: calc(100% / 7 + 2.5rem / 2); }
-.day-17 { left: calc(200% / 7 + 2.5rem / 2); }
-.day-18 { left: calc(300% / 7 + 2.5rem / 2); }
-.day-19 { left: calc(400% / 7 + 2.5rem / 2); }
-.day-20 { left: calc(500% / 7 + 2.5rem / 2); }
-.day-21 { left: calc(600% / 7 + 2.5rem / 2); }
-.day-22 { left: calc(0% + 2.5rem / 2); }
-.day-23 { left: calc(100% / 7 + 2.5rem / 2); }
-.day-24 { left: calc(200% / 7 + 2.5rem / 2); }
-.day-25 { left: calc(300% / 7 + 2.5rem / 2); }
-.day-26 { left: calc(400% / 7 + 2.5rem / 2); }
-.day-27 { left: calc(500% / 7 + 2.5rem / 2); }
-.day-28 { left: calc(600% / 7 + 2.5rem / 2); }
-.day-29 { left: calc(0% + 2.5rem / 2); }
-.day-30 { left: calc(100% / 7 + 2.5rem / 2); }
-.day-31 { left: calc(200% / 7 + 2.5rem / 2); }
-
-/* Custom button styling */
-:deep(.p-button) {
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-:deep(.p-button:focus) {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--primary-300, #a5b4fc);
-}
-
-:deep(.p-inputtext) {
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
-  padding: 0.75rem 1rem;
-}
-
-:deep(.p-inputtext:focus) {
-  border-color: var(--primary-500, #6366f1);
-  box-shadow: 0 0 0 2px var(--primary-100, #e0e7ff);
-}
-
-:deep(.p-dropdown) {
-  border-radius: 0.5rem;
-}
-
-:deep(.p-dropdown:focus) {
-  border-color: var(--primary-500, #6366f1);
-  box-shadow: 0 0 0 2px var(--primary-100, #e0e7ff);
-}
-
-:deep(.p-dropdown-panel) {
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.p-dialog) {
-  border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-}
-
-:deep(.p-dialog-content) {
-  overflow: visible;
-  padding: 0;
-  border-radius: 1rem;
-}
-
 /* Custom scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
@@ -1019,23 +1089,6 @@ const updateEventDate = (value) => {
   border-radius: 1rem;
 }
 
-/* Add has-events styling */
-:deep(.has-events) {
-  position: relative;
-}
-
-:deep(.has-events::after) {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--primary-500, #6366f1);
-}
-
 /* CSS Variables for primary colors with RGB values for box-shadow */
 :root {
   --primary-100-rgb: 224, 231, 255;
@@ -1043,5 +1096,21 @@ const updateEventDate = (value) => {
   --primary-400-rgb: 129, 140, 248;
   --primary-500-rgb: 99, 102, 241;
   --primary-600-rgb: 79, 70, 229;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-day {
+    padding: 2px;
+  }
+  
+  .day-number {
+    font-size: 1rem;
+  }
+  
+  .day-event {
+    font-size: 0.65rem;
+    padding: 1px 2px;
+  }
 }
 </style>

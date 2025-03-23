@@ -1,98 +1,103 @@
 <template>
-    <div class="w-full bg-primary-600 text-white px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-2">
-        <!-- Menu button slot -->
-        <slot name="menu-button"></slot>
-        <h1 class="text-xl font-semibold">{{ title }}</h1>
-      </div>
-      <div class="flex items-center gap-4">
-        <!-- Notification System -->
-        <div class="relative">
-          <Button icon="pi pi-bell" 
-                  text 
-                  severity="secondary" 
-                  aria-label="Notification" 
-                  class="p-button-rounded text-white hover:bg-primary-700"
-                  @click="toggleNotifications" />
-                  
-          <!-- Notification Badge -->
-          <span v-if="unreadCount > 0" 
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {{ unreadCount > 9 ? '9+' : unreadCount }}
-          </span>
-          
-          <!-- Notification Panel -->
-          <div v-if="showNotifications" 
-               class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden">
-            <div class="p-3 border-b flex justify-between items-center">
-              <h3 class="font-medium text-gray-800">Notifications</h3>
-              <div class="flex gap-2">
-                <Button v-if="unreadCount > 0"
-                        label="Mark all as read" 
-                        link 
-                        size="small"
-                        class="text-primary-600 p-0"
-                        @click="markAllAsRead" />
-              </div>
-            </div>
-            
-            <div class="max-h-80 overflow-y-auto">
-              <div v-if="notifications.length === 0" class="p-4 text-center text-gray-500">
-                No notifications
-              </div>
-              
-              <div v-for="(notification, index) in notifications" 
-                   :key="index"
-                   class="p-3 border-b hover:bg-gray-50 cursor-pointer transition-colors"
-                   :class="{'bg-primary-50': !notification.read}"
-                   @click="readNotification(index)">
-                <div class="flex gap-3">
-                  <div class="flex-shrink-0">
-                    <i :class="[notification.icon, 'text-xl', notification.iconClass]"></i>
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-800">{{ notification.title }}</p>
-                    <p class="text-xs text-gray-500">{{ notification.message }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ notification.time }}</p>
-                  </div>
-                  <div v-if="!notification.read" class="w-2 h-2 bg-primary-600 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="p-2 border-t text-center">
-              <Button label="View all notifications" 
-                      link
-                      class="text-primary-600 w-full" />
+  <div class="w-full bg-primary-600 text-white px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <!-- Menu button slot -->
+      <slot name="menu-button"></slot>
+      <h1 class="text-xl font-semibold">{{ title }}</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- Notification System -->
+      <div class="relative">
+        <Button icon="pi pi-bell" 
+                text 
+                severity="secondary" 
+                aria-label="Notification" 
+                class="p-button-rounded text-white hover:bg-primary-700"
+                @click="toggleNotifications" />
+                
+        <!-- Notification Badge -->
+        <span v-if="unreadCount > 0" 
+              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          {{ unreadCount > 9 ? '9+' : unreadCount }}
+        </span>
+        
+        <!-- Notification Panel -->
+        <div v-if="showNotifications" 
+             class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden">
+          <div class="p-3 border-b flex justify-between items-center">
+            <h3 class="font-medium text-gray-800">Notifications</h3>
+            <div class="flex gap-2">
+              <Button v-if="unreadCount > 0"
+                      label="Mark all as read" 
+                      link 
+                      size="small"
+                      class="text-primary-600 p-0"
+                      @click="markAllAsRead" />
             </div>
           </div>
-        </div>
-        
-        <div class="flex items-center gap-2">
-          <span class="hidden sm:inline">Admin</span>
-          <i class="pi pi-user text-xl"></i>
+          
+          <div class="max-h-80 overflow-y-auto">
+            <div v-if="notifications.length === 0" class="p-4 text-center text-gray-500">
+              No notifications
+            </div>
+            
+            <div v-for="(notification, index) in notifications" 
+                 :key="index"
+                 class="p-3 border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                 :class="{'bg-primary-50': !notification.read}"
+                 @click="readNotification(index)">
+              <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                  <i :class="[notification.icon, 'text-xl', notification.iconClass]"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-800">{{ notification.title }}</p>
+                  <p class="text-xs text-gray-500">{{ notification.message }}</p>
+                  <p class="text-xs text-gray-400 mt-1">{{ notification.time }}</p>
+                </div>
+                <div v-if="!notification.read" class="w-2 h-2 bg-primary-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-2 border-t text-center">
+            <Button label="View all notifications" 
+                    link
+                    class="text-primary-600 w-full" />
+          </div>
         </div>
       </div>
+      
+      <div class="flex items-center gap-2">
+        <span class="hidden sm:inline">{{ userName }}</span>
+        <i class="pi pi-user text-xl"></i>
+      </div>
     </div>
-    
-    <!-- Overlay to close notifications when clicking outside -->
-    <div v-if="showNotifications" 
-         class="fixed inset-0 z-40" 
-         @click="showNotifications = false"></div>
-  </template>
+  </div>
   
-  <script setup>
-  import { ref, computed, onMounted, onUnmounted } from 'vue';
-  import Button from 'primevue/button';
-  
-  defineProps({
-    title: {
-      type: String,
-      default: 'Data Information'
-    }
-  });
-  
- // Notification state
+  <!-- Overlay to close notifications when clicking outside -->
+  <div v-if="showNotifications" 
+       class="fixed inset-0 z-40" 
+       @click="showNotifications = false"></div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import Button from 'primevue/button';
+import { auth } from '@/services/firebase'; // Import Firebase auth
+import { onAuthStateChanged } from 'firebase/auth';
+
+defineProps({
+  title: {
+    type: String,
+    default: 'Data Information'
+  }
+});
+
+// User state
+const userName = ref('User');
+
+// Notification state
 const showNotifications = ref(false);
 const notifications = ref([
   {
@@ -158,12 +163,39 @@ const handleEscKey = (event) => {
   }
 };
 
+// Function to update user name from current auth state
+const updateUserName = () => {
+  const user = auth.currentUser;
+  if (user) {
+    // Use displayName if available, otherwise use email or uid
+    userName.value = user.displayName || user.email || user.uid;
+  } else {
+    userName.value = 'User';
+  }
+};
+
 // Add and remove event listeners
 onMounted(() => {
   document.addEventListener('keydown', handleEscKey);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscKey);
+  
+  // Set up auth state listener
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is signed in
+      userName.value = user.displayName || user.email || user.uid;
+    } else {
+      // User is signed out
+      userName.value = 'User';
+    }
+  });
+  
+  // Initial check for current user
+  updateUserName();
+  
+  // Clean up auth listener on unmount
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleEscKey);
+    unsubscribe();
+  });
 });
 </script>
