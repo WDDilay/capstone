@@ -9,13 +9,37 @@ export const useUserStore = defineStore("user", () => {
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  // Restore user data on refresh
-  if (localStorage.getItem("user")) {
-    user.value = JSON.parse(localStorage.getItem("user"));
-  }
+  const clearUser = () => {
+    user.value = null;
+    localStorage.removeItem("user");
+  };
+
+  // Restore user data on refresh or page load
+  const initializeStore = () => {
+    if (localStorage.getItem("user")) {
+      try {
+        user.value = JSON.parse(localStorage.getItem("user"));
+      } catch (e) {
+        console.error("Failed to parse user data from localStorage", e);
+        localStorage.removeItem("user");
+      }
+    }
+  };
+  
+  // Initialize on store creation
+  initializeStore();
 
   // Get user role
   const role = computed(() => user.value?.role || null);
+  
+  // Check if user is authenticated
+  const isAuthenticated = computed(() => user.value !== null);
 
-  return { user, setUser, role };
+  return { 
+    user, 
+    setUser, 
+    clearUser,
+    role,
+    isAuthenticated
+  };
 });

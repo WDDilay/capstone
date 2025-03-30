@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useUserStore } from '@/stores/user'; // Import Pinia store
+import { useUserStore } from '@/stores/user';
 
 // Views
 
@@ -22,43 +22,110 @@ import Members from '../views/Superadmin/Members.vue';
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
 import Data from '../views/BarangayAdmin/Data.vue';
+import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
 
-// User Guard
-
-
 const routes = [
-
-  // Landing Page routes
-  { path: '/', name: 'LandPage', component: LandPage },
-  { path: '/home', name: 'Home', component: Home },
-  { path: '/about', name: 'About', component: About },
+  // Public routes
+  { 
+    path: '/', 
+    name: 'LandPage', 
+    component: LandPage,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
+  { 
+    path: '/home', 
+    name: 'Home', 
+    component: Home,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
+  { 
+    path: '/about', 
+    name: 'About', 
+    component: About,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
 
   // Authentication routes
-  { path: '/login', name: 'Login', component: Login },
-  { path: '/register', name: 'Register', component: Register },
-
-  //Super Admin routes
-  { path: '/super-admin', component: SuperAdmin, 
-    redirect: '/super-admin/super-dashboard', 
-    children: [
-      { path: 'super-dashboard', component: Dashboard },
-      {path: 'events', component: Events },
-      {path: 'accounts', component: Accounts },
-      {path: 'members', component: Members }
-
-] 
+  { 
+    path: '/login', 
+    name: 'Login', 
+    component: Login,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
+  { 
+    path: '/register', 
+    name: 'Register', 
+    component: Register,
+    meta: { requiresAuth: false, allowedRoles: [] }
   },
 
-  { path: '/barangay-admin', component: BarangayAdmin, 
-    redirect: '/barangay-admin/dashboard', 
+  // Super Admin routes
+  { 
+    path: '/super-admin', 
+    component: SuperAdmin, 
+    redirect: '/super-admin/super-dashboard',
+    meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] },
     children: [
-      { path: 'dashboard', component: BarangayDashboard },
-      {path: 'data', component: Data },
-      {path: 'messages', component: Messages }
-] 
+      { 
+        path: 'super-dashboard', 
+        component: Dashboard,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      { 
+        path: 'events', 
+        component: Events,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      { 
+        path: 'accounts', 
+        component: Accounts,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      { 
+        path: 'members', 
+        component: Members,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      }
+    ] 
   },
+
+  // Barangay Admin routes
+  { 
+    path: '/barangay-admin', 
+    component: BarangayAdmin, 
+    redirect: '/barangay-admin/dashboard',
+    meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] },
+    children: [
+      { 
+        path: 'dashboard', 
+        component: BarangayDashboard,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      { 
+        path: 'data', 
+        component: Data,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      { 
+        path: 'announcements', 
+        component: Announcements,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      { 
+        path: 'messages', 
+        component: Messages,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      }
+    ] 
+  },
+  
+  // Catch-all route for 404
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
+  }
 ];
 
 const router = createRouter({
@@ -66,50 +133,54 @@ const router = createRouter({
   routes,
 });
 
+// Single comprehensive navigation guard
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore();
   const isAuthenticated = userStore.user !== null;
-  const userRole = isAuthenticated ? userStore.user.role : null;
+  const userRole = userStore.role;
   
   // Check if route requires authentication
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   
-  // Check if route should redirect authenticated users
-  const redirectIfAuth = to.matched.some(record => record.meta.redirectIfAuth);
-  
-  // Check if route requires a specific role
-  const requiredRole = to.matched.find(record => record.meta.role)?.meta.role;
-  
-  // Handle authentication and role-based access
-  if (requiresAuth && !isAuthenticated) {
-    // Route requires auth but user is not authenticated
-    next('/login');
-  } else if (redirectIfAuth && isAuthenticated) {
-    // User is authenticated but trying to access login/register
-    // Redirect to appropriate dashboard based on role
-    if (userRole === 'SuperAdmin') {
-      next('/super-admin/super-dashboard');
-    } else if (userRole === 'BarangayPresident') {
-      next('/barangay-admin/dashboard');
-    } else {
-      // Default fallback if role is unknown
-      next('/');
+  // Check if user has permission for this route
+  const hasPermission = to.matched.every(record => {
+    // If no roles specified or empty array, allow access
+    if (!record.meta.allowedRoles || record.meta.allowedRoles.length === 0) {
+      return true;
     }
-  } else if (requiresAuth && requiredRole && userRole !== requiredRole) {
-    // User is authenticated but doesn't have the required role
-    // Redirect to appropriate dashboard based on their actual role
-    if (userRole === 'SuperAdmin') {
-      next('/super-admin/super-dashboard');
+    // Otherwise check if user role is in the allowed roles
+    return record.meta.allowedRoles.includes(userRole);
+  });
+
+  // Public routes - redirect authenticated users to their dashboard
+  if (!requiresAuth && isAuthenticated) {
+    if (userRole === 'FederationPresident') {
+      return next('/super-admin');
     } else if (userRole === 'BarangayPresident') {
-      next('/barangay-admin/dashboard');
-    } else {
-      // If role is unknown, redirect to home
-      next('/');
+      return next('/barangay-admin');
     }
-  } else {
-    // All checks passed, proceed to the requested route
-    next();
   }
+  
+  // Protected routes - check authentication and permissions
+  if (requiresAuth) {
+    if (!isAuthenticated) {
+      // Not authenticated, redirect to login
+      return next('/login');
+    } else if (!hasPermission) {
+      // Authenticated but wrong role
+      if (userRole === 'FederationPresident') {
+        return next('/super-admin');
+      } else if (userRole === 'BarangayPresident') {
+        return next('/barangay-admin');
+      } else {
+        // Fallback if role is unknown
+        return next('/login');
+      }
+    }
+  }
+  
+  // If we got here, proceed normally
+  next();
 });
 
 export default router;
