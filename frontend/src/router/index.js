@@ -11,6 +11,7 @@ import About from '../views/LandPage/About.vue';
 //Authentication
 import Login from '../views/auth/Login.vue';
 import Register from '../views/auth/Register.vue';
+import Membership from '../views/auth/Membership.vue';
 
 //Super Admin
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
@@ -58,6 +59,12 @@ const routes = [
     path: '/register', 
     name: 'Register', 
     component: Register,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
+  {
+    path: '/membership', 
+    name: 'Membership', 
+    component: Membership,
     meta: { requiresAuth: false, allowedRoles: [] }
   },
 
