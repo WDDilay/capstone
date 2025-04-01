@@ -509,6 +509,9 @@ const isReadOnlyMode = computed(() => {
 
 // Check if user can edit/delete an event
 const canEditEvent = (event) => {
+  console.log("Checking edit permissions for event:", event);
+  console.log("Current user:", user.value);
+  
   // Only Federation President can edit Federation President events
   if (event.createdBy === 'FederationPresident') {
     return user.value?.role === 'FederationPresident';
@@ -516,7 +519,9 @@ const canEditEvent = (event) => {
   
   // BarangayPresident can only edit their own events
   if (user.value?.role === 'BarangayPresident') {
-    return event.createdBy === 'BarangayPresident' && event.barangay === user.value?.barangay;
+    const canEdit = event.createdBy === 'BarangayPresident' && event.barangay === user.value?.barangay;
+    console.log("BarangayPresident can edit:", canEdit);
+    return canEdit;
   }
   
   return false;
@@ -576,19 +581,12 @@ const fetchEvents = async () => {
       // Federation President can see all events
       q = query(eventsCollection, orderBy("date", "asc"));
     } else if (user.value?.role === 'BarangayPresident') {
-      // Barangay President can see events created by Federation President and their own barangay events
-      q = query(
-        eventsCollection,
-        where('createdBy', 'in', ['FederationPresident', 'BarangayPresident']),
-        orderBy("date", "asc")
-      );
+      // Barangay President can see Federation President events and their own barangay events
+      // IMPORTANT: We're not filtering by createdBy here, as it causes issues with compound queries
+      q = query(eventsCollection, orderBy("date", "asc"));
     } else {
       // Regular members can only see events from Federation President and their own barangay
-      q = query(
-        eventsCollection,
-        where('createdBy', 'in', ['FederationPresident', 'BarangayPresident']),
-        orderBy("date", "asc")
-      );
+      q = query(eventsCollection, orderBy("date", "asc"));
     }
     
     console.log("Executing query...");
@@ -603,11 +601,17 @@ const fetchEvents = async () => {
       console.log("Document data:", data);
       
       // Additional filtering for barangay-specific events
-      if (user.value?.role !== 'FederationPresident') {
-        // For BarangayPresident and regular members, filter by barangay
-        if (data.createdBy === 'BarangayPresident' && 
-            data.barangay !== user.value?.barangay && 
-            user.value?.role !== 'FederationPresident') {
+      if (user.value?.role === 'BarangayPresident') {
+        // For BarangayPresident, include:
+        // 1. All Federation President events
+        // 2. Only their own barangay's events
+        if (data.createdBy === 'BarangayPresident' && data.barangay !== user.value?.barangay) {
+          // Skip events from other barangays
+          return;
+        }
+      } else if (user.value?.role !== 'FederationPresident') {
+        // For regular members, filter by barangay
+        if (data.createdBy === 'BarangayPresident' && data.barangay !== user.value?.barangay) {
           // Skip events from other barangays
           return;
         }
@@ -654,31 +658,23 @@ const fetchEvents = async () => {
   }
 };
 
-// Set up real-time updates with filtering
+// Set up real-time updates with filtering - apply the same changes as fetchEvents
 const setupRealtimeUpdates = () => {
   try {
     const eventsCollection = collection(db, "announcements");
     
-    // Create a query based on user role and barangay
+    // Create a query based on user role and barangay - simplified to avoid compound query issues
     let q;
     
     if (user.value?.role === 'FederationPresident') {
       // Federation President can see all events
       q = query(eventsCollection, orderBy("date", "asc"));
     } else if (user.value?.role === 'BarangayPresident') {
-      // Barangay President can see events created by Federation President and their own barangay events
-      q = query(
-        eventsCollection,
-        where('createdBy', 'in', ['FederationPresident', 'BarangayPresident']),
-        orderBy("date", "asc")
-      );
+      // Barangay President can see all events (we'll filter client-side)
+      q = query(eventsCollection, orderBy("date", "asc"));
     } else {
-      // Regular members can only see events from Federation President and their own barangay
-      q = query(
-        eventsCollection,
-        where('createdBy', 'in', ['FederationPresident', 'BarangayPresident']),
-        orderBy("date", "asc")
-      );
+      // Regular members (we'll filter client-side)
+      q = query(eventsCollection, orderBy("date", "asc"));
     }
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -689,11 +685,17 @@ const setupRealtimeUpdates = () => {
         const data = doc.data();
         
         // Additional filtering for barangay-specific events
-        if (user.value?.role !== 'FederationPresident') {
-          // For BarangayPresident and regular members, filter by barangay
-          if (data.createdBy === 'BarangayPresident' && 
-              data.barangay !== user.value?.barangay && 
-              user.value?.role !== 'FederationPresident') {
+        if (user.value?.role === 'BarangayPresident') {
+          // For BarangayPresident, include:
+          // 1. All Federation President events
+          // 2. Only their own barangay's events
+          if (data.createdBy === 'BarangayPresident' && data.barangay !== user.value?.barangay) {
+            // Skip events from other barangays
+            return;
+          }
+        } else if (user.value?.role !== 'FederationPresident') {
+          // For regular members, filter by barangay
+          if (data.createdBy === 'BarangayPresident' && data.barangay !== user.value?.barangay) {
             // Skip events from other barangays
             return;
           }
@@ -874,17 +876,24 @@ const confirmDeleteEvent = () => {
 // Delete Event
 const deleteEvent = async () => {
   try {
+    console.log("Attempting to delete event:", newEvent.value);
+    
     // Check if user has permission to delete
     if (!canEditEvent(newEvent.value)) {
+      console.error("Permission denied: User cannot delete this event");
       alert("You don't have permission to delete this event");
       return;
     }
     
+    console.log("Deleting document with ID:", newEvent.value.id);
     await deleteDoc(doc(db, 'announcements', newEvent.value.id));
+    console.log("Event deleted successfully");
+    
     deleteDialog.value = false;
     eventDialog.value = false;
   } catch (error) {
     console.error('Error deleting event:', error);
+    alert("Error deleting event: " + error.message);
   }
 };
 
@@ -901,26 +910,35 @@ const saveEvent = async () => {
 
   try {
     if (editMode.value) {
+      console.log("Attempting to update event:", newEvent.value);
+      
       // Check if user has permission to edit
       if (!canEditEvent(newEvent.value)) {
+        console.error("Permission denied: User cannot edit this event");
         alert("You don't have permission to edit this event");
         return;
       }
       
       // Update existing event
       const eventRef = doc(db, 'announcements', newEvent.value.id);
-      await updateDoc(eventRef, {
+      
+      // Create update object
+      const updateData = {
         title: newEvent.value.title,
         date: newEvent.value.date,
         type: newEvent.value.type,
         isHoliday: newEvent.value.type === 'Holiday',
         description: newEvent.value.description,
-        location: newEvent.value.location
-        // Don't update createdBy or barangay
-      });
+        location: newEvent.value.location,
+        updatedAt: new Date() // Add last updated timestamp
+      };
+      
+      console.log("Updating with data:", updateData);
+      await updateDoc(eventRef, updateData);
       console.log("Event updated successfully");
     } else {
       // Add new event
+      console.log("Creating new event");
       const eventsCollection = collection(db, 'announcements');
       
       // Set the barangay field based on user role
@@ -929,7 +947,8 @@ const saveEvent = async () => {
         barangayValue = user.value?.barangay || '';
       }
       
-      const docRef = await addDoc(eventsCollection, {
+      // Create new event object
+      const newEventData = {
         title: newEvent.value.title,
         date: newEvent.value.date,
         type: newEvent.value.type,
@@ -939,7 +958,10 @@ const saveEvent = async () => {
         createdBy: user.value?.role || '',
         barangay: barangayValue,
         createdAt: new Date()
-      });
+      };
+      
+      console.log("Adding new event with data:", newEventData);
+      const docRef = await addDoc(eventsCollection, newEventData);
       console.log("Event added successfully with ID:", docRef.id);
     }
     eventDialog.value = false;
@@ -1027,6 +1049,11 @@ const updateEventDate = (value) => {
   
   newEvent.value.date = newDate;
 };
+
+
+
+
+
 </script>
 
 <style scoped>
