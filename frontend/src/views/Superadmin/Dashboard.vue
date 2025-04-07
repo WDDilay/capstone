@@ -20,7 +20,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <div class="bg-white p-6 rounded-xl shadow-lg">
         <h2 class="text-lg font-semibold mb-4 text-gray-700">Monthly Distribution</h2>
-        <Chart type="bar" :data="monthlyDistributionData" :options="chartOptions" class="h-64" />
+        <div v-if="isLoadingChartData" class="flex justify-center items-center h-64">
+          <i class="pi pi-spin pi-spinner text-3xl text-primary-500"></i>
+        </div>
+        <Chart v-else type="bar" :data="monthlyDistributionData" :options="chartOptions" class="h-64" />
       </div>
       <div class="bg-white p-6 rounded-xl shadow-lg">
         <h2 class="text-lg font-semibold mb-4 text-gray-700">Member Distribution</h2>
@@ -86,24 +89,27 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import Chart from 'primevue/chart';
 import Tag from 'primevue/tag';
-import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
+import { format, isAfter, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
 import { db } from '@/services/firebase';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, where } from 'firebase/firestore';
 
 // Stats Cards Data
 const stats = ref([
   { title: 'Total Members', value: '0', icon: 'pi pi-users', bgColor: 'bg-blue-500' },
-  { title: 'New Applications', value: '0', icon: 'pi pi-file', bgColor: 'bg-green-500' }, // Updated default to 0
+  { title: 'New Applications', value: '0', icon: 'pi pi-file', bgColor: 'bg-green-500' },
   { title: 'Upcoming Events', value: '0', icon: 'pi pi-calendar', bgColor: 'bg-yellow-500' },
   { title: 'Support Tickets', value: '28', icon: 'pi pi-ticket', bgColor: 'bg-red-500' },
 ]);
+
+// Loading state for chart data
+const isLoadingChartData = ref(true);
 
 // Chart Data
 const monthlyDistributionData = ref({
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   datasets: [
-    { label: 'New Members', data: [65, 59, 80, 81, 56, 55, 40, 70, 75, 62, 58, 90], backgroundColor: '#3B82F6' },
-    { label: 'Events Held', data: [28, 48, 40, 19, 86, 27, 90, 35, 42, 50, 45, 70], backgroundColor: '#10B981' }
+    { label: 'New Members', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], backgroundColor: '#3B82F6' },
+    { label: 'Events Held', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], backgroundColor: '#10B981' }
   ]
 });
 
@@ -115,7 +121,24 @@ const memberDistributionData = ref({
 const chartOptions = ref({
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { position: 'bottom' } }
+  plugins: { 
+    legend: { position: 'bottom' },
+    tooltip: {
+      callbacks: {
+        title: function(context) {
+          return context[0].label + ' ' + new Date().getFullYear();
+        }
+      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        precision: 0
+      }
+    }
+  }
 });
 
 const pieChartOptions = ref({
@@ -162,7 +185,7 @@ const fetchTotalMembers = async () => {
   }
 };
 
-// ✅ Fetch New Applications
+// Fetch New Applications
 const fetchNewApplications = async () => {
   try {
     const applicationsCollection = collection(db, 'applications');
@@ -173,6 +196,99 @@ const fetchNewApplications = async () => {
     }
   } catch (error) {
     console.error('Error fetching new applications:', error);
+  }
+};
+
+// Fetch Monthly Distribution Data
+const fetchMonthlyDistribution = async () => {
+  try {
+    isLoadingChartData.value = true;
+    
+    // Get current year
+    const currentYear = new Date().getFullYear();
+    
+    // Initialize monthly counts
+    const monthlyCounts = Array(12).fill(0);
+    const monthlyEvents = Array(12).fill(0);
+    
+    // Fetch users created this year
+    const usersCollection = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersCollection);
+    
+    // Process user data
+    usersSnapshot.forEach((doc) => {
+      const userData = doc.data();
+      
+      if (userData.createdAt) {
+        let creationDate;
+        
+        // Handle different timestamp formats
+        if (userData.createdAt instanceof Timestamp) {
+          creationDate = userData.createdAt.toDate();
+        } else if (userData.createdAt.seconds) {
+          creationDate = new Date(userData.createdAt.seconds * 1000);
+        } else if (typeof userData.createdAt === 'string') {
+          creationDate = new Date(userData.createdAt);
+        }
+        
+        // If we have a valid date and it's from the current year
+        if (creationDate && getYear(creationDate) === currentYear) {
+          const month = getMonth(creationDate);
+          monthlyCounts[month]++;
+        }
+      }
+    });
+    
+    // Fetch events for this year
+    const eventsCollection = collection(db, 'announcements');
+    const eventsQuery = query(eventsCollection);
+    const eventsSnapshot = await getDocs(eventsQuery);
+    
+    // Process events data
+    eventsSnapshot.forEach((doc) => {
+      const eventData = doc.data();
+      
+      if (eventData.date) {
+        let eventDate;
+        
+        // Handle different timestamp formats
+        if (eventData.date instanceof Timestamp) {
+          eventDate = eventData.date.toDate();
+        } else if (eventData.date.seconds) {
+          eventDate = new Date(eventData.date.seconds * 1000);
+        } else if (typeof eventData.date === 'string') {
+          eventDate = new Date(eventData.date);
+        }
+        
+        // If we have a valid date and it's from the current year
+        if (eventDate && getYear(eventDate) === currentYear) {
+          const month = getMonth(eventDate);
+          monthlyEvents[month]++;
+        }
+      }
+    });
+    
+    // Update chart data
+    monthlyDistributionData.value = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      datasets: [
+        { 
+          label: 'New Members', 
+          data: monthlyCounts, 
+          backgroundColor: '#3B82F6' 
+        },
+        { 
+          label: 'Events Held', 
+          data: monthlyEvents, 
+          backgroundColor: '#10B981' 
+        }
+      ]
+    };
+    
+    isLoadingChartData.value = false;
+  } catch (error) {
+    console.error('Error fetching monthly distribution data:', error);
+    isLoadingChartData.value = false;
   }
 };
 
@@ -280,7 +396,8 @@ const getEventTypeSeverity = (type) => {
 // Lifecycle Hook
 onMounted(() => {
   fetchTotalMembers();
-  fetchNewApplications(); // 🔹 Call here
+  fetchNewApplications();
+  fetchMonthlyDistribution(); // New function to fetch monthly distribution data
   fetchEvents();
   fetchRecentActivities();
 });
