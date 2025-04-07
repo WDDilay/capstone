@@ -19,6 +19,7 @@ import Dashboard from '../views/Superadmin/Dashboard.vue';
 import Events from '../views/Superadmin/Events.vue';
 import Accounts from '../views/Superadmin/Accounts.vue';
 import Members from '../views/Superadmin/Members.vue';
+import Application from '../views/Superadmin/Application.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -26,6 +27,7 @@ import Data from '../views/BarangayAdmin/Data.vue';
 import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
+import { Apple } from 'lucide-vue-next';
 
 const routes = [
   // Public routes
@@ -94,6 +96,11 @@ const routes = [
         path: 'members', 
         component: Members,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'application', 
+        component: Application,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
   },
@@ -145,17 +152,17 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore();
   const isAuthenticated = userStore.user !== null;
   const userRole = userStore.role;
-  
+
+  console.log("Current user role:", userRole); // Debugging line
+
   // Check if route requires authentication
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   // Check if user has permission for this route
   const hasPermission = to.matched.every(record => {
-    // If no roles specified or empty array, allow access
     if (!record.meta.allowedRoles || record.meta.allowedRoles.length === 0) {
       return true;
     }
-    // Otherwise check if user role is in the allowed roles
     return record.meta.allowedRoles.includes(userRole);
   });
 
@@ -171,23 +178,21 @@ router.beforeEach((to, from, next) => {
   // Protected routes - check authentication and permissions
   if (requiresAuth) {
     if (!isAuthenticated) {
-      // Not authenticated, redirect to login
       return next('/login');
     } else if (!hasPermission) {
-      // Authenticated but wrong role
       if (userRole === 'FederationPresident') {
         return next('/super-admin');
       } else if (userRole === 'BarangayPresident') {
         return next('/barangay-admin');
       } else {
-        // Fallback if role is unknown
         return next('/login');
       }
     }
   }
-  
-  // If we got here, proceed normally
+
+  // Proceed normally if everything is okay
   next();
 });
+
 
 export default router;

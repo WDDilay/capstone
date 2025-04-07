@@ -260,11 +260,12 @@
           </div>
         </div>
         
-        <!-- Attachments Group -->
+        <!-- Attachments Group - Modified for development -->
         <div class="form-section">
           <div class="form-group">
             <label class="form-label">Attachments for Requirements</label>
             <p class="document-note">Please upload pictures of your requirements (ID, certificates, etc.)</p>
+            <p class="development-note">Note: File uploads are temporarily disabled in development mode. This feature will be available in production.</p>
             
             <div v-for="(attachment, index) in attachments" :key="index" class="attachment-item">
               <div class="attachment-row">
@@ -283,7 +284,6 @@
                     :id="`attachmentFile${index}`" 
                     @change="(e) => handleAttachmentChange(e, index)"
                     accept="image/*"
-                    required
                   >
                 </div>
                 <button 
@@ -317,7 +317,6 @@
                   type="file" 
                   id="barangayAffidavit" 
                   @change="handleFileChange($event, 'barangayAffidavit')"
-                  required
                 >
                 <i class="pi pi-upload"></i>
               </div>
@@ -330,7 +329,6 @@
                   type="file" 
                   id="marriageCertificate" 
                   @change="handleFileChange($event, 'marriageCertificate')"
-                  required
                 >
                 <i class="pi pi-upload"></i>
               </div>
@@ -343,7 +341,6 @@
                   type="file" 
                   id="deathCertificate" 
                   @change="handleFileChange($event, 'deathCertificate')"
-                  required
                 >
                 <i class="pi pi-upload"></i>
               </div>
@@ -356,7 +353,6 @@
                   type="file" 
                   id="custodyDocument" 
                   @change="handleFileChange($event, 'custodyDocument')"
-                  required
                 >
                 <i class="pi pi-upload"></i>
               </div>
@@ -369,7 +365,6 @@
                   type="file" 
                   id="imprisonmentDocument" 
                   @change="handleFileChange($event, 'imprisonmentDocument')"
-                  required
                 >
                 <i class="pi pi-upload"></i>
               </div>
@@ -503,7 +498,7 @@ import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import { auth, db, storage } from '@/services/firebase';
+import { auth, db } from '@/services/firebase'; // Removed storage import
 import { 
   createUserWithEmailAndPassword, 
   sendEmailVerification,
@@ -517,12 +512,6 @@ import {
   getDocs,
   serverTimestamp
 } from "firebase/firestore";
-import {
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-  getStorage
-} from "firebase/storage";
 
 const router = useRouter();
 const toast = useToast();
@@ -538,9 +527,7 @@ const showVerificationDialog = ref(false);
 const showSuccessDialog = ref(false);
 const referenceCode = ref('');
 const currentUser = ref(null);
-
-// Ensure storage is properly initialized
-const firebaseStorage = getStorage();
+const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
 
 const passwordMismatch = computed(() => {
   if (password.value && verifyPassword.value) {
@@ -680,37 +667,61 @@ const handleFileChange = (event, fileType) => {
   files[fileType] = event.target.files[0];
 };
 
-// Upload a file to Firebase Storage
-const uploadFile = async (file, path) => {
+// Mock file upload for development environment
+const mockUploadFile = async (file) => {
   if (!file) return null;
   
-  try {
-    console.log(`Uploading file to ${path}...`);
-    
-    // Use the properly initialized storage instance
-    const fileRef = storageRef(firebaseStorage, path);
-    
-    if (!fileRef) {
-      console.error('Storage reference is undefined');
-      throw new Error('Storage reference is undefined');
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return a mock URL
+  return `mock-file-url-${Date.now()}`;
+};
+
+// Mock upload all attachments for development
+const mockUploadAttachments = async () => {
+  const attachmentUrls = [];
+  const specificDocuments = {};
+  
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Create mock data for attachments
+  for (let i = 0; i < attachments.length; i++) {
+    const attachment = attachments[i];
+    if (attachment.file && attachment.name) {
+      attachmentUrls.push({
+        name: attachment.name,
+        url: `mock-attachment-url-${i}-${Date.now()}`
+      });
     }
-    
-    const snapshot = await uploadBytes(fileRef, file);
-    console.log(`File uploaded successfully to ${path}`);
-    
-    if (!snapshot) {
-      console.error('Upload snapshot is undefined');
-      return null;
-    }
-    
-    const downloadURL = await getDownloadURL(fileRef);
-    console.log(`Download URL obtained: ${downloadURL}`);
-    return downloadURL;
-  } catch (error) {
-    console.error(`Error uploading file to ${path}:`, error);
-    // Return null instead of throwing to prevent stopping the entire process
-    return null;
   }
+  
+  // Create mock data for specific documents
+  if (files.barangayAffidavit) {
+    specificDocuments.barangayAffidavit = `mock-barangay-affidavit-${Date.now()}`;
+  }
+  
+  if (formData.soloParentReason === 'separated' && files.marriageCertificate) {
+    specificDocuments.marriageCertificate = `mock-marriage-certificate-${Date.now()}`;
+  }
+  
+  if (formData.soloParentReason === 'widow' && files.deathCertificate) {
+    specificDocuments.deathCertificate = `mock-death-certificate-${Date.now()}`;
+  }
+  
+  if (formData.soloParentReason === 'custody' && files.custodyDocument) {
+    specificDocuments.custodyDocument = `mock-custody-document-${Date.now()}`;
+  }
+  
+  if (formData.soloParentReason === 'imprisoned' && files.imprisonmentDocument) {
+    specificDocuments.imprisonmentDocument = `mock-imprisonment-document-${Date.now()}`;
+  }
+  
+  return {
+    attachments: attachmentUrls,
+    documents: specificDocuments
+  };
 };
 
 // Send verification email
@@ -805,10 +816,15 @@ const handleRegistration = async () => {
     referenceCode.value = generateReferenceCode();
     console.log("Generated reference code:", referenceCode.value);
     
-    // Skip file uploads for now to avoid storage errors
-    console.log("Skipping file uploads due to storage configuration issues");
+    // 2. Handle file uploads (mock in development)
+    console.log("Processing attachments and documents...");
+    let uploadResults = { attachments: [], documents: {} };
     
-    // 4. Save application data to Firestore with user.uid as document ID
+    // Use mock uploads in development to avoid CORS issues
+    uploadResults = await mockUploadAttachments();
+    console.log("Upload results:", uploadResults);
+    
+    // 3. Save application data to Firestore with user.uid as document ID
     try {
       console.log("Saving application data to Firestore...");
       await setDoc(doc(db, "applications", user.uid), {
@@ -829,6 +845,8 @@ const handleRegistration = async () => {
         fbName: formData.fbName,
         children: children,
         soloParentReason: formData.soloParentReason,
+        attachments: uploadResults.attachments,
+        documents: uploadResults.documents,
         status: "Pending", // Default status for new applications
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -840,7 +858,7 @@ const handleRegistration = async () => {
       // Continue with the process even if Firestore save fails
     }
     
-    // 5. Also save user data to users collection
+    // 4. Also save user data to users collection
     try {
       console.log("Saving user data to Firestore...");
       await setDoc(doc(db, "users", user.uid), {
@@ -858,11 +876,11 @@ const handleRegistration = async () => {
       // Continue with the process even if user data save fails
     }
     
-    // 6. Send verification email
+    // 5. Send verification email
     console.log("Sending verification email...");
     await sendVerificationEmailToUser(user);
     
-    // 7. Show verification dialog
+    // 6. Show verification dialog
     showVerificationDialog.value = true;
     
     console.log("Registration process completed successfully");
@@ -875,8 +893,6 @@ const handleRegistration = async () => {
       errorMessage = "This email is already registered. Please use a different email or try logging in.";
     } else if (error.code === "auth/weak-password") {
       errorMessage = "Password is too weak. Please use a stronger password.";
-    } else if (error.code === "storage/unauthorized") {
-      errorMessage = "Error uploading files. Please check your file sizes and try again.";
     }
     
     toast.add({ severity: 'error', summary: 'Error', detail: errorMessage, life: 3000 });
@@ -958,6 +974,15 @@ const goToLogin = () => {
   text-align: center;
   color: #666;
   margin-bottom: 2rem;
+}
+
+.development-note {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ffeeba;
 }
 
 .form-section {

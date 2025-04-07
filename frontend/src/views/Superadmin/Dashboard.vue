@@ -92,9 +92,9 @@ import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firesto
 
 // Stats Cards Data
 const stats = ref([
-  { title: 'Total Members', value: '0', icon: 'pi pi-users', bgColor: 'bg-blue-500' }, // Default value is 0
-  { title: 'New Applications', value: '54', icon: 'pi pi-file', bgColor: 'bg-green-500' },
-  { title: 'Upcoming Events', value: '0', icon: 'pi pi-calendar', bgColor: 'bg-yellow-500' }, // Default value is 0
+  { title: 'Total Members', value: '0', icon: 'pi pi-users', bgColor: 'bg-blue-500' },
+  { title: 'New Applications', value: '0', icon: 'pi pi-file', bgColor: 'bg-green-500' }, // Updated default to 0
+  { title: 'Upcoming Events', value: '0', icon: 'pi pi-calendar', bgColor: 'bg-yellow-500' },
   { title: 'Support Tickets', value: '28', icon: 'pi pi-ticket', bgColor: 'bg-red-500' },
 ]);
 
@@ -137,10 +137,10 @@ const upcomingEvents = computed(() => {
       return isAfter(eventDate, today) || isSameDay(eventDate, today);
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5); // Limit to 5 upcoming events
+    .slice(0, 5);
 });
 
-// Update the "Upcoming Events" stat card
+// Update "Upcoming Events" stat card
 watch(upcomingEvents, (newUpcomingEvents) => {
   const upcomingEventsStat = stats.value.find(stat => stat.title === 'Upcoming Events');
   if (upcomingEventsStat) {
@@ -148,58 +148,35 @@ watch(upcomingEvents, (newUpcomingEvents) => {
   }
 });
 
-// Fetch Recent Activities from Firestore
-const fetchRecentActivities = async () => {
-  try {
-    const announcementsCollection = collection(db, 'announcements');
-    const q = query(announcementsCollection, orderBy('date', 'desc')); // Fetch announcements sorted by date
-    const querySnapshot = await getDocs(q);
-
-    const fetchedActivities = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      let eventDate;
-      if (data.date instanceof Timestamp) {
-        eventDate = data.date.toDate();
-      } else if (data.date && typeof data.date === 'string') {
-        eventDate = new Date(data.date);
-      } else {
-        eventDate = new Date();
-      }
-
-      fetchedActivities.push({
-        id: doc.id,
-        title: data.title || 'Untitled Event',
-        description: data.description || '',
-        date: eventDate,
-        type: data.type || 'General',
-      });
-    });
-
-    // Update recentActivities with the fetched data
-    recentActivities.value = fetchedActivities.slice(0, 5); // Limit to 5 recent activities
-  } catch (error) {
-    console.error('Error fetching recent activities:', error);
-  }
-};
-
-// Fetch Total Members from Firestore
+// Fetch Total Members
 const fetchTotalMembers = async () => {
   try {
-    const usersCollection = collection(db, 'users'); // Replace 'users' with your Firestore collection name
+    const usersCollection = collection(db, 'users');
     const querySnapshot = await getDocs(usersCollection);
-
-    // Update the "Total Members" stat card
     const totalMembersStat = stats.value.find(stat => stat.title === 'Total Members');
     if (totalMembersStat) {
-      totalMembersStat.value = querySnapshot.size.toString(); // Use the size of the query snapshot
+      totalMembersStat.value = querySnapshot.size.toString();
     }
   } catch (error) {
     console.error('Error fetching total members:', error);
   }
 };
 
-// Fetch Events from Firestore
+// ✅ Fetch New Applications
+const fetchNewApplications = async () => {
+  try {
+    const applicationsCollection = collection(db, 'applications');
+    const querySnapshot = await getDocs(applicationsCollection);
+    const newApplicationsStat = stats.value.find(stat => stat.title === 'New Applications');
+    if (newApplicationsStat) {
+      newApplicationsStat.value = querySnapshot.size.toString();
+    }
+  } catch (error) {
+    console.error('Error fetching new applications:', error);
+  }
+};
+
+// Fetch Events
 const fetchEvents = async () => {
   try {
     const eventsCollection = collection(db, 'announcements');
@@ -234,6 +211,40 @@ const fetchEvents = async () => {
   }
 };
 
+// Fetch Recent Activities
+const fetchRecentActivities = async () => {
+  try {
+    const announcementsCollection = collection(db, 'announcements');
+    const q = query(announcementsCollection, orderBy('date', 'desc'));
+    const querySnapshot = await getDocs(q);
+
+    const fetchedActivities = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      let eventDate;
+      if (data.date instanceof Timestamp) {
+        eventDate = data.date.toDate();
+      } else if (data.date && typeof data.date === 'string') {
+        eventDate = new Date(data.date);
+      } else {
+        eventDate = new Date();
+      }
+
+      fetchedActivities.push({
+        id: doc.id,
+        title: data.title || 'Untitled Event',
+        description: data.description || '',
+        date: eventDate,
+        type: data.type || 'General',
+      });
+    });
+
+    recentActivities.value = fetchedActivities.slice(0, 5);
+  } catch (error) {
+    console.error('Error fetching recent activities:', error);
+  }
+};
+
 // Format Date and Time
 const formatDateTime = (date) => {
   try {
@@ -244,7 +255,7 @@ const formatDateTime = (date) => {
   }
 };
 
-// Get Event Type Color
+// Event Type Color
 const getEventTypeColor = (type) => {
   switch (type) {
     case 'Meeting': return 'bg-blue-500';
@@ -255,7 +266,7 @@ const getEventTypeColor = (type) => {
   }
 };
 
-// Get Event Type Severity for Tag
+// Tag Severity
 const getEventTypeSeverity = (type) => {
   switch (type) {
     case 'Meeting': return 'info';
@@ -268,40 +279,34 @@ const getEventTypeSeverity = (type) => {
 
 // Lifecycle Hook
 onMounted(() => {
-  fetchTotalMembers(); // Fetch total members when the component is mounted
+  fetchTotalMembers();
+  fetchNewApplications(); // 🔹 Call here
   fetchEvents();
-  fetchRecentActivities(); // Fetch recent activities when the component is mounted
+  fetchRecentActivities();
 });
 </script>
 
 <style scoped>
-/* Custom scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9);
 }
-
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-track {
   background: var(--surface-100, #f1f5f9);
   border-radius: 10px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--primary-400, #818cf8);
   border-radius: 20px;
   border: 2px solid var(--surface-100, #f1f5f9);
 }
-
-/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
