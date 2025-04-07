@@ -13,6 +13,16 @@ import Login from '../views/auth/Login.vue';
 import Register from '../views/auth/Register.vue';
 import Membership from '../views/auth/Membership.vue';
 
+// User Page
+import userdash from '../views/User/userdash.vue';
+import userprofile from '../views/User/userprofile.vue';
+import user_announcement from '../views/User/user_announcement.vue';
+import available_resource from '../views/User/available_resource.vue';
+import usermessage from '../views/User/usermessage.vue';
+import resourcereq from '../views/User/resourcereq.vue';
+import user_event from '../views/User/user_event.vue';
+
+
 //Super Admin
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
 import Dashboard from '../views/Superadmin/Dashboard.vue';
@@ -70,6 +80,45 @@ const routes = [
     component: Membership,
     meta: { requiresAuth: false, allowedRoles: [] }
   },
+
+
+   // User Routes
+   {
+    path: '/userdash',
+    name: 'userdash',
+    component: userdash
+  },
+  {
+    path: '/userprofile',
+    name: 'userprofile',
+    component: userprofile
+  },
+  {
+    path: '/user_announcement',
+    name: 'user_announcement',
+    component: user_announcement
+  },
+  {
+    path: '/available_resource',
+    name: 'available_resource',
+    component: available_resource
+  },
+  {
+    path: '/usermessage',
+    name: 'usermessage',
+    component: usermessage
+  },
+  {
+    path: '/resourcereq',
+    name: 'resourcereq',
+    component: resourcereq
+  },
+  {
+    path: '/user_event',
+    name: 'user_event',
+    component: user_event
+  },
+
 
   // Super Admin routes
   { 
