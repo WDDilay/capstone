@@ -1,8 +1,10 @@
-<script setup>
+```vue type="vue" project="Solo Parent Application" file="Application.vue"
+[v0-no-op-code-block-prefix]\`\`\`vue type="vue" project="Solo Parent Application" file="Application.vue"
+[v0-no-op-code-block-prefix]<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
 import { collection, getDocs, doc, updateDoc, onSnapshot, setDoc, deleteDoc, getDoc, Timestamp, serverTimestamp, runTransaction } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
 import { 
   Search, 
   Eye, 
@@ -22,7 +24,7 @@ const itemsPerPage = 5;
 const showViewModal = ref(false);
 const showAcceptModal = ref(false);
 const showRejectModal = ref(false);
-const isProcessing = ref(isProcessing.value);
+const isProcessing = ref(false);
 const selectedApplication = ref(null);
 const rejectionReason = ref('');
 const rejectionSubmitted = ref(false);
@@ -341,7 +343,7 @@ const acceptApplication = async () => {
   }
 };
 
-// Reject application using a transaction
+// Reject application without using a transaction
 const rejectApplication = async () => {
   rejectionSubmitted.value = true;
 
@@ -359,28 +361,7 @@ const rejectApplication = async () => {
       throw new Error('No authenticated user found');
     }
     
-    // Use a transaction for the database update
-    await runTransaction(db, async (transaction) => {
-      // READ OPERATION
-      const applicationRef = doc(db, 'applications', application.id);
-      const applicationDoc = await transaction.get(applicationRef);
-      
-      if (!applicationDoc.exists()) {
-        throw new Error('Application not found');
-      }
-      
-      // All reads are complete, now perform writes
-      
-      // WRITE OPERATION
-      transaction.update(applicationRef, {
-        status: 'Rejected',
-        rejectionReason: rejectionReason.value,
-        updatedAt: serverTimestamp(),
-        updatedBy: user.uid
-      });
-    });
-    
-    // Send email notification (outside transaction)
+    // 1. Send email notification first (in case deletion fails, at least they get notified)
     const emailSubject = 'Update on Your Solo Parent Application';
     const emailBody = `
       Dear ${application.firstName},
@@ -397,7 +378,17 @@ const rejectApplication = async () => {
     
     await sendEmailNotification(application.email, emailSubject, emailBody);
     
-    console.log('Application rejected successfully');
+    // 2. Delete the application document directly (no transaction)
+    const applicationRef = doc(db, 'applications', application.id);
+    await deleteDoc(applicationRef);
+    
+    // 3. If there's a corresponding user document, delete it too
+    if (application.userId) {
+      const userRef = doc(db, 'users', application.userId);
+      await deleteDoc(userRef);
+    }
+    
+    console.log('Application rejected and deleted successfully');
     showRejectModal.value = false;
     rejectionReason.value = '';
     rejectionSubmitted.value = false;
@@ -405,7 +396,7 @@ const rejectApplication = async () => {
     // Update local state to reflect the change
     const index = applications.value.findIndex(a => a.id === application.id);
     if (index !== -1) {
-      applications.value.splice(index, 1); // Remove from the list since it's no longer pending
+      applications.value.splice(index, 1); // Remove from the list
     }
     
   } catch (err) {

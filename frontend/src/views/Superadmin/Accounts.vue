@@ -1,4 +1,5 @@
-<template>
+```vue type="code" project="accounts" file="accounts.vue"
+[v0-no-op-code-block-prefix]<template>
   <div class="p-6">
     <!-- Top Bar -->
     <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
@@ -213,7 +214,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
-import { collection, getDocs, doc, updateDoc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, onSnapshot, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
 import { 
   Search, 
@@ -439,9 +440,11 @@ const deleteAccount = async () => {
   isProcessing.value = true;
 
   try {
-    // First, sign in as admin to get permission to delete the user
-    // Note: This requires your admin account to have sufficient permissions
-    // You may need to implement a different approach based on your security rules
+    // Check if the current user is a Federation President
+    const adminDoc = await getDoc(doc(db, 'admins', auth.currentUser.uid));
+    if (!adminDoc.exists() || adminDoc.data().role !== 'FederationPresident') {
+      throw new Error('Only Federation Presidents can delete accounts');
+    }
     
     // Delete the Firestore document
     await deleteDoc(doc(db, 'barangay_presidents', editForm.value.id));
@@ -450,7 +453,6 @@ const deleteAccount = async () => {
     
     // Note: Deleting the actual Firebase Auth user requires admin SDK or Cloud Functions
     // This client-side approach has limitations due to security restrictions
-    // Consider implementing a Cloud Function for this purpose
     
     showDeleteModal.value = false;
   } catch (error) {

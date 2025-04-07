@@ -90,6 +90,7 @@ onUnmounted(() => {
 const regularMenuItems = [
   { label: 'Dashboard', path: '/barangay-admin/dashboard', icon: 'pi pi-home' },
   { label: 'Data Information', path: '/barangay-admin/data', icon: 'pi pi-database' },
+  { label: 'Application', path: '/barangay-admin/application', icon: 'pi pi-file' },
   { label: 'Announcement', path: '/barangay-admin/announcements', icon: 'pi pi-megaphone' },
   { label: 'Resource Inventory', path: '/barangay-admin/inventory', icon: 'pi pi-box' },
   { label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
