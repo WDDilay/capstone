@@ -156,7 +156,7 @@ try {
         });
         break;
       default:
-        router.replace('/userdash'); // Redirect general users
+        router.replace('/user-dashboard'); // Redirect general users
         break;
     }
   } else {

@@ -30,14 +30,14 @@
       <!-- Action Buttons -->
       <div class="flex gap-2 flex-wrap justify-center">
         <button
-          @click="exportToExcel"
+          @click="showExportPreview = true"
           class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <FileSpreadsheet class="w-5 h-5" />
           <span>Export to Excel</span>
         </button>
         <button
-          @click="printData"
+          @click="showPrintPreview = true"
           class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Printer class="w-5 h-5" />
@@ -156,7 +156,7 @@
             <X class="w-5 h-5" />
           </button>
         </div>
-        
+
         <div v-if="selectedUser" class="space-y-4">
           <!-- Status Badge -->
           <div class="mb-4">
@@ -171,7 +171,7 @@
               {{ selectedUser.status }}
             </span>
           </div>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
               <h3 class="font-medium text-gray-700">Personal Information</h3>
@@ -181,7 +181,7 @@
               <p><span class="font-medium">Gender:</span> {{ selectedUser.gender }}</p>
               <p><span class="font-medium">Date of Birth:</span> {{ selectedUser.dateOfBirth }}</p>
             </div>
-            
+
             <div class="space-y-2">
               <h3 class="font-medium text-gray-700">Address Information</h3>
               <p><span class="font-medium">Address:</span> {{ selectedUser.address }}</p>
@@ -191,21 +191,135 @@
               <p v-if="selectedUser.updatedAt"><span class="font-medium">Last Updated:</span> {{ formatDate(selectedUser.updatedAt) }}</p>
             </div>
           </div>
-          
+
           <div class="flex justify-end gap-2 mt-6">
-            <button 
-              @click="showViewModal = false" 
+            <button
+              @click="showViewModal = false"
               class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
             >
               Close
             </button>
-            <button 
-              @click="sendEmail(selectedUser)" 
+            <button
+              @click="sendEmail(selectedUser)"
               class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
             >
               Send Email
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Preview Modal -->
+    <div v-if="showExportPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Export Preview</h2>
+          <button @click="showExportPreview = false" class="p-1 hover:bg-gray-100 rounded-full">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <p class="text-sm text-gray-600">
+            You are about to export data for {{ filteredUsers.length }} solo parents from {{ currentBarangay }}.
+            The following data will be included in the Excel file:
+          </p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full border border-gray-200">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-4 py-2 border text-left">Full Name</th>
+                <th class="px-4 py-2 border text-left">Email</th>
+                <th class="px-4 py-2 border text-left">Contact</th>
+                <th class="px-4 py-2 border text-left">Address</th>
+                <th class="px-4 py-2 border text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(user, index) in previewUsers" :key="index" class="border-b">
+                <td class="px-4 py-2 border">{{ formatFullName(user) }}</td>
+                <td class="px-4 py-2 border">{{ user.email || 'N/A' }}</td>
+                <td class="px-4 py-2 border">{{ user.contactNumber || 'N/A' }}</td>
+                <td class="px-4 py-2 border">{{ user.address || 'N/A' }}</td>
+                <td class="px-4 py-2 border">{{ user.status || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="filteredUsers.length > 5" class="mt-2 text-center text-sm text-gray-500">
+          Showing 5 of {{ filteredUsers.length }} records in this preview
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <button
+            @click="showExportPreview = false"
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmExport"
+            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+          >
+            <FileSpreadsheet class="w-5 h-5" />
+            <span>Download Excel</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Preview Modal -->
+    <div v-if="showPrintPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Print Preview</h2>
+          <button @click="showPrintPreview = false" class="p-1 hover:bg-gray-100 rounded-full">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div id="print-content" class="print-section">
+          <h1 class="text-2xl font-bold text-center mb-2">Solo Parents in {{ currentBarangay }}</h1>
+          <p class="text-center text-gray-600 mb-6">Generated on {{ new Date().toLocaleDateString() }}</p>
+          
+          <table class="min-w-full border border-gray-200">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-4 py-2 border text-left">Full Name</th>
+                <th class="px-4 py-2 border text-left">Contact</th>
+                <th class="px-4 py-2 border text-left">Address</th>
+                <th class="px-4 py-2 border text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in filteredUsers" :key="user.id" class="border-b">
+                <td class="px-4 py-2 border">{{ formatFullName(user) }}</td>
+                <td class="px-4 py-2 border">{{ user.contactNumber || 'N/A' }}</td>
+                <td class="px-4 py-2 border">{{ user.address || 'N/A' }}</td>
+                <td class="px-4 py-2 border">{{ user.status || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="flex justify-end gap-2 mt-6">
+          <button 
+            @click="showPrintPreview = false" 
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="confirmPrint" 
+            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+          >
+            <Printer class="w-5 h-5" />
+            <span>Print</span>
+          </button>
         </div>
       </div>
     </div>
@@ -239,6 +353,10 @@ const selectedUser = ref(null);
 const error = ref(null);
 const currentBarangay = ref('');
 const isProcessing = ref(false);
+
+// Preview modals state
+const showExportPreview = ref(false);
+const showPrintPreview = ref(false);
 
 // Sorting
 const sortField = ref('name');
@@ -386,6 +504,11 @@ const filteredUsers = computed(() => {
   });
 });
 
+// Preview users (limited to 5 for the export preview)
+const previewUsers = computed(() => {
+  return filteredUsers.value.slice(0, 5);
+});
+
 // Paginated users
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
@@ -419,8 +542,8 @@ const sendEmail = (user) => {
   window.location.href = `mailto:${user.email}?subject=Solo Parent Federation - Important Information`;
 };
 
-// Export to Excel functionality
-const exportToExcel = () => {
+// Export to Excel functionality with confirmation
+const confirmExport = () => {
   // Prepare data for export
   const exportData = filteredUsers.value.map(user => ({
     'Full Name': formatFullName(user),
@@ -441,64 +564,75 @@ const exportToExcel = () => {
 
   // Save file
   XLSX.writeFile(wb, `solo-parents-${currentBarangay.value}.xlsx`);
+  
+  // Close the preview modal
+  showExportPreview.value = false;
 };
 
-// Print functionality - Fixed to avoid HTML parsing issues
-const printData = () => {
-  // Create table rows HTML
-  const tableRows = filteredUsers.value.map(user => 
-    `<tr>
-      <td style="border: 1px solid #ddd; padding: 8px;">${formatFullName(user)}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">${user.contactNumber || 'N/A'}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">${user.address || 'N/A'}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">${user.status || 'N/A'}</td>
-    </tr>`
-  ).join('');
+// Print functionality with preview
+const confirmPrint = () => {
+  // Close the preview modal first
+  showPrintPreview.value = false;
+  
+  // Wait for modal to close before printing
+  setTimeout(() => {
+    // Create table rows HTML
+    const tableRows = filteredUsers.value.map(user => 
+      `<tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">${formatFullName(user)}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${user.contactNumber || 'N/A'}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${user.address || 'N/A'}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${user.status || 'N/A'}</td>
+      </tr>`
+    ).join('');
 
-  // Create HTML content
-  const htmlContent = 
-    `<html>
-      <head>
-        <title>Solo Parents in ${currentBarangay.value}</title>
-        <style>
-          body { font-family: Arial, sans-serif; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          @media print {
-            body { margin: 0; padding: 20px; }
-          }
-        </style>
-      </head>
-      <body>
-        <h1 style="text-align: center; margin-bottom: 20px;">Solo Parents in ${currentBarangay.value}</h1>
-        <p style="text-align: center; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="border: 1px solid #ddd; padding: 8px;">Name</th>
-              <th style="border: 1px solid #ddd; padding: 8px;">Contact</th>
-              <th style="border: 1px solid #ddd; padding: 8px;">Address</th>
-              <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-          </tbody>
-        </table>
-        <script>
-          window.onload = function() {
-            window.print();
-            window.onafterprint = function() {
-              window.close();
+    // Create HTML content
+    const htmlContent = 
+      `<html>
+        <head>
+          <title>Solo Parents in ${currentBarangay.value}</title>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            @media print {
+              body { margin: 0; padding: 20px; }
             }
-          }
-       `;
+          </style>
+        </head>
+        <body>
+          <h1 style="text-align: center; margin-bottom: 20px;">Solo Parents in ${currentBarangay.value}</h1>
+          <p style="text-align: center; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="border: 1px solid #ddd; padding: 8px;">Name</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Contact</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Address</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              }
+            }
+          
+        </body>
+      </html>`;
 
-  // Open new window and write content
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+    // Open new window and write content
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  }, 300);
 };
 
 // Lifecycle hooks
@@ -511,3 +645,12 @@ onMounted(() => {
   };
 });
 </script>
+
+<style>
+@media print {
+  .print-section {
+    margin: 0;
+    padding: 20px;
+  }
+}
+</style>

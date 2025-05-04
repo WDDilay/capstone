@@ -493,167 +493,162 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import { auth, db } from '@/services/firebase'; // Removed storage import
-import { 
-  createUserWithEmailAndPassword, 
+import { ref, reactive, computed, onMounted } from "vue"
+import { useRouter } from "vue-router"
+import { useToast } from "primevue/usetoast"
+import Button from "primevue/button"
+import Dialog from "primevue/dialog"
+import { auth, db } from "@/services/firebase" // Removed storage import
+import {
+  createUserWithEmailAndPassword,
   sendEmailVerification,
   signOut,
-  signInWithEmailAndPassword
-} from "firebase/auth";
-import { 
-  doc, 
-  setDoc, 
-  collection, 
-  getDocs,
-  serverTimestamp
-} from "firebase/firestore";
+  signInWithEmailAndPassword,
+} from "firebase/auth"
+import { doc, setDoc, collection, getDocs, serverTimestamp } from "firebase/firestore"
 
-const router = useRouter();
-const toast = useToast();
-const showPassword = ref(false);
-const showVerifyPassword = ref(false);
-const password = ref('');
-const verifyPassword = ref('');
-const barangays = ref([]);
-const loadingBarangays = ref(true);
-const barangayError = ref('');
-const isSubmitting = ref(false);
-const showVerificationDialog = ref(false);
-const showSuccessDialog = ref(false);
-const referenceCode = ref('');
-const currentUser = ref(null);
-const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+const router = useRouter()
+const toast = useToast()
+const showPassword = ref(false)
+const showVerifyPassword = ref(false)
+const password = ref("")
+const verifyPassword = ref("")
+const barangays = ref([])
+const loadingBarangays = ref(true)
+const barangayError = ref("")
+const isSubmitting = ref(false)
+const showVerificationDialog = ref(false)
+const showSuccessDialog = ref(false)
+const referenceCode = ref("")
+const currentUser = ref(null)
+const isDevelopment = process.env.NODE_ENV === "development" || window.location.hostname === "localhost"
+
+// Initialize toast outside of any conditional block
+const toastInstance = useToast()
 
 const passwordMismatch = computed(() => {
   if (password.value && verifyPassword.value) {
-    return password.value !== verifyPassword.value;
+    return password.value !== verifyPassword.value
   }
-  return false;
-});
+  return false
+})
 
 const formData = reactive({
-  lastName: '',
-  firstName: '',
-  middleName: '',
-  nameExt: '',
-  dateOfBirth: '',
-  age: '',
-  birthplace: '',
-  gender: '',
-  address: '',
-  barangay: '',
-  email: '',
-  contactNumber: '',
-  fbName: '',
-  soloParentReason: '',
-});
+  lastName: "",
+  firstName: "",
+  middleName: "",
+  nameExt: "",
+  dateOfBirth: "",
+  age: "",
+  birthplace: "",
+  gender: "",
+  address: "",
+  barangay: "",
+  email: "",
+  contactNumber: "",
+  fbName: "",
+  soloParentReason: "",
+})
 
 // Generate a unique reference code
 const generateReferenceCode = () => {
-  const timestamp = new Date().getTime().toString().slice(-6);
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  const nameCode = formData.lastName.substring(0, 2).toUpperCase();
-  return `SP-${nameCode}${timestamp}-${random}`;
-};
+  const timestamp = new Date().getTime().toString().slice(-6)
+  const random = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0")
+  const nameCode = formData.lastName.substring(0, 2).toUpperCase()
+  return `SP-${nameCode}${timestamp}-${random}`
+}
 
 // Fetch barangays from Firebase
 const fetchBarangays = async () => {
-  loadingBarangays.value = true;
-  barangayError.value = '';
-  
+  loadingBarangays.value = true
+  barangayError.value = ""
+
   try {
-    const barangaysCollection = collection(db, "barangays");
-    const barangaysSnapshot = await getDocs(barangaysCollection);
-    
-    const barangaysList = [];
+    const barangaysCollection = collection(db, "barangays")
+    const barangaysSnapshot = await getDocs(barangaysCollection)
+
+    const barangaysList = []
     barangaysSnapshot.forEach((doc) => {
       barangaysList.push({
         id: doc.id,
-        name: doc.data().name
-      });
-    });
-    
+        name: doc.data().name,
+      })
+    })
+
     // Sort barangays alphabetically
-    barangaysList.sort((a, b) => a.name.localeCompare(b.name));
-    
-    barangays.value = barangaysList;
+    barangaysList.sort((a, b) => a.name.localeCompare(b.name))
+
+    barangays.value = barangaysList
   } catch (error) {
-    console.error("Error fetching barangays:", error);
-    barangayError.value = "Failed to load barangays. Please try again later.";
+    console.error("Error fetching barangays:", error)
+    barangayError.value = "Failed to load barangays. Please try again later."
   } finally {
-    loadingBarangays.value = false;
+    loadingBarangays.value = false
   }
-};
+}
 
 // Fetch barangays when component mounts
 onMounted(() => {
-  fetchBarangays();
-});
+  fetchBarangays()
+})
 
 // Calculate age based on date of birth
 const calculateAge = () => {
   if (formData.dateOfBirth) {
-    const birthDate = new Date(formData.dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+    const birthDate = new Date(formData.dateOfBirth)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+      age--
     }
-    
-    formData.age = age;
+
+    formData.age = age
   }
-};
+}
 
 // Children array with name and age
-const children = reactive([
-  { name: '', age: '' }
-]);
+const children = reactive([{ name: "", age: "" }])
 
 const addChild = () => {
-  children.push({ name: '', age: '' });
-};
+  children.push({ name: "", age: "" })
+}
 
 const removeChild = (index) => {
   if (children.length > 1) {
-    children.splice(index, 1);
+    children.splice(index, 1)
   }
-};
+}
 
 // Attachments array
-const attachments = reactive([
-  { name: '', file: null, preview: null }
-]);
+const attachments = reactive([{ name: "", file: null, preview: null }])
 
 const addAttachment = () => {
-  attachments.push({ name: '', file: null, preview: null });
-};
+  attachments.push({ name: "", file: null, preview: null })
+}
 
 const removeAttachment = (index) => {
   if (attachments.length > 1) {
-    attachments.splice(index, 1);
+    attachments.splice(index, 1)
   }
-};
+}
 
 const handleAttachmentChange = (event, index) => {
-  const file = event.target.files[0];
+  const file = event.target.files[0]
   if (file) {
-    attachments[index].file = file;
-    
+    attachments[index].file = file
+
     // Create a preview for the image
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = (e) => {
-      attachments[index].preview = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      attachments[index].preview = e.target.result
+    }
+    reader.readAsDataURL(file)
   }
-};
+}
 
 const files = reactive({
   barangayAffidavit: null,
@@ -661,172 +656,196 @@ const files = reactive({
   deathCertificate: null,
   custodyDocument: null,
   imprisonmentDocument: null,
-});
+})
 
 const handleFileChange = (event, fileType) => {
-  files[fileType] = event.target.files[0];
-};
+  files[fileType] = event.target.files[0]
+}
 
 // Mock file upload for development environment
 const mockUploadFile = async (file) => {
-  if (!file) return null;
-  
+  if (!file) return null
+
   // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
   // Return a mock URL
-  return `mock-file-url-${Date.now()}`;
-};
+  return `mock-file-url-${Date.now()}`
+}
 
 // Mock upload all attachments for development
 const mockUploadAttachments = async () => {
-  const attachmentUrls = [];
-  const specificDocuments = {};
-  
+  const attachmentUrls = []
+  const specificDocuments = {}
+
   // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+
   // Create mock data for attachments
   for (let i = 0; i < attachments.length; i++) {
-    const attachment = attachments[i];
+    const attachment = attachments[i]
     if (attachment.file && attachment.name) {
       attachmentUrls.push({
         name: attachment.name,
-        url: `mock-attachment-url-${i}-${Date.now()}`
-      });
+        url: `mock-attachment-url-${i}-${Date.now()}`,
+      })
     }
   }
-  
+
   // Create mock data for specific documents
   if (files.barangayAffidavit) {
-    specificDocuments.barangayAffidavit = `mock-barangay-affidavit-${Date.now()}`;
+    specificDocuments.barangayAffidavit = `mock-barangay-affidavit-${Date.now()}`
   }
-  
-  if (formData.soloParentReason === 'separated' && files.marriageCertificate) {
-    specificDocuments.marriageCertificate = `mock-marriage-certificate-${Date.now()}`;
+
+  if (formData.soloParentReason === "separated" && files.marriageCertificate) {
+    specificDocuments.marriageCertificate = `mock-marriage-certificate-${Date.now()}`
   }
-  
-  if (formData.soloParentReason === 'widow' && files.deathCertificate) {
-    specificDocuments.deathCertificate = `mock-death-certificate-${Date.now()}`;
+
+  if (formData.soloParentReason === "widow" && files.deathCertificate) {
+    specificDocuments.deathCertificate = `mock-death-certificate-${Date.now()}`
   }
-  
-  if (formData.soloParentReason === 'custody' && files.custodyDocument) {
-    specificDocuments.custodyDocument = `mock-custody-document-${Date.now()}`;
+
+  if (formData.soloParentReason === "custody" && files.custodyDocument) {
+    specificDocuments.custodyDocument = `mock-custody-document-${Date.now()}`
   }
-  
-  if (formData.soloParentReason === 'imprisoned' && files.imprisonmentDocument) {
-    specificDocuments.imprisonmentDocument = `mock-imprisonment-document-${Date.now()}`;
+
+  if (formData.soloParentReason === "imprisoned" && files.imprisonmentDocument) {
+    specificDocuments.imprisonmentDocument = `mock-imprisonment-document-${Date.now()}`
   }
-  
+
   return {
     attachments: attachmentUrls,
-    documents: specificDocuments
-  };
-};
+    documents: specificDocuments,
+  }
+}
 
 // Send verification email
 const sendVerificationEmailToUser = async (user) => {
   if (!user) {
-    console.error('User is undefined, cannot send verification email');
-    return false;
+    console.error("User is undefined, cannot send verification email")
+    return false
   }
-  
+
   try {
-    await sendEmailVerification(user);
-    console.log("Verification email sent successfully");
-    return true;
+    await sendEmailVerification(user)
+    console.log("Verification email sent successfully")
+    return true
   } catch (error) {
-    console.error("Error sending verification email:", error);
-    return false;
+    console.error("Error sending verification email:", error)
+    return false
   }
-};
+}
 
 // Resend verification email
 const resendVerificationEmail = async () => {
   try {
     if (!currentUser.value) {
       // Sign in again to get the current user
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value);
-      currentUser.value = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value)
+      currentUser.value = userCredential.user
     }
-    
-    await sendEmailVerification(currentUser.value);
-    toast.add({ severity: 'success', summary: 'Email Sent', detail: 'Verification email has been resent', life: 3000 });
+
+    await sendEmailVerification(currentUser.value)
+    toastInstance.add({
+      severity: "success",
+      summary: "Email Sent",
+      detail: "Verification email has been resent",
+      life: 3000,
+    })
   } catch (error) {
-    console.error("Error resending verification email:", error);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to resend verification email', life: 3000 });
+    console.error("Error resending verification email:", error)
+    toastInstance.add({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to resend verification email",
+      life: 3000,
+    })
   }
-};
+}
 
 // Check if user has verified their email
 const checkVerificationStatus = async () => {
   try {
     // Sign out and sign in again to refresh the user's auth state
-    await signOut(auth);
-    const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value);
-    const user = userCredential.user;
-    currentUser.value = user;
-    
+    await signOut(auth)
+    const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value)
+    const user = userCredential.user
+    currentUser.value = user
+
     // Force refresh the token to get the latest emailVerified status
-    await user.reload();
-    
+    await user.reload()
+
     if (user.emailVerified) {
       try {
         // Update the application status in Firestore
-        await setDoc(doc(db, "applications", user.uid), {
-          emailVerified: true,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        
-        showVerificationDialog.value = false;
-        showSuccessDialog.value = true;
+        await setDoc(
+          doc(db, "applications", user.uid),
+          {
+            emailVerified: true,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        )
+
+        showVerificationDialog.value = false
+        showSuccessDialog.value = true
       } catch (firestoreError) {
-        console.error("Error updating Firestore:", firestoreError);
+        console.error("Error updating Firestore:", firestoreError)
         // Still show success even if Firestore update fails
-        showVerificationDialog.value = false;
-        showSuccessDialog.value = true;
+        showVerificationDialog.value = false
+        showSuccessDialog.value = true
       }
     } else {
-      toast.add({ severity: 'warn', summary: 'Not Verified', detail: 'Your email is not verified yet. Please check your inbox.', life: 3000 });
+      toastInstance.add({
+        severity: "warn",
+        summary: "Not Verified",
+        detail: "Your email is not verified yet. Please check your inbox.",
+        life: 3000,
+      })
     }
   } catch (error) {
-    console.error("Error checking verification status:", error);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to check verification status', life: 3000 });
+    console.error("Error checking verification status:", error)
+    toastInstance.add({
+      severity: "error",
+      summary: "Error",
+      detail: "Failed to check verification status",
+      life: 3000,
+    })
   }
-};
+}
 
 const handleRegistration = async () => {
   if (passwordMismatch.value) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Passwords do not match', life: 3000 });
-    return;
+    toastInstance.add({ severity: "error", summary: "Error", detail: "Passwords do not match", life: 3000 })
+    return
   }
-  
-  isSubmitting.value = true;
-  
+
+  isSubmitting.value = true
+
   try {
-    console.log("Starting registration process...");
-    
+    console.log("Starting registration process...")
+
     // 1. Create user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(auth, formData.email, password.value);
-    const user = userCredential.user;
-    currentUser.value = user;
-    console.log("User created in Authentication:", user.uid);
-    
+    const userCredential = await createUserWithEmailAndPassword(auth, formData.email, password.value)
+    const user = userCredential.user
+    currentUser.value = user
+    console.log("User created in Authentication:", user.uid)
+
     // Generate reference code
-    referenceCode.value = generateReferenceCode();
-    console.log("Generated reference code:", referenceCode.value);
-    
+    referenceCode.value = generateReferenceCode()
+    console.log("Generated reference code:", referenceCode.value)
+
     // 2. Handle file uploads (mock in development)
-    console.log("Processing attachments and documents...");
-    let uploadResults = { attachments: [], documents: {} };
-    
+    console.log("Processing attachments and documents...")
+    let uploadResults = { attachments: [], documents: {} }
+
     // Use mock uploads in development to avoid CORS issues
-    uploadResults = await mockUploadAttachments();
-    console.log("Upload results:", uploadResults);
-    
+    uploadResults = await mockUploadAttachments()
+    console.log("Upload results:", uploadResults)
+
     // 3. Save application data to Firestore with user.uid as document ID
     try {
-      console.log("Saving application data to Firestore...");
+      console.log("Saving application data to Firestore...")
       await setDoc(doc(db, "applications", user.uid), {
         userId: user.uid,
         referenceCode: referenceCode.value,
@@ -850,72 +869,57 @@ const handleRegistration = async () => {
         status: "Pending", // Default status for new applications
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        emailVerified: false
-      });
-      console.log("Application data saved to Firestore");
+        emailVerified: false,
+      })
+      console.log("Application data saved to Firestore")
     } catch (firestoreError) {
-      console.error("Error saving to Firestore:", firestoreError);
+      console.error("Error saving to Firestore:", firestoreError)
       // Continue with the process even if Firestore save fails
     }
-    
-    // 4. Also save user data to users collection
-    try {
-      console.log("Saving user data to Firestore...");
-      await setDoc(doc(db, "users", user.uid), {
-        lastName: formData.lastName,
-        firstName: formData.firstName,
-        email: formData.email,
-        role: "Applicant", // Default role for new registrations
-        referenceCode: referenceCode.value,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log("User data saved to Firestore");
-    } catch (userSaveError) {
-      console.error("Error saving user data:", userSaveError);
-      // Continue with the process even if user data save fails
-    }
-    
-    // 5. Send verification email
-    console.log("Sending verification email...");
-    await sendVerificationEmailToUser(user);
-    
-    // 6. Show verification dialog
-    showVerificationDialog.value = true;
-    
-    console.log("Registration process completed successfully");
-    
+
+    // REMOVED: The code that saves to the users collection
+    // This ensures data only goes to the applications collection
+
+    // 4. Send verification email
+    console.log("Sending verification email...")
+    await sendVerificationEmailToUser(user)
+
+    // 5. Show verification dialog
+    showVerificationDialog.value = true
+
+    console.log("Registration process completed successfully")
   } catch (error) {
-    console.error("Registration Error:", error.code, error.message);
-    let errorMessage = "Registration failed. Please try again.";
-    
+    console.error("Registration Error:", error.code, error.message)
+    let errorMessage = "Registration failed. Please try again."
+
     if (error.code === "auth/email-already-in-use") {
-      errorMessage = "This email is already registered. Please use a different email or try logging in.";
+      errorMessage = "This email is already registered. Please use a different email or try logging in."
     } else if (error.code === "auth/weak-password") {
-      errorMessage = "Password is too weak. Please use a stronger password.";
+      errorMessage = "Password is too weak. Please use a stronger password."
     }
-    
-    toast.add({ severity: 'error', summary: 'Error', detail: errorMessage, life: 3000 });
+
+    toastInstance.add({ severity: "error", summary: "Error", detail: errorMessage, life: 3000 })
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 const togglePassword = () => {
-  showPassword.value = !showPassword.value;
-};
+  showPassword.value = !showPassword.value
+}
 
 const toggleVerifyPassword = () => {
-  showVerifyPassword.value = !showVerifyPassword.value;
-};
+  showVerifyPassword.value = !showVerifyPassword.value
+}
 
 const goToHome = () => {
-  router.push('/');
-};
+  router.push("/")
+}
 
 const goToLogin = () => {
-  router.push('/login');
-};
+  router.push("/login")
+}
+
 </script>
 
 <style scoped>

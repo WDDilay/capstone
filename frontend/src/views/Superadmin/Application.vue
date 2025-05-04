@@ -1,232 +1,239 @@
 ```vue type="vue" project="Solo Parent Application" file="Application.vue"
 [v0-no-op-code-block-prefix]\`\`\`vue type="vue" project="Solo Parent Application" file="Application.vue"
 [v0-no-op-code-block-prefix]<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
-import { collection, getDocs, doc, updateDoc, onSnapshot, setDoc, deleteDoc, getDoc, Timestamp, serverTimestamp, runTransaction } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, updateProfile, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
-import { 
-  Search, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  ChevronLeft, 
-  ChevronRight, 
-  ArrowUpDown,
-  X
-} from 'lucide-vue-next';
+import { ref, computed, onMounted } from "vue"
+import { db, auth } from "@/services/firebase" // Ensure Firebase is configured correctly
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  onSnapshot,
+  setDoc,
+  deleteDoc,
+  getDoc,
+  Timestamp,
+  serverTimestamp,
+  runTransaction,
+} from "firebase/firestore"
+import { createUserWithEmailAndPassword, updateProfile, deleteUser, signInWithEmailAndPassword } from "firebase/auth"
+import { Search, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, ArrowUpDown, X } from "lucide-vue-next"
 
 // State
-const applications = ref([]);
-const searchQuery = ref('');
-const currentPage = ref(1);
-const itemsPerPage = 5;
-const showViewModal = ref(false);
-const showAcceptModal = ref(false);
-const showRejectModal = ref(false);
-const isProcessing = ref(false);
-const selectedApplication = ref(null);
-const rejectionReason = ref('');
-const rejectionSubmitted = ref(false);
-const error = ref(null);
+const applications = ref([])
+const searchQuery = ref("")
+const currentPage = ref(1)
+const itemsPerPage = 5
+const showViewModal = ref(false)
+const showAcceptModal = ref(false)
+const showRejectModal = ref(false)
+const isProcessing = ref(false)
+const selectedApplication = ref(null)
+const rejectionReason = ref("")
+const rejectionSubmitted = ref(false)
+const error = ref(null)
 
 // Sorting
-const sortOption = ref('date-desc');
-const sortField = ref('createdAt');
-const sortDirection = ref('desc');
+const sortOption = ref("date-desc")
+const sortField = ref("createdAt")
+const sortDirection = ref("desc")
 
 // Format full name as "lastName, firstName middleName"
 const formatFullName = (application) => {
-  if (!application) return '';
-  
-  let fullName = `${application.lastName || ''}, ${application.firstName || ''}`;
+  if (!application) return ""
+
+  let fullName = `${application.lastName || ""}, ${application.firstName || ""}`
   if (application.middleName) {
-    fullName += ` ${application.middleName}`;
+    fullName += ` ${application.middleName}`
   }
-  return fullName;
-};
+  return fullName
+}
 
 // Format date
 const formatDate = (timestamp) => {
-  if (!timestamp) return 'N/A';
-  
+  if (!timestamp) return "N/A"
+
   try {
     // Handle Firestore Timestamp
-    const date = timestamp instanceof Timestamp 
-      ? timestamp.toDate() 
-      : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
-    
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    const date =
+      timestamp instanceof Timestamp
+        ? timestamp.toDate()
+        : timestamp.seconds
+          ? new Date(timestamp.seconds * 1000)
+          : new Date(timestamp)
+
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid Date';
+    console.error("Error formatting date:", error)
+    return "Invalid Date"
   }
-};
+}
 
 // Fetch applications from Firestore
 const fetchApplications = async () => {
   try {
     // First, verify that the current user is in the admins collection with the correct role
-    const user = auth.currentUser;
+    const user = auth.currentUser
     if (!user) {
-      throw new Error('No authenticated user found');
+      throw new Error("No authenticated user found")
     }
-    
+
     // Check if user is in admins collection with FederationPresident role
-    const adminDocRef = doc(db, 'admins', user.uid);
-    const adminDoc = await getDoc(adminDocRef);
-    
+    const adminDocRef = doc(db, "admins", user.uid)
+    const adminDoc = await getDoc(adminDocRef)
+
     if (!adminDoc.exists()) {
-      console.error('User not found in admins collection');
-      error.value = 'Your user account is not properly set up as a Federation President. Please contact the system administrator.';
-      return null;
+      console.error("User not found in admins collection")
+      error.value =
+        "Your user account is not properly set up as a Federation President. Please contact the system administrator."
+      return null
     }
-    
-    const adminData = adminDoc.data();
-    if (adminData.role !== 'FederationPresident') {
-      console.error('User does not have FederationPresident role');
-      error.value = `Your role is set to "${adminData.role}" instead of "FederationPresident". Please contact the system administrator.`;
-      return null;
+
+    const adminData = adminDoc.data()
+    if (adminData.role !== "FederationPresident") {
+      console.error("User does not have FederationPresident role")
+      error.value = `Your role is set to "${adminData.role}" instead of "FederationPresident". Please contact the system administrator.`
+      return null
     }
-    
-    console.log('User verified as FederationPresident:', user.uid);
-    
+
+    console.log("User verified as FederationPresident:", user.uid)
+
     // Now fetch applications
-    const unsubscribe = onSnapshot(collection(db, 'applications'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, "applications"), (snapshot) => {
       applications.value = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(app => app.status === 'Pending' || !app.status); // Only show pending applications
-      
-      sortApplications(); // Sort initially
-    });
-    return unsubscribe; // Return unsubscribe function for cleanup
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((app) => app.status === "Pending" || !app.status) // Only show pending applications
+
+      sortApplications() // Sort initially
+    })
+    return unsubscribe // Return unsubscribe function for cleanup
   } catch (error) {
-    console.error('Error fetching applications:', error);
-    error.value = 'Error fetching applications: ' + error.message;
-    return null;
+    console.error("Error fetching applications:", error)
+    error.value = "Error fetching applications: " + error.message
+    return null
   }
-};
+}
 
 // Sorting functions
 const handleSort = () => {
-  const [field, direction] = sortOption.value.split('-');
-  sortField.value = field === 'date' ? 'createdAt' : field;
-  sortDirection.value = direction;
-  sortApplications();
-};
+  const [field, direction] = sortOption.value.split("-")
+  sortField.value = field === "date" ? "createdAt" : field
+  sortDirection.value = direction
+  sortApplications()
+}
 
 const toggleSort = (field) => {
-  const actualField = field === 'date' ? 'createdAt' : field;
-  
+  const actualField = field === "date" ? "createdAt" : field
+
   if (sortField.value === actualField) {
     // Toggle direction if same field
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc"
   } else {
     // New field, default to ascending
-    sortField.value = actualField;
-    sortDirection.value = 'asc';
+    sortField.value = actualField
+    sortDirection.value = "asc"
   }
-  
+
   // Update the select dropdown to match
-  const displayField = actualField === 'createdAt' ? 'date' : actualField;
-  sortOption.value = `${displayField}-${sortDirection.value}`;
-  sortApplications();
-};
+  const displayField = actualField === "createdAt" ? "date" : actualField
+  sortOption.value = `${displayField}-${sortDirection.value}`
+  sortApplications()
+}
 
 const sortApplications = () => {
-  const field = sortField.value;
-  const direction = sortDirection.value;
-  
+  const field = sortField.value
+  const direction = sortDirection.value
+
   applications.value.sort((a, b) => {
-    let valueA, valueB;
-    
-    if (field === 'name') {
-      valueA = formatFullName(a).toLowerCase();
-      valueB = formatFullName(b).toLowerCase();
-    } else if (field === 'createdAt') {
+    let valueA, valueB
+
+    if (field === "name") {
+      valueA = formatFullName(a).toLowerCase()
+      valueB = formatFullName(b).toLowerCase()
+    } else if (field === "createdAt") {
       // Handle date sorting
-      valueA = a[field] instanceof Timestamp ? a[field].toMillis() : 
-               (a[field]?.seconds ? a[field].seconds * 1000 : 0);
-      valueB = b[field] instanceof Timestamp ? b[field].toMillis() : 
-               (b[field]?.seconds ? b[field].seconds * 1000 : 0);
+      valueA = a[field] instanceof Timestamp ? a[field].toMillis() : a[field]?.seconds ? a[field].seconds * 1000 : 0
+      valueB = b[field] instanceof Timestamp ? b[field].toMillis() : b[field]?.seconds ? b[field].seconds * 1000 : 0
     } else {
-      valueA = (a[field]?.toLowerCase?.() || '');
-      valueB = (b[field]?.toLowerCase?.() || '');
+      valueA = a[field]?.toLowerCase?.() || ""
+      valueB = b[field]?.toLowerCase?.() || ""
     }
-    
-    if (direction === 'asc') {
-      return valueA > valueB ? 1 : -1;
+
+    if (direction === "asc") {
+      return valueA > valueB ? 1 : -1
     } else {
-      return valueA < valueB ? 1 : -1;
+      return valueA < valueB ? 1 : -1
     }
-  });
-};
+  })
+}
 
 // Filtered applications based on search
 const filteredApplications = computed(() => {
-  if (!searchQuery.value) return applications.value;
-  
-  const query = searchQuery.value.toLowerCase();
-  return applications.value.filter(application => {
-    const fullName = formatFullName(application).toLowerCase();
-    const refCode = application.referenceCode?.toLowerCase() || '';
-    const barangay = application.barangay?.toLowerCase() || '';
-    
-    return fullName.includes(query) || 
-           refCode.includes(query) || 
-           barangay.includes(query);
-  });
-});
+  if (!searchQuery.value) return applications.value
+
+  const query = searchQuery.value.toLowerCase()
+  return applications.value.filter((application) => {
+    const fullName = formatFullName(application).toLowerCase()
+    const refCode = application.referenceCode?.toLowerCase() || ""
+    const barangay = application.barangay?.toLowerCase() || ""
+
+    return fullName.includes(query) || refCode.includes(query) || barangay.includes(query)
+  })
+})
 
 // Paginated applications
 const paginatedApplications = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredApplications.value.slice(start, end);
-});
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredApplications.value.slice(start, end)
+})
 
 // Calculate total pages
 const totalPages = computed(() => {
-  return Math.ceil(filteredApplications.value.length / itemsPerPage) || 1;
-});
+  return Math.ceil(filteredApplications.value.length / itemsPerPage) || 1
+})
 
 // Pagination methods
-const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
-const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--
+}
 
 // Modal functions
 const viewApplication = (application) => {
-  selectedApplication.value = application;
-  showViewModal.value = true;
-};
+  selectedApplication.value = application
+  showViewModal.value = true
+}
 
 const openAcceptModal = (application) => {
-  selectedApplication.value = application;
-  showAcceptModal.value = true;
-  showViewModal.value = false;
-};
+  selectedApplication.value = application
+  showAcceptModal.value = true
+  showViewModal.value = false
+}
 
 const openRejectModal = (application) => {
-  selectedApplication.value = application;
-  rejectionReason.value = '';
-  rejectionSubmitted.value = false;
-  showRejectModal.value = true;
-  showViewModal.value = false;
-};
+  selectedApplication.value = application
+  rejectionReason.value = ""
+  rejectionSubmitted.value = false
+  showRejectModal.value = true
+  showViewModal.value = false
+}
 
 // Send email notification
 const sendEmailNotification = async (to, subject, body) => {
   try {
     // This would typically call a server function or API endpoint
     // For demonstration, we'll log the email details
-    console.log('Sending email:', { to, subject, body });
-    
+    console.log("Sending email:", { to, subject, body })
+
     // In a real implementation, you would call a Cloud Function or API
     // Example:
     // await fetch('/api/send-email', {
@@ -234,85 +241,77 @@ const sendEmailNotification = async (to, subject, body) => {
     //   headers: { 'Content-Type': 'application/json' },
     //   body: JSON.stringify({ to, subject, body })
     // });
-    
-    return true;
+
+    return true
   } catch (error) {
-    console.error('Error sending email:', error);
-    return false;
+    console.error("Error sending email:", error)
+    return false
   }
-};
+}
 
 // Accept application using a transaction
 const acceptApplication = async () => {
-  if (!selectedApplication.value || isProcessing.value) return;
+  if (!selectedApplication.value || isProcessing.value) return
 
-  isProcessing.value = true;
-  error.value = null;
+  isProcessing.value = true
+  error.value = null
 
   try {
-    const application = selectedApplication.value;
-    const user = auth.currentUser;
-    
+    const application = selectedApplication.value
+    const user = auth.currentUser
+
     if (!user) {
-      throw new Error('No authenticated user found');
+      throw new Error("No authenticated user found")
     }
-    
+
     // Use a transaction to ensure all operations succeed or fail together
     await runTransaction(db, async (transaction) => {
       // 1. Get the application document - READ OPERATION
-      const applicationRef = doc(db, 'applications', application.id);
-      const applicationDoc = await transaction.get(applicationRef);
-      
+      const applicationRef = doc(db, "applications", application.id)
+      const applicationDoc = await transaction.get(applicationRef)
+
       if (!applicationDoc.exists()) {
-        throw new Error('Application not found');
+        throw new Error("Application not found")
       }
-      
+
       // 2. Check if user document exists - READ OPERATION
-      const userRef = doc(db, 'users', application.userId || application.id);
-      const userDoc = await transaction.get(userRef);
-      
+      const userRef = doc(db, "users", application.userId || application.id)
+      const userDoc = await transaction.get(userRef)
+
       // IMPORTANT: All reads are now complete before any writes begin
-      
-      // 3. Update application status - WRITE OPERATION
-      transaction.update(applicationRef, {
-        status: 'Approved',
-        updatedAt: serverTimestamp(),
-        updatedBy: user.uid
-      });
-      
-      // 4. Create or update user document - WRITE OPERATION
+
+      // 3. Create or update user document with ALL application data - WRITE OPERATION
       if (!userDoc.exists()) {
-        // Create new user document
+        // Create new user document with all application data
         transaction.set(userRef, {
-          firstName: application.firstName,
-          middleName: application.middleName,
-          lastName: application.lastName,
-          nameExt: application.nameExt || '',
-          email: application.email,
-          contactNumber: application.contactNumber,
-          address: application.address,
-          barangay: application.barangay,
-          dateOfBirth: application.dateOfBirth,
-          gender: application.gender,
-          role: 'Member',
-          status: 'Active',
+          // Transfer all application data
+          ...applicationDoc.data(),
+          // Override/add specific fields
+          role: "Member",
+          status: "Active",
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          updatedBy: user.uid
-        });
+          updatedBy: user.uid,
+        })
       } else {
-        // Update existing user
+        // Update existing user with all application data
         transaction.update(userRef, {
-          role: 'Member',
-          status: 'Active',
+          // Transfer all application data
+          ...applicationDoc.data(),
+          // Override/add specific fields
+          role: "Member",
+          status: "Active",
           updatedAt: serverTimestamp(),
-          updatedBy: user.uid
-        });
+          updatedBy: user.uid,
+        })
       }
-    });
-    
+
+      // 4. Delete the application document - WRITE OPERATION
+      transaction.delete(applicationRef)
+    })
+
     // 5. Send email notification (outside transaction)
-    const emailSubject = 'Your Solo Parent Application Has Been Approved';
+    const emailSubject = "Your Solo Parent Application Has Been Approved"
     const emailBody = `
       Dear ${application.firstName},
       
@@ -322,47 +321,46 @@ const acceptApplication = async () => {
       
       Thank you,
       Solo Parent Support Team
-    `;
-    
-    await sendEmailNotification(application.email, emailSubject, emailBody);
-    
-    console.log('Application approved successfully');
-    showAcceptModal.value = false;
-    
+    `
+
+    await sendEmailNotification(application.email, emailSubject, emailBody)
+
+    console.log("Application approved and transferred to users successfully")
+    showAcceptModal.value = false
+
     // Update local state to reflect the change
-    const index = applications.value.findIndex(a => a.id === application.id);
+    const index = applications.value.findIndex((a) => a.id === application.id)
     if (index !== -1) {
-      applications.value.splice(index, 1); // Remove from the list since it's no longer pending
+      applications.value.splice(index, 1) // Remove from the list since it's deleted
     }
-    
   } catch (err) {
-    console.error('Error approving application:', err);
-    error.value = 'Error approving application: ' + err.message;
+    console.error("Error approving application:", err)
+    error.value = "Error approving application: " + err.message
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
-};
+}
 
 // Reject application without using a transaction
 const rejectApplication = async () => {
-  rejectionSubmitted.value = true;
+  rejectionSubmitted.value = true
 
-  if (!selectedApplication.value || isProcessing.value) return;
-  if (!rejectionReason.value) return;
+  if (!selectedApplication.value || isProcessing.value) return
+  if (!rejectionReason.value) return
 
-  isProcessing.value = true;
-  error.value = null;
+  isProcessing.value = true
+  error.value = null
 
   try {
-    const application = selectedApplication.value;
-    const user = auth.currentUser;
-    
+    const application = selectedApplication.value
+    const user = auth.currentUser
+
     if (!user) {
-      throw new Error('No authenticated user found');
+      throw new Error("No authenticated user found")
     }
-    
+
     // 1. Send email notification first (in case deletion fails, at least they get notified)
-    const emailSubject = 'Update on Your Solo Parent Application';
+    const emailSubject = "Update on Your Solo Parent Application"
     const emailBody = `
       Dear ${application.firstName},
       
@@ -374,48 +372,48 @@ const rejectApplication = async () => {
       
       Thank you,
       Solo Parent Support Team
-    `;
-    
-    await sendEmailNotification(application.email, emailSubject, emailBody);
-    
+    `
+
+    await sendEmailNotification(application.email, emailSubject, emailBody)
+
     // 2. Delete the application document directly (no transaction)
-    const applicationRef = doc(db, 'applications', application.id);
-    await deleteDoc(applicationRef);
-    
+    const applicationRef = doc(db, "applications", application.id)
+    await deleteDoc(applicationRef)
+
     // 3. If there's a corresponding user document, delete it too
     if (application.userId) {
-      const userRef = doc(db, 'users', application.userId);
-      await deleteDoc(userRef);
+      const userRef = doc(db, "users", application.userId)
+      await deleteDoc(userRef)
     }
-    
-    console.log('Application rejected and deleted successfully');
-    showRejectModal.value = false;
-    rejectionReason.value = '';
-    rejectionSubmitted.value = false;
-    
+
+    console.log("Application rejected and deleted successfully")
+    showRejectModal.value = false
+    rejectionReason.value = ""
+    rejectionSubmitted.value = false
+
     // Update local state to reflect the change
-    const index = applications.value.findIndex(a => a.id === application.id);
+    const index = applications.value.findIndex((a) => a.id === application.id)
     if (index !== -1) {
-      applications.value.splice(index, 1); // Remove from the list
+      applications.value.splice(index, 1) // Remove from the list
     }
-    
   } catch (err) {
-    console.error('Error rejecting application:', err);
-    error.value = 'Error rejecting application: ' + err.message;
+    console.error("Error rejecting application:", err)
+    error.value = "Error rejecting application: " + err.message
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
-};
+}
 
 // Lifecycle hooks
 onMounted(() => {
-  const unsubscribe = fetchApplications();
-  
+  const unsubscribe = fetchApplications()
+
   // Cleanup on component unmount
   return () => {
-    if (unsubscribe) unsubscribe();
-  };
-});
+    if (unsubscribe) unsubscribe()
+  }
+})
+
 </script>
 
 <template>

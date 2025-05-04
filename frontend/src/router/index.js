@@ -14,14 +14,11 @@ import Register from '../views/auth/Register.vue';
 import Membership from '../views/auth/Membership.vue';
 
 // User Page
-import userdash from '../views/User/userdash.vue';
-import userprofile from '../views/User/userprofile.vue';
-import user_announcement from '../views/User/user_announcement.vue';
-import available_resource from '../views/User/available_resource.vue';
-import usermessage from '../views/User/usermessage.vue';
-import resourcereq from '../views/User/resourcereq.vue';
-import user_event from '../views/User/user_event.vue';
 
+import UserDashboard from '@/views/UserPage/UserDashboard.vue';
+import UserPage from '@/views/UserPage/UserPage.vue';
+import events from '@/views/UserPage/Events.vue';
+import Profile from '@/views/UserPage/Profile.vue';
 
 //Super Admin
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
@@ -30,6 +27,7 @@ import Events from '../views/Superadmin/Events.vue';
 import Accounts from '../views/Superadmin/Accounts.vue';
 import Members from '../views/Superadmin/Members.vue';
 import Application from '../views/Superadmin/Application.vue';
+import Notification from '../views/Superadmin/Notification.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -39,6 +37,7 @@ import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
 import { Apple } from 'lucide-vue-next';
+
 
 const routes = [
   // Public routes
@@ -70,55 +69,11 @@ const routes = [
   },
   { 
     path: '/register', 
-    name: 'Register', 
-    component: Register,
-    meta: { requiresAuth: false, allowedRoles: [] }
-  },
-  {
-    path: '/membership', 
     name: 'Membership', 
     component: Membership,
     meta: { requiresAuth: false, allowedRoles: [] }
   },
-
-
-   // User Routes
-   {
-    path: '/userdash',
-    name: 'userdash',
-    component: userdash
-  },
-  {
-    path: '/userprofile',
-    name: 'userprofile',
-    component: userprofile
-  },
-  {
-    path: '/user_announcement',
-    name: 'user_announcement',
-    component: user_announcement
-  },
-  {
-    path: '/available_resource',
-    name: 'available_resource',
-    component: available_resource
-  },
-  {
-    path: '/usermessage',
-    name: 'usermessage',
-    component: usermessage
-  },
-  {
-    path: '/resourcereq',
-    name: 'resourcereq',
-    component: resourcereq
-  },
-  {
-    path: '/user_event',
-    name: 'user_event',
-    component: user_event
-  },
-
+  
 
   // Super Admin routes
   { 
@@ -150,6 +105,11 @@ const routes = [
       {
         path: 'application', 
         component: Application,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'notification', 
+        component: Notification,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
@@ -190,6 +150,30 @@ const routes = [
     ] 
   },
   
+  //User PAge
+  { 
+    path: '/user-dashboard', 
+    component: UserDashboard, 
+    meta: { requiresAuth: true, allowedRoles: ['Member'] },
+    redirect: '/user-dashboard/UserPage',
+    children: [
+      { 
+        path: 'UserPage', 
+        component: UserPage,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      },
+      { 
+        path: 'Events', 
+        component: events,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      },
+      { 
+        path: 'Profile', 
+        component: Profile,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      }
+    ] 
+  },
   // Catch-all route for 404
   {
     path: '/:pathMatch(.*)*',
@@ -209,6 +193,7 @@ router.beforeEach((to, from, next) => {
   const userRole = userStore.role;
 
   console.log("Current user role:", userRole); // Debugging line
+  console.log("Is authenticated:", isAuthenticated); // Additional debugging
 
   // Check if route requires authentication
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
@@ -227,6 +212,8 @@ router.beforeEach((to, from, next) => {
       return next('/super-admin');
     } else if (userRole === 'BarangayPresident') {
       return next('/barangay-admin');
+    } else if (userRole === 'Member') {
+      return next('/user-dashboard');
     }
   }
   
@@ -239,6 +226,8 @@ router.beforeEach((to, from, next) => {
         return next('/super-admin');
       } else if (userRole === 'BarangayPresident') {
         return next('/barangay-admin');
+      } else if (userRole === 'Member') {
+        return next('/user-dashboard');
       } else {
         return next('/login');
       }
