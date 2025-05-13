@@ -28,6 +28,7 @@ import Accounts from '../views/Superadmin/Accounts.vue';
 import Members from '../views/Superadmin/Members.vue';
 import Application from '../views/Superadmin/Application.vue';
 import Notification from '../views/Superadmin/Notification.vue';
+import resources from '../views/Superadmin/resources.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -110,6 +111,11 @@ const routes = [
       {
         path: 'notification', 
         component: Notification,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'resources', 
+        component: resources,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
