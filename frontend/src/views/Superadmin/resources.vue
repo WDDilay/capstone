@@ -340,106 +340,158 @@
         </form>
       </div>
 
-      <!-- Send to Barangay Tab -->
+      <!-- Send to Barangay Tab - Improved Design -->
       <div v-if="activeTab === 'send'" class="tab-content">
         <h2 class="form-title">Send Resources to Barangay</h2>
         <form @submit.prevent="submitSendForm" class="resource-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="barangay">Barangay <span class="required">*</span></label>
-              <select 
-                id="barangay"
-                v-model="sendForm.barangay" 
-                required
-              >
-                <option value="" disabled>Select barangay</option>
-                <option v-for="brgy in barangayList" :key="brgy" :value="brgy">{{ brgy }}</option>
-              </select>
-            </div>
+          <!-- Barangay and Admin Information Section -->
+          <div class="form-section">
+            <h3 class="section-title">Barangay & Admin Information</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="barangay">Barangay <span class="required">*</span></label>
+                <select 
+                  id="barangay"
+                  v-model="sendForm.barangay" 
+                  required
+                  class="form-select"
+                >
+                  <option value="" disabled>Select barangay</option>
+                  <option v-for="brgy in barangayList" :key="brgy" :value="brgy">{{ brgy }}</option>
+                </select>
+              </div>
 
-            <div class="form-group">
-              <label for="adminName">Barangay Admin Name <span class="required">*</span></label>
-              <input 
-                id="adminName"
-                v-model="sendForm.adminName" 
-                type="text" 
-                required
-                placeholder="Enter barangay admin name"
-              >
-            </div>
+              <div class="form-group">
+                <label for="adminName">Barangay Admin Name <span class="required">*</span></label>
+                <input 
+                  id="adminName"
+                  v-model="sendForm.adminName" 
+                  type="text" 
+                  required
+                  placeholder="Enter barangay admin name"
+                  class="form-input"
+                >
+              </div>
 
-            <div class="form-group">
-              <label for="adminContact">Admin Contact Number <span class="required">*</span></label>
-              <input 
-                id="adminContact"
-                v-model="sendForm.adminContact" 
-                type="text" 
-                required
-                placeholder="Enter admin contact number"
-              >
-            </div>
+              <div class="form-group">
+                <label for="adminContact">Admin Contact Number <span class="required">*</span></label>
+                <input 
+                  id="adminContact"
+                  v-model="sendForm.adminContact" 
+                  type="text" 
+                  required
+                  placeholder="Enter admin contact number"
+                  class="form-input"
+                >
+              </div>
 
-            <div class="form-group">
-              <label for="requestDate">Request Date <span class="required">*</span></label>
-              <input 
-                id="requestDate"
-                v-model="sendForm.requestDate" 
-                type="date" 
-                required
-              >
+              <div class="form-group">
+                <label for="requestDate">Request Date <span class="required">*</span></label>
+                <input 
+                  id="requestDate"
+                  v-model="sendForm.requestDate" 
+                  type="date" 
+                  required
+                  class="form-input"
+                >
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Requested Resources <span class="required">*</span></label>
+          <!-- Resources Section -->
+          <div class="form-section">
+            <h3 class="section-title">Requested Resources</h3>
             <div class="requested-resources">
               <div v-for="(item, index) in sendForm.requestedItems" :key="index" class="requested-item">
                 <div class="resource-selection">
-                  <select 
-                    v-model="item.resourceId" 
-                    required
-                    @change="updateResourceDetails(index)"
-                  >
-                    <option value="" disabled>Select resource</option>
-                    <option v-for="res in resources" :key="res.id" :value="res.id">
-                      {{ res.name }} ({{ formatQuantity(res) }})
-                    </option>
-                  </select>
+                  <div class="resource-select">
+                    <label :for="`resource-${index}`">Resource <span class="required">*</span></label>
+                    <select 
+                      :id="`resource-${index}`"
+                      v-model="item.resourceId" 
+                      required
+                      @change="updateResourceDetails(index)"
+                      class="form-select"
+                    >
+                      <option value="" disabled>Select resource</option>
+                      <option v-for="res in resources" :key="res.id" :value="res.id">
+                        {{ res.name }} ({{ formatQuantity(res) }})
+                      </option>
+                    </select>
+                  </div>
                   
-                  <input 
-                    v-model.number="item.quantity" 
-                    type="number" 
-                    min="1" 
-                    :max="getMaxQuantity(item.resourceId)"
-                    required
-                    placeholder="Qty"
-                  >
+                  <div class="resource-quantity">
+                    <label :for="`quantity-${index}`">Quantity <span class="required">*</span></label>
+                    <input 
+                      :id="`quantity-${index}`"
+                      v-model.number="item.quantity" 
+                      type="number" 
+                      min="1" 
+                      :max="getMaxQuantity(item.resourceId)"
+                      required
+                      placeholder="Qty"
+                      class="form-input"
+                    >
+                  </div>
                   
-                  <button type="button" @click="removeRequestedItem(index)" class="remove-btn">
+                  <div class="resource-unit" v-if="getResourceById(item.resourceId)">
+                    <span class="unit-label">Unit</span>
+                    <span class="unit-value">{{ getResourceById(item.resourceId).unit || 'units' }}</span>
+                  </div>
+                  
+                  <button 
+                    type="button" 
+                    @click="removeRequestedItem(index)" 
+                    class="remove-btn"
+                    :disabled="sendForm.requestedItems.length <= 1"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
+                </div>
+                
+                <div class="resource-info" v-if="getResourceById(item.resourceId)">
+                  <div class="info-badge">
+                    Available: {{ getResourceById(item.resourceId).quantity }} {{ getResourceById(item.resourceId).unit || 'units' }}
+                  </div>
                 </div>
               </div>
               
               <button type="button" @click="addRequestedItem" class="add-item-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Add Resource
+                Add Another Resource
               </button>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="requestNotes">Request Notes</label>
-            <textarea 
-              id="requestNotes"
-              v-model="sendForm.notes" 
-              placeholder="Enter additional notes about this request"
-              rows="3"
-            ></textarea>
+          <!-- Additional Information Section -->
+          <div class="form-section">
+            <h3 class="section-title">Additional Information</h3>
+            <div class="form-group">
+              <label for="purpose">Purpose <span class="required">*</span></label>
+              <textarea 
+                id="purpose"
+                v-model="sendForm.purpose" 
+                placeholder="Enter the purpose of this request"
+                rows="3"
+                required
+                class="form-textarea"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="requestNotes">Additional Notes</label>
+              <textarea 
+                id="requestNotes"
+                v-model="sendForm.notes" 
+                placeholder="Enter any additional notes about this request"
+                rows="3"
+                class="form-textarea"
+              ></textarea>
+            </div>
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="submit-btn" :disabled="isSending">
+            <button type="submit" class="submit-btn" :disabled="isSending || !isValidSendForm">
               {{ isSending ? 'Processing...' : 'Submit Request' }}
             </button>
             <button type="button" @click="resetSendForm" class="cancel-btn">
@@ -659,6 +711,11 @@
               </table>
             </div>
 
+            <div class="detail-section" v-if="selectedRequest.purpose">
+              <h3>Purpose</h3>
+              <p>{{ selectedRequest.purpose }}</p>
+            </div>
+
             <div class="detail-section" v-if="selectedRequest.notes">
               <h3>Notes</h3>
               <p>{{ selectedRequest.notes }}</p>
@@ -760,7 +817,7 @@ import { db } from '@/services/firebase' // Adjust the path to your firebase con
 
 // Firestore references
 const resourceCollection = collection(db, 'spfresource')
-const requestCollection = collection(db, 'resourceRequests')
+const requestCollection = collection(db, 'request_history') // Changed to request_history as requested
 
 // Reactive state
 const activeTab = ref('list')
@@ -787,6 +844,7 @@ const sendForm = ref({
   adminContact: '',
   requestDate: new Date().toISOString().substr(0, 10),
   requestedItems: [{ resourceId: '', quantity: 1 }],
+  purpose: '', // Added purpose field
   notes: ''
 })
 
@@ -838,6 +896,26 @@ const resourceStats = ref({
   other: 0
 })
 
+// Computed properties
+const isValidSendForm = computed(() => {
+  // Check if barangay, admin name, and contact are filled
+  if (!sendForm.value.barangay || !sendForm.value.adminName || !sendForm.value.adminContact || !sendForm.value.purpose) {
+    return false
+  }
+  
+  // Check if at least one resource is selected with valid quantity
+  for (const item of sendForm.value.requestedItems) {
+    if (!item.resourceId) return false
+    
+    const resource = getResourceById(item.resourceId)
+    if (!resource) return false
+    
+    if (item.quantity <= 0 || item.quantity > resource.quantity) return false
+  }
+  
+  return true
+})
+
 // Notification function
 const showNotification = (message, type = 'success') => {
   notification.value = { show: true, message, type }
@@ -862,6 +940,10 @@ const formatDate = (timestamp) => {
 const formatQuantity = (resource) => {
   if (!resource) return 'N/A'
   if (resource.quantity === undefined) return 'N/A'
+  
+  if (resource.type === 'Financial') {
+    return `₱${parseFloat(resource.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
   
   return `${resource.quantity} ${resource.unit || ''}`
 }
@@ -905,9 +987,9 @@ const getResources = async () => {
 const filterResources = () => {
   const search = searchQuery.value.toLowerCase()
   filteredResources.value = resources.value.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(search) ||
-                          r.type.toLowerCase().includes(search) ||
-                          r.providerOrganization.toLowerCase().includes(search)
+    const matchesSearch = r.name?.toLowerCase().includes(search) ||
+                          r.type?.toLowerCase().includes(search) ||
+                          r.providerOrganization?.toLowerCase().includes(search)
     const matchesType = !typeFilter.value || r.type === typeFilter.value
     return matchesSearch && matchesType
   })
@@ -1051,6 +1133,7 @@ const resetSendForm = () => {
     adminContact: '',
     requestDate: new Date().toISOString().substr(0, 10),
     requestedItems: [{ resourceId: '', quantity: 1 }],
+    purpose: '',
     notes: ''
   }
 }
@@ -1066,7 +1149,8 @@ const removeRequestedItem = (index) => {
 }
 
 const getResourceById = (id) => {
-  return resources.value.find(r => r.id === id)
+  if (!id) return null
+  return resources.value.find(r => r.id === id) || null
 }
 
 const getMaxQuantity = (resourceId) => {
@@ -1114,6 +1198,7 @@ const submitSendForm = async () => {
       adminContact: sendForm.value.adminContact,
       requestDate: Timestamp.fromDate(new Date(sendForm.value.requestDate)),
       requestedItems: requestItems,
+      purpose: sendForm.value.purpose,
       notes: sendForm.value.notes,
       status: 'Pending',
       createdAt: serverTimestamp(),
@@ -1122,6 +1207,18 @@ const submitSendForm = async () => {
     
     // Add to Firestore
     await addDoc(requestCollection, requestData)
+    
+    // Update resource quantities
+    for (const item of sendForm.value.requestedItems) {
+      const resource = getResourceById(item.resourceId)
+      if (!resource) continue
+      
+      const newQuantity = parseFloat(resource.quantity) - parseFloat(item.quantity)
+      await updateDoc(doc(db, 'spfresource', resource.id), {
+        quantity: newQuantity,
+        lastUpdated: serverTimestamp()
+      })
+    }
     
     showNotification('Request submitted successfully!')
     resetSendForm()
@@ -1132,7 +1229,7 @@ const submitSendForm = async () => {
     
   } catch (error) {
     console.error('Submit request error:', error)
-    showNotification('Failed to submit request.', 'error')
+    showNotification('Failed to submit request: ' + error.message, 'error')
   } finally {
     isSending.value = false
   }
@@ -1157,9 +1254,10 @@ const loadRequestHistory = async () => {
 const filterHistory = () => {
   const search = historySearchQuery.value.toLowerCase()
   filteredHistory.value = requestHistory.value.filter(r => {
-    const matchesSearch = r.barangay.toLowerCase().includes(search) ||
-                          r.adminName.toLowerCase().includes(search) ||
-                          r.status.toLowerCase().includes(search)
+    const matchesSearch = r.barangay?.toLowerCase().includes(search) ||
+                          r.adminName?.toLowerCase().includes(search) ||
+                          r.status?.toLowerCase().includes(search) ||
+                          r.purpose?.toLowerCase().includes(search)
     const matchesBarangay = !historyBarangayFilter.value || r.barangay === historyBarangayFilter.value
     return matchesSearch && matchesBarangay
   })
@@ -1192,11 +1290,25 @@ const viewRequestDetails = (request) => {
 
 const updateRequestStatus = async (status) => {
   try {
-    const requestRef = doc(db, 'resourceRequests', selectedRequest.value.id)
+    const requestRef = doc(db, 'request_history', selectedRequest.value.id)
     await updateDoc(requestRef, {
       status: status,
       updatedAt: serverTimestamp()
     })
+    
+    // If rejected, return the quantity to the resource
+    if (status === 'Rejected') {
+      for (const item of selectedRequest.value.requestedItems) {
+        const resource = resources.value.find(r => r.id === item.resourceId)
+        if (resource) {
+          const newQuantity = parseFloat(resource.quantity) + parseFloat(item.quantity)
+          await updateDoc(doc(db, 'spfresource', item.resourceId), {
+            quantity: newQuantity,
+            lastUpdated: serverTimestamp()
+          })
+        }
+      }
+    }
     
     // Update local data
     selectedRequest.value.status = status
@@ -1463,34 +1575,28 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.barangay-count {
-  cursor: pointer;
-  color: #2196f3;
-  position: relative;
-}
-
-.barangay-tooltip {
-  display: none;
-  position: absolute;
-  background-color: #333;
-  color: white;
-  padding: 0.5rem;
-  border-radius: 4px;
-  z-index: 10;
-  max-width: 300px;
-  font-size: 0.75rem;
-}
-
-td:hover .barangay-tooltip {
-  display: block;
-}
-
 /* Form Styles */
 .form-title {
   margin-top: 0;
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #2c3e50;
 }
 
 .resource-form {
@@ -1519,16 +1625,125 @@ td:hover .barangay-tooltip {
   color: #f44336;
 }
 
-.form-group input, .form-group select, .form-group textarea {
+.form-input, .form-select, .form-textarea {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-family: inherit;
+  background-color: white;
 }
 
-.form-group textarea {
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: #2c3e50;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+}
+
+.form-textarea {
   resize: vertical;
+  min-height: 100px;
+}
+
+/* Send to Barangay Styles */
+.requested-resources {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.requested-item {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.resource-selection {
+  display: grid;
+  grid-template-columns: 3fr 1fr auto auto;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.resource-select, .resource-quantity {
+  display: flex;
+  flex-direction: column;
+}
+
+.resource-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  height: 100%;
+  padding-bottom: 0.75rem;
+}
+
+.unit-label {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.unit-value {
+  font-weight: 500;
+}
+
+.remove-btn {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.remove-btn:hover {
+  background-color: #f5c6cb;
+}
+
+.remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resource-info {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info-badge {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.add-item-btn {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px dashed #ced4da;
+  border-radius: 4px;
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.add-item-btn:hover {
+  background-color: #dee2e6;
 }
 
 .form-actions {
@@ -1537,12 +1752,16 @@ td:hover .barangay-tooltip {
   margin-top: 1rem;
 }
 
-.submit-btn, .cancel-btn {
-  padding: 0.5rem 1rem;
+.submit-btn, .cancel-btn, .approve-btn, .reject-btn {
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .submit-btn {
@@ -1566,6 +1785,48 @@ td:hover .barangay-tooltip {
 
 .cancel-btn:hover {
   background-color: #dee2e6;
+}
+
+.approve-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #388e3c;
+}
+
+.reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 /* Modal Styles */
@@ -1662,30 +1923,21 @@ td:hover .barangay-tooltip {
   white-space: pre-line;
 }
 
-.barangay-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
 }
 
-.barangay-tag {
-  background-color: #e9ecef;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
+.detail-table th, .detail-table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
 }
 
-.delete-confirm-btn {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.delete-confirm-btn:hover {
-  background-color: #d32f2f;
+.detail-table th {
+  font-weight: 600;
+  background-color: #f8f9fa;
 }
 
 /* Delete Preview Styles */
@@ -1714,5 +1966,39 @@ td:hover .barangay-tooltip {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.5rem;
 }
-</style>
 
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+.preview-label {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.preview-value {
+  font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .resource-selection {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .remove-btn {
+    align-self: flex-start;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

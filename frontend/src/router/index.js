@@ -39,6 +39,7 @@ import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
+import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import { Apple } from 'lucide-vue-next';
 
 
@@ -162,6 +163,11 @@ const routes = [
       },
       { 
         path: 'messages', 
+        component: Messages,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+       { 
+        path: 'BarangayInventory', 
         component: Messages,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       }
