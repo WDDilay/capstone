@@ -9,6 +9,19 @@
 
       <h1 class="page-title">Barangay Resource Inventory</h1>
 
+      <!-- Stat Cards -->
+      <div class="stat-cards">
+        <div class="stat-card" v-for="(stat, index) in stats" :key="index">
+          <div class="stat-icon" :style="`background-color: ${stat.bgColor}`">
+            <i :class="stat.icon"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ stat.value }}</h3>
+            <p class="stat-label">{{ stat.label }}</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button 
@@ -60,6 +73,14 @@
         <div v-if="isLoading" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading resources...</p>
+        </div>
+
+        <div v-else-if="fetchError" class="error-container">
+          <div class="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <p>{{ fetchError }}</p>
+          <button @click="fetchAvailableResources" class="retry-btn">Retry</button>
         </div>
 
         <div v-else class="resource-table-container">
@@ -458,7 +479,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   collection,
   addDoc,
@@ -471,6 +492,7 @@ import {
   where,
   Timestamp
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Correct import for getAuth
 import { db } from '@/services/firebase';
 
 // Current barangay - this would typically come from user authentication
@@ -483,9 +505,38 @@ const activeTab = ref('available');
 const isLoading = ref(true);
 const isLoadingHistory = ref(true);
 const isSubmitting = ref(false);
+const fetchError = ref(null);
 
 // Notification
 const notification = ref({ show: false, message: '', type: 'success' });
+
+// Stats
+const stats = ref([
+  {
+    label: 'Total Resources',
+    value: '0',
+    icon: 'pi pi-box',
+    bgColor: '#3B82F6'
+  },
+  {
+    label: 'Resource Types',
+    value: '0',
+    icon: 'pi pi-list',
+    bgColor: '#10B981'
+  },
+  {
+    label: 'Distributions',
+    value: '0',
+    icon: 'pi pi-send',
+    bgColor: '#F59E0B'
+  },
+  {
+    label: 'Members Served',
+    value: '0',
+    icon: 'pi pi-users',
+    bgColor: '#8B5CF6'
+  }
+]);
 
 // Available Resources
 const availableResources = ref([]);
@@ -600,11 +651,30 @@ const formatDate = (timestamp) => {
   }
 };
 
+// Check if user is authenticated
+const checkAuthentication = () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) {
+    throw new Error('User is not authenticated');
+  }
+  
+  return user;
+};
+
 // Fetch available resources from request_history
 const fetchAvailableResources = async () => {
   isLoading.value = true;
+  fetchError.value = null;
   
   try {
+    // First check if user is authenticated
+    const user = checkAuthentication();
+    console.log('User authenticated:', user.uid);
+    
+    console.log('Fetching resources for barangay:', currentBarangay.value);
+    
     const requestHistoryCollection = collection(db, 'request_history');
     const q = query(
       requestHistoryCollection,
@@ -612,11 +682,17 @@ const fetchAvailableResources = async () => {
       where('status', '==', 'Approved')
     );
     
+    console.log('Query created, executing...');
+    
     const querySnapshot = await getDocs(q);
+    
+    console.log('Query executed, documents found:', querySnapshot.size);
+    
     const resources = [];
     
     querySnapshot.forEach(doc => {
       const data = doc.data();
+      console.log('Document data:', data);
       
       // Process each requested item as a separate available resource
       if (data.requestedItems && Array.isArray(data.requestedItems)) {
@@ -638,16 +714,21 @@ const fetchAvailableResources = async () => {
       }
     });
     
+    console.log('Resources processed:', resources.length);
+    
     // Update remaining quantities based on member_history
     await updateRemainingQuantities(resources);
     
     availableResources.value = resources;
     filterAvailableResources();
     
+    // Update stats
+    updateStats();
+    
     isLoading.value = false;
   } catch (error) {
     console.error('Error fetching available resources:', error);
-    showNotification('Failed to load available resources', 'error');
+    fetchError.value = `Failed to load resources: ${error.message}. Please check your permissions and try again.`;
     isLoading.value = false;
   }
 };
@@ -690,6 +771,19 @@ const updateRemainingQuantities = async (resources) => {
   } catch (error) {
     console.error('Error updating remaining quantities:', error);
   }
+};
+
+// Update stats
+const updateStats = () => {
+  // Total resources
+  const totalResources = availableResources.value.reduce((sum, resource) => sum + resource.remainingQuantity, 0);
+  stats.value[0].value = totalResources.toFixed(0);
+  
+  // Resource types
+  const uniqueTypes = new Set(availableResources.value.map(resource => resource.resourceType));
+  stats.value[1].value = uniqueTypes.size.toString();
+  
+  // Distributions and members served will be updated when loading history
 };
 
 // Filter available resources
@@ -872,6 +966,13 @@ const loadMemberHistory = async () => {
     memberHistory.value = history;
     filterHistory();
     
+    // Update stats
+    stats.value[2].value = history.length.toString();
+    
+    // Count unique members served
+    const uniqueMembers = new Set(history.map(item => item.memberID));
+    stats.value[3].value = uniqueMembers.size.toString();
+    
     isLoadingHistory.value = false;
   } catch (error) {
     console.error('Error loading member history:', error);
@@ -941,7 +1042,13 @@ const viewHistoryDetails = (history) => {
 
 // Initialize
 onMounted(async () => {
-  await fetchAvailableResources();
+  try {
+    await fetchAvailableResources();
+    await loadMemberHistory();
+  } catch (error) {
+    console.error('Error initializing inventory system:', error);
+    showNotification('Failed to initialize inventory system. Please refresh the page.', 'error');
+  }
 });
 </script>
 
@@ -965,6 +1072,62 @@ onMounted(async () => {
   font-weight: 700;
   color: #2c3e50;
   margin-bottom: 1.5rem;
+}
+
+/* Stat Cards */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: white;
+}
+
+.stat-icon i {
+  font-size: 1.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  color: #2c3e50;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
 }
 
 /* Notification */
@@ -1001,6 +1164,38 @@ onMounted(async () => {
   font-size: 1.25rem;
   cursor: pointer;
   color: inherit;
+}
+
+/* Error Container */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #721c24;
+  background-color: #f8d7da;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.error-icon {
+  margin-bottom: 1rem;
+  color: #dc3545;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background-color: #1a2530;
 }
 
 /* Tabs */

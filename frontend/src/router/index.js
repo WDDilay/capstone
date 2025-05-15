@@ -38,8 +38,8 @@ import Data from '../views/BarangayAdmin/Data.vue';
 import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
-import Applications from '../views/BarangayAdmin/Application.vue';
 import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
+import Applications from '../views/BarangayAdmin/Application.vue';
 import { Apple } from 'lucide-vue-next';
 
 
@@ -168,7 +168,7 @@ const routes = [
       },
        { 
         path: 'BarangayInventory', 
-        component: Messages,
+        component: BarangayInventory,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       }
     ] 

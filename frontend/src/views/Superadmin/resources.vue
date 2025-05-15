@@ -875,7 +875,7 @@ const notification = ref({ show: false, message: '', type: '' })
 
 // Barangay list
 const barangayList = [
-  'Balite', 'Bayanan I', 'Bayanan II', 'Bulusan', 'Comunal', 'Guinobatan',
+  'Balite', 'Bayanan I', 'Bayanan II', 'Baruyan','Bulusan', 'Comunal', 'Guinobatan',
   'Ibaba East', 'Ibaba West', 'Ilaya', 'Lalud', 'Libis', 'Mahal Na Pangalan',
   'Maidlang', 'Malad', 'Masipit', 'Nag-iba I', 'Nag-iba II', 'Pachoca',
   'Parang', 'Salong', 'San Antonio', 'Sta. Cruz', 'Sta. Isabel', 'Sto. Niño',

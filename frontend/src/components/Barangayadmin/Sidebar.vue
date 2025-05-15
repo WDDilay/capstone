@@ -93,7 +93,7 @@ const regularMenuItems = [
   { label: 'Application', path: '/barangay-admin/application', icon: 'pi pi-file' },
   { label: 'Announcement', path: '/barangay-admin/announcements', icon: 'pi pi-megaphone' },
   { label: 'Resource Inventory', path: '/barangay-admin/BarangayInventory', icon: 'pi pi-box' },
-  { label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
+  //{ label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
   { label: 'Block', path: '/barangay-admin/block', icon: 'pi pi-ban' }
 ];
 
