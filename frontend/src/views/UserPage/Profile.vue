@@ -104,12 +104,14 @@
             
             <div class="form-group">
               <label for="barangay">Barangay</label>
-              <select id="barangay" v-model="userProfile.barangay">
-                <option value="">Select Barangay</option>
-                <option v-for="barangay in barangays" :key="barangay.id" :value="barangay.name">
-                  {{ barangay.name }}
-                </option>
-              </select>
+              <input type="text" id="barangay" v-model="userProfile.barangay" readonly class="readonly-field">
+              <small class="field-note">Your barangay cannot be changed. Contact support if this information is incorrect.</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="referenceCode">Reference Code</label>
+              <input type="text" id="referenceCode" v-model="userProfile.referenceCode" readonly class="readonly-field">
+              <small class="field-note">This is your unique member ID</small>
             </div>
             
             <div class="form-group full-width">
@@ -130,18 +132,13 @@
           
           <form @submit.prevent="saveSoloParentInfo" class="form-grid">
             <div class="form-group">
-              <label for="referenceCode">Reference Code</label>
-              <input type="text" id="referenceCode" v-model="userProfile.referenceCode" placeholder="Reference Code" readonly>
+              <label for="statusDisplay">Status</label>
+              <input type="text" id="statusDisplay" v-model="userProfile.status" readonly class="readonly-field">
             </div>
             
             <div class="form-group">
-              <label for="status">Status</label>
-              <input type="text" id="status" v-model="userProfile.status" readonly>
-            </div>
-            
-            <div class="form-group">
-              <label for="createdAt">Date Registered</label>
-              <input type="text" id="createdAt" :value="formatDate(userProfile.createdAt)" readonly>
+              <label for="createdAtDisplay">Date Registered</label>
+              <input type="text" id="createdAtDisplay" :value="formatDate(userProfile.createdAt)" readonly class="readonly-field">
             </div>
             
             <div class="form-group">
@@ -546,7 +543,7 @@ export default {
           dateOfBirth: userProfile.value.dateOfBirth,
           birthplace: userProfile.value.birthplace,
           gender: userProfile.value.gender,
-          barangay: userProfile.value.barangay,
+          // barangay is not included here as it should not be editable
           address: userProfile.value.address,
           updatedAt: new Date(),
           updatedBy: user.uid
@@ -940,6 +937,19 @@ input:focus, select:focus, textarea:focus {
 input[readonly], select[readonly], textarea[readonly] {
   background-color: #f9f9f9;
   cursor: default;
+}
+
+.readonly-field {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.field-note {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
 }
 
 .toggle-password {

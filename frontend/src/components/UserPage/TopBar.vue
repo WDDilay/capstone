@@ -225,7 +225,7 @@ const handleLogout = async () => {
   top: 0;
   right: 0;
   left: 0;
-  z-index: 90;
+  z-index: 1000;
 }
 
 .left-section {

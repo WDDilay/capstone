@@ -31,6 +31,12 @@
           Available Resources
         </button>
         <button 
+          :class="['tab-btn', { active: activeTab === 'memberRequest' }]" 
+          @click="activeTab = 'memberRequest'; loadMemberRequests()"
+        >
+          Member Request
+        </button>
+        <button 
           :class="['tab-btn', { active: activeTab === 'member' }]" 
           @click="activeTab = 'member'"
         >
@@ -141,6 +147,125 @@
                   >
                     {{ resource.status }}
                   </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Member Request Tab -->
+      <div v-if="activeTab === 'memberRequest'" class="tab-content">
+        <div class="list-controls">
+          <div class="search-box">
+            <input 
+              v-model="memberRequestSearchQuery" 
+              type="text" 
+              placeholder="Search member requests..." 
+              @input="filterMemberRequests"
+            >
+          </div>
+          <div class="filter-box">
+            <select v-model="memberRequestStatusFilter" @change="filterMemberRequests">
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="isLoadingMemberRequests" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading member requests...</p>
+        </div>
+
+        <div v-else class="resource-table-container">
+          <table class="resource-table">
+            <thead>
+              <tr>
+                <th @click="sortMemberRequests('requestDate')">
+                  Request Date
+                  <span v-if="memberRequestSortField === 'requestDate'" class="sort-icon">
+                    {{ memberRequestSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortMemberRequests('userName')">
+                  Member Name
+                  <span v-if="memberRequestSortField === 'userName'" class="sort-icon">
+                    {{ memberRequestSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortMemberRequests('referenceCode')">
+                  Reference Code
+                  <span v-if="memberRequestSortField === 'referenceCode'" class="sort-icon">
+                    {{ memberRequestSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th>Requested Items</th>
+                <th @click="sortMemberRequests('status')">
+                  Status
+                  <span v-if="memberRequestSortField === 'status'" class="sort-icon">
+                    {{ memberRequestSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="filteredMemberRequests.length === 0">
+                <td colspan="6" class="no-data">No member requests found.</td>
+              </tr>
+              <tr v-for="request in filteredMemberRequests" :key="request.id">
+                <td>{{ formatDate(request.requestDate) }}</td>
+                <td>{{ request.userName }}</td>
+                <td>{{ request.referenceCode }}</td>
+                <td>
+                  <div class="resource-list">
+                    <div 
+                      v-for="(item, index) in request.requestedItems" 
+                      :key="index"
+                      class="resource-item"
+                      :style="`border-left-color: ${getResourceTypeColor(item.resourceType, 1)}`"
+                    >
+                      {{ item.resourceName }}: {{ item.quantity }} {{ item.unit }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span 
+                    class="status-badge"
+                    :class="{
+                      'approved': request.status === 'Approved',
+                      'pending': request.status === 'Pending',
+                      'rejected': request.status === 'Rejected'
+                    }"
+                  >
+                    {{ request.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button @click="viewMemberRequestDetails(request)" class="view-btn" title="View Details">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                    <button 
+                      v-if="request.status === 'Pending'" 
+                      @click="updateRequestStatus(request, 'Approved')" 
+                      class="approve-btn" 
+                      title="Approve Request"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button 
+                      v-if="request.status === 'Pending'" 
+                      @click="updateRequestStatus(request, 'Rejected')" 
+                      class="reject-btn" 
+                      title="Reject Request"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -474,6 +599,132 @@
           </div>
         </div>
       </div>
+
+      <!-- Member Request Details Modal -->
+      <div v-if="showMemberRequestModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Member Request Details</h2>
+            <button @click="showMemberRequestModal = false" class="close-modal">&times;</button>
+          </div>
+          <div class="modal-body" v-if="selectedMemberRequest">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <h3>Member Name</h3>
+                <p>{{ selectedMemberRequest.userName }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Reference Code</h3>
+                <p>{{ selectedMemberRequest.referenceCode }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Email</h3>
+                <p>{{ selectedMemberRequest.userEmail || 'Not provided' }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Barangay</h3>
+                <p>{{ selectedMemberRequest.barangay }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Request Date</h3>
+                <p>{{ formatDate(selectedMemberRequest.requestDate) }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Status</h3>
+                <p>
+                  <span 
+                    class="status-badge"
+                    :class="{
+                      'approved': selectedMemberRequest.status === 'Approved',
+                      'pending': selectedMemberRequest.status === 'Pending',
+                      'rejected': selectedMemberRequest.status === 'Rejected'
+                    }"
+                  >
+                    {{ selectedMemberRequest.status }}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Requested Resources</h3>
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Resource</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in selectedMemberRequest.requestedItems" :key="index">
+                    <td>{{ item.resourceName }}</td>
+                    <td>
+                      <span 
+                        class="resource-type-badge"
+                        :style="`background-color: ${getResourceTypeColor(item.resourceType, 0.2)}; color: ${getResourceTypeColor(item.resourceType, 1)}`"
+                      >
+                        {{ item.resourceType }}
+                      </span>
+                    </td>
+                    <td>{{ item.quantity }} {{ item.unit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="detail-section">
+              <h3>Urgency</h3>
+              <p>{{ selectedMemberRequest.urgency }}</p>
+            </div>
+
+            <div class="detail-section">
+              <h3>Reason</h3>
+              <p>{{ selectedMemberRequest.reason }}</p>
+            </div>
+
+            <div class="detail-section" v-if="selectedMemberRequest.additionalInfo">
+              <h3>Additional Information</h3>
+              <p>{{ selectedMemberRequest.additionalInfo }}</p>
+            </div>
+
+            <div class="detail-section">
+              <h3>Contact Information</h3>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <h4>Contact Number</h4>
+                  <p>{{ selectedMemberRequest.contactNumber || 'Not provided' }}</p>
+                </div>
+                <div class="detail-item" v-if="selectedMemberRequest.alternateContact">
+                  <h4>Alternate Contact</h4>
+                  <p>{{ selectedMemberRequest.alternateContact }}</p>
+                </div>
+                <div class="detail-item" v-if="selectedMemberRequest.preferredContactTime">
+                  <h4>Preferred Contact Time</h4>
+                  <p>{{ selectedMemberRequest.preferredContactTime }}</p>
+                </div>
+                <div class="detail-item">
+                  <h4>Delivery Address</h4>
+                  <p>{{ selectedMemberRequest.deliveryAddress || 'Not provided' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div v-if="selectedMemberRequest && selectedMemberRequest.status === 'Pending'" class="status-actions">
+              <button @click="updateRequestStatus(selectedMemberRequest, 'Approved')" class="approve-btn-large">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Approve Request
+              </button>
+              <button @click="updateRequestStatus(selectedMemberRequest, 'Rejected')" class="reject-btn-large">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                Reject Request
+              </button>
+            </div>
+            <button @click="showMemberRequestModal = false" class="close-btn">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -485,6 +736,7 @@ import {
   addDoc,
   updateDoc,
   getDocs,
+  getDoc,
   doc,
   serverTimestamp,
   query,
@@ -492,7 +744,7 @@ import {
   where,
   Timestamp
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth'; // Correct import for getAuth
+import { getAuth } from 'firebase/auth';
 import { db } from '@/services/firebase';
 
 // Current barangay - this would typically come from user authentication
@@ -504,6 +756,7 @@ const activeTab = ref('available');
 // Loading states
 const isLoading = ref(true);
 const isLoadingHistory = ref(true);
+const isLoadingMemberRequests = ref(true);
 const isSubmitting = ref(false);
 const fetchError = ref(null);
 
@@ -556,6 +809,16 @@ const memberResourceForm = ref({
   purpose: '',
   notes: ''
 });
+
+// Member Requests
+const memberRequests = ref([]);
+const filteredMemberRequests = ref([]);
+const memberRequestSearchQuery = ref('');
+const memberRequestStatusFilter = ref('');
+const memberRequestSortField = ref('requestDate');
+const memberRequestSortDirection = ref('desc');
+const showMemberRequestModal = ref(false);
+const selectedMemberRequest = ref(null);
 
 // History
 const memberHistory = ref([]);
@@ -941,6 +1204,133 @@ const submitMemberResourceForm = async () => {
   }
 };
 
+// Load member requests from user_history
+const loadMemberRequests = async () => {
+  isLoadingMemberRequests.value = true;
+  
+  try {
+    const userHistoryCollection = collection(db, 'user_history');
+    const q = query(
+      userHistoryCollection,
+      where('barangay', '==', currentBarangay.value)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const requests = [];
+    
+    querySnapshot.forEach(doc => {
+      requests.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    console.log('Member requests loaded:', requests.length);
+    memberRequests.value = requests;
+    filterMemberRequests();
+    
+    isLoadingMemberRequests.value = false;
+  } catch (error) {
+    console.error('Error loading member requests:', error);
+    showNotification('Failed to load member requests', 'error');
+    isLoadingMemberRequests.value = false;
+  }
+};
+
+// Filter member requests
+const filterMemberRequests = () => {
+  const search = memberRequestSearchQuery.value.toLowerCase();
+  
+  filteredMemberRequests.value = memberRequests.value.filter(request => {
+    const matchesSearch = 
+      (request.userName && request.userName.toLowerCase().includes(search)) ||
+      (request.referenceCode && request.referenceCode.toLowerCase().includes(search)) ||
+      (request.reason && request.reason.toLowerCase().includes(search)) ||
+      (request.requestedItems && request.requestedItems.some(item => 
+        item.resourceName.toLowerCase().includes(search) ||
+        item.resourceType.toLowerCase().includes(search)
+      ));
+    
+    const matchesStatus = !memberRequestStatusFilter.value || request.status === memberRequestStatusFilter.value;
+    
+    return matchesSearch && matchesStatus;
+  });
+  
+  sortMemberRequests(memberRequestSortField.value);
+};
+
+// Sort member requests
+const sortMemberRequests = (field) => {
+  if (memberRequestSortField.value === field) {
+    memberRequestSortDirection.value = memberRequestSortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    memberRequestSortField.value = field;
+    memberRequestSortDirection.value = 'desc';
+  }
+  
+  filteredMemberRequests.value.sort((a, b) => {
+    let valueA = a[field];
+    let valueB = b[field];
+    
+    // Handle date fields
+    if (field === 'requestDate') {
+      if (valueA instanceof Timestamp) valueA = valueA.toDate();
+      if (valueB instanceof Timestamp) valueB = valueB.toDate();
+      if (valueA.seconds) valueA = new Date(valueA.seconds * 1000);
+      if (valueB.seconds) valueB = new Date(valueB.seconds * 1000);
+      if (typeof valueA === 'string') valueA = new Date(valueA);
+      if (typeof valueB === 'string') valueB = new Date(valueB);
+    }
+    
+    if (memberRequestSortDirection.value === 'asc') {
+      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+    } else {
+      return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+    }
+  });
+};
+
+// View member request details
+const viewMemberRequestDetails = (request) => {
+  selectedMemberRequest.value = request;
+  showMemberRequestModal.value = true;
+};
+
+// Update request status
+const updateRequestStatus = async (request, newStatus) => {
+  try {
+    const requestRef = doc(db, 'user_history', request.id);
+    await updateDoc(requestRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update local data
+    if (request === selectedMemberRequest.value) {
+      selectedMemberRequest.value.status = newStatus;
+    }
+    
+    // Update in the list
+    const index = memberRequests.value.findIndex(r => r.id === request.id);
+    if (index !== -1) {
+      memberRequests.value[index].status = newStatus;
+    }
+    
+    // Re-filter the list
+    filterMemberRequests();
+    
+    // Close modal if open
+    if (showMemberRequestModal.value) {
+      showMemberRequestModal.value = false;
+    }
+    
+    showNotification(`Request ${newStatus.toLowerCase()} successfully`, 'success');
+  } catch (error) {
+    console.error('Error updating request status:', error);
+    showNotification('Failed to update request status', 'error');
+  }
+};
+
 // Load member history
 const loadMemberHistory = async () => {
   isLoadingHistory.value = true;
@@ -1045,9 +1435,19 @@ onMounted(async () => {
   try {
     await fetchAvailableResources();
     await loadMemberHistory();
+    await loadMemberRequests();
   } catch (error) {
     console.error('Error initializing inventory system:', error);
     showNotification('Failed to initialize inventory system. Please refresh the page.', 'error');
+  }
+});
+
+// Watch for tab changes
+watch(activeTab, (newTab) => {
+  if (newTab === 'memberRequest') {
+    loadMemberRequests();
+  } else if (newTab === 'history') {
+    loadMemberHistory();
   }
 });
 </script>
@@ -1156,6 +1556,12 @@ onMounted(async () => {
   background-color: #d1ecf1;
   color: #0c5460;
   border: 1px solid #bee5eb;
+}
+
+.notification.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
 }
 
 .close-btn {
@@ -1573,7 +1979,12 @@ onMounted(async () => {
 }
 
 /* Action Buttons */
-.view-btn {
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-btn, .approve-btn, .reject-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -1582,11 +1993,52 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.view-btn {
   color: #2196f3;
 }
 
-.view-btn:hover {
+.approve-btn {
+  color: #10B981;
+}
+
+.reject-btn {
+  color: #EF4444;
+}
+
+.view-btn:hover, .approve-btn:hover, .reject-btn:hover {
   background-color: rgba(0,0,0,0.05);
+}
+
+.approve-btn-large, .reject-btn-large {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.approve-btn-large {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.approve-btn-large:hover {
+  background-color: #c3e6cb;
+}
+
+.reject-btn-large {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.reject-btn-large:hover {
+  background-color: #f5c6cb;
 }
 
 /* Modal Styles */
@@ -1646,6 +2098,12 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1653,7 +2111,7 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
 }
 
-.detail-item h3 {
+.detail-item h3, .detail-item h4 {
   font-size: 0.875rem;
   color: #666;
   margin: 0 0 0.25rem 0;
@@ -1713,6 +2171,26 @@ onMounted(async () => {
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    text-align: left;
+    padding: 0.5rem 1rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .status-actions {
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 1rem;
   }
 }
 </style>

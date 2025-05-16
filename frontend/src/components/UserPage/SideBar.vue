@@ -105,7 +105,7 @@ const navItems = [
   },
   { 
     title: 'Resources', 
-    path: '/userdash/resources', 
+    path: '/user-dashboard/user_resource', 
     icon: FileText 
   }
 ];
@@ -175,7 +175,7 @@ const handleLogout = async () => {
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 100;
+  z-index: 995;
 }
 
 .sidebar-collapsed {
