@@ -107,6 +107,11 @@ const navItems = [
     title: 'Resources', 
     path: '/user-dashboard/user_resource', 
     icon: FileText 
+  },
+  { 
+    title: 'Settings', 
+    path: '/user-dashboard/user_settings', 
+    icon: FileText 
   }
 ];
 

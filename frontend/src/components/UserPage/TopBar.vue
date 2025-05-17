@@ -67,23 +67,7 @@
               <p>{{ userStore.user?.email || 'user@example.com' }}</p>
             </div>
           </div>
-          
-          <div class="menu-items">
-            <router-link to="/userdash/profile" class="menu-item" @click="showUserMenu = false">
-              <User class="menu-icon" />
-              <span>My Profile</span>
-            </router-link>
-            
-            <router-link to="/userdash/settings" class="menu-item" @click="showUserMenu = false">
-              <Settings class="menu-icon" />
-              <span>Settings</span>
-            </router-link>
-            
-            <button @click="handleLogout" class="menu-item logout">
-              <LogOut class="menu-icon" />
-              <span>Logout</span>
-            </button>
-          </div>
+
         </div>
       </div>
     </div>
@@ -171,6 +155,7 @@ const pageTitle = computed(() => {
   if (path.includes('/profile')) return 'Profile Settings';
   if (path.includes('/announcements')) return 'Announcements';
   if (path.includes('/messages')) return 'Messages';
+   if (path.includes('/user_settings')) return 'Settings';
   if (path.includes('/resources')) return 'Resource Requests';
   return 'Solo Parent Dashboard';
 });

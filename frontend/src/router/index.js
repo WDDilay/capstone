@@ -19,6 +19,7 @@ import UserDashboard from '@/views/UserPage/UserDashboard.vue';
 import UserPage from '@/views/UserPage/UserPage.vue';
 import events from '@/views/UserPage/Events.vue';
 import Profile from '@/views/UserPage/Profile.vue';
+import user_settings from '@/views/UserPage/user_settings.vue';
 import user_resource from '@/views/UserPage/user_resource.vue';
 
 //Super Admin
@@ -200,6 +201,11 @@ const routes = [
       { 
         path: 'user_resource', 
         component: user_resource,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      },
+      { 
+        path: 'user_settings', 
+        component: user_settings,
         meta: { requiresAuth: true, allowedRoles: ['Member'] },
       }
     ] 
