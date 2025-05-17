@@ -109,6 +109,11 @@ const navItems = [
     icon: FileText 
   },
   { 
+    title: 'Attendance', 
+    path: '/user-dashboard/Attendance', 
+    icon: FileText 
+  },
+  { 
     title: 'Settings', 
     path: '/user-dashboard/user_settings', 
     icon: FileText 

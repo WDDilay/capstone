@@ -21,6 +21,7 @@ import events from '@/views/UserPage/Events.vue';
 import Profile from '@/views/UserPage/Profile.vue';
 import user_settings from '@/views/UserPage/user_settings.vue';
 import user_resource from '@/views/UserPage/user_resource.vue';
+import Attendance from '@/views/UserPage/Attendance.vue';
 
 //Super Admin
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
@@ -40,6 +41,7 @@ import Data from '../views/BarangayAdmin/Data.vue';
 import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
 import Messages from '../views/BarangayAdmin/Message.vue';
+import attendance_form from '../views/BarangayAdmin/attendance_form.vue';
 import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
 import { Apple } from 'lucide-vue-next';
@@ -168,9 +170,14 @@ const routes = [
         component: Messages,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       },
-       { 
+      { 
         path: 'BarangayInventory', 
         component: BarangayInventory,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      { 
+        path: 'attendance_form', 
+        component: attendance_form,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       }
     ] 
@@ -206,6 +213,11 @@ const routes = [
       { 
         path: 'user_settings', 
         component: user_settings,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      },
+      { 
+        path: 'Attendance', 
+        component: Attendance,
         meta: { requiresAuth: true, allowedRoles: ['Member'] },
       }
     ] 
