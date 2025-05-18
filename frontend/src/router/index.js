@@ -44,6 +44,7 @@ import Messages from '../views/BarangayAdmin/Message.vue';
 import attendance_form from '../views/BarangayAdmin/attendance_form.vue';
 import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
+import Block from '../views/BarangayAdmin/Block.vue';
 import { Apple } from 'lucide-vue-next';
 
 
@@ -179,7 +180,13 @@ const routes = [
         path: 'attendance_form', 
         component: attendance_form,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
-      }
+      },
+      { 
+        path: 'Block', 
+        component: Block,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      
     ] 
   },
   

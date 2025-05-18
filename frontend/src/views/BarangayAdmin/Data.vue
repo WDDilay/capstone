@@ -8,6 +8,14 @@
       </button>
     </div>
     
+    <!-- Success Notification -->
+    <div v-if="notification" class="fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50 flex items-center justify-between" style="min-width: 300px; max-width: 500px;">
+      <div>{{ notification }}</div>
+      <button @click="notification = null" class="text-green-700 hover:text-green-900">
+        <X class="w-5 h-5" />
+      </button>
+    </div>
+    
     <!-- Barangay Indicator -->
     <div v-if="currentBarangay" class="mb-4">
       <h2 class="text-xl font-semibold">Solo Parents in {{ currentBarangay }}</h2>
@@ -48,7 +56,7 @@
 
     <!-- Table -->
     <div class="bg-white rounded-lg overflow-x-auto shadow-md">
-      <div class="hidden md:grid grid-cols-5 gap-4 py-4 px-6 border-b">
+      <div class="hidden md:grid grid-cols-6 gap-4 py-4 px-6 border-b">
         <div class="text-gray-600 font-medium cursor-pointer flex items-center gap-1" @click="toggleSort('name')">
           Name
           <ArrowUpDown class="w-4 h-4" />
@@ -59,7 +67,7 @@
           Status
           <ArrowUpDown class="w-4 h-4" />
         </div>
-        <div class="text-gray-600 font-medium">Actions</div>
+        <div class="text-gray-600 font-medium col-span-2">Actions</div>
       </div>
 
       <!-- Table Body for Larger Screens -->
@@ -67,7 +75,7 @@
         <div
           v-for="user in paginatedUsers"
           :key="user.id"
-          class="grid grid-cols-5 gap-4 py-4 px-6 items-center hover:bg-gray-50"
+          class="grid grid-cols-6 gap-4 py-4 px-6 items-center hover:bg-gray-50"
         >
           <div>{{ formatFullName(user) }}</div>
           <div>{{ user.address }}</div>
@@ -84,9 +92,12 @@
               {{ user.status }}
             </span>
           </div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 col-span-2">
             <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
               <Eye class="w-5 h-5" />
+            </button>
+            <button @click="confirmDelete(user)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+              <Trash2 class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -115,9 +126,14 @@
             >
               {{ user.status }}
             </span>
-            <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
-              <Eye class="w-5 h-5" />
-            </button>
+            <div class="flex gap-2">
+              <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+                <Eye class="w-5 h-5" />
+              </button>
+              <button @click="confirmDelete(user)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                <Trash2 class="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
         
@@ -204,6 +220,37 @@
               class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
             >
               Send Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <AlertTriangle class="h-6 w-6 text-red-600" />
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Block Member Account</h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Are you sure you want to block {{ formatFullName(userToDelete) }}? This will prevent them from logging in, but their data will be preserved and can be restored later.
+          </p>
+          <div class="flex justify-center gap-3">
+            <button
+              @click="showDeleteModal = false"
+              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              @click="blockUser"
+              :disabled="isProcessing"
+              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center"
+            >
+              <span v-if="isProcessing">Processing...</span>
+              <span v-else>Block Member</span>
             </button>
           </div>
         </div>
@@ -315,7 +362,7 @@
           </button>
           <button 
             @click="confirmPrint" 
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center justify-center"
           >
             <Printer class="w-5 h-5" />
             <span>Print</span>
@@ -327,9 +374,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
-import { collection, getDocs, doc, getDoc, Timestamp, query, where, onSnapshot } from 'firebase/firestore';
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  getDoc, 
+  Timestamp, 
+  query, 
+  where, 
+  onSnapshot, 
+  deleteDoc, 
+  addDoc, 
+  serverTimestamp 
+} from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import { 
   Search, 
@@ -340,7 +399,9 @@ import {
   ChevronRight,
   ArrowUpDown,
   X,
-  Mail
+  Mail,
+  Trash2,
+  AlertTriangle
 } from 'lucide-vue-next';
 
 // State
@@ -353,10 +414,15 @@ const selectedUser = ref(null);
 const error = ref(null);
 const currentBarangay = ref('');
 const isProcessing = ref(false);
+const notification = ref(null); // New notification state
 
 // Preview modals state
 const showExportPreview = ref(false);
 const showPrintPreview = ref(false);
+
+// Delete confirmation modal
+const showDeleteModal = ref(false);
+const userToDelete = ref(null);
 
 // Sorting
 const sortField = ref('name');
@@ -399,6 +465,45 @@ const formatDate = (timestamp) => {
   }
 };
 
+// Show notification
+const showNotification = (message) => {
+  notification.value = message;
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    notification.value = null;
+  }, 5000);
+};
+
+// Check for restored member notification
+const checkForRestoredMemberNotification = () => {
+  const restoredMemberData = localStorage.getItem('restoredMember');
+  
+  if (restoredMemberData) {
+    try {
+      const restored = JSON.parse(restoredMemberData);
+      
+      // Check if notification is less than 10 minutes old
+      const now = new Date().getTime();
+      const tenMinutesInMs = 10 * 60 * 1000;
+      
+      if (now - restored.timestamp < tenMinutesInMs) {
+        // Show notification
+        showNotification(`Member ${restored.name} has been restored successfully`);
+        
+        // Remove from localStorage after showing
+        localStorage.removeItem('restoredMember');
+      } else {
+        // Clear old notification
+        localStorage.removeItem('restoredMember');
+      }
+    } catch (e) {
+      console.error('Error parsing restored member data:', e);
+      localStorage.removeItem('restoredMember');
+    }
+  }
+};
+
 // Fetch users from Firestore
 const fetchUsers = async () => {
   try {
@@ -433,7 +538,8 @@ const fetchUsers = async () => {
     const usersQuery = query(
       collection(db, 'users'),
       where('barangay', '==', currentBarangay.value),
-      where('role', '==', 'Member')
+      where('role', '==', 'Member'),
+      where('status', '==', 'Active') // Only get active members
     );
     
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
@@ -542,6 +648,52 @@ const sendEmail = (user) => {
   window.location.href = `mailto:${user.email}?subject=Solo Parent Federation - Important Information`;
 };
 
+// Confirm delete (block) user
+const confirmDelete = (user) => {
+  userToDelete.value = user;
+  showDeleteModal.value = true;
+};
+
+// Block user (move to blocked_members collection)
+const blockUser = async () => {
+  if (!userToDelete.value) return;
+  
+  isProcessing.value = true;
+  
+  try {
+    const user = userToDelete.value;
+    
+    // Add to blocked_members collection
+    const blockedMembersCollection = collection(db, 'blocked_members');
+    await addDoc(blockedMembersCollection, {
+      ...user,
+      blockedAt: serverTimestamp(),
+      blockedBy: auth.currentUser.uid,
+      previousId: user.id, // Store original ID for restoration
+      status: 'Blocked'
+    });
+    
+    // Delete from users collection
+    const userRef = doc(db, 'users', user.id);
+    await deleteDoc(userRef);
+    
+    // Remove from local array to update UI immediately
+    users.value = users.value.filter(u => u.id !== user.id);
+    
+    // Show success notification
+    showNotification(`${formatFullName(user)} has been blocked successfully`);
+    
+    // Close modal
+    showDeleteModal.value = false;
+    userToDelete.value = null;
+  } catch (err) {
+    console.error('Error blocking user:', err);
+    error.value = 'Failed to block member: ' + err.message;
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 // Export to Excel functionality with confirmation
 const confirmExport = () => {
   // Prepare data for export
@@ -586,9 +738,9 @@ const confirmPrint = () => {
       </tr>`
     ).join('');
 
-    // Create HTML content
-    const htmlContent = 
-      `<html>
+    // Create HTML content with properly closed script tag
+    const htmlContent = `
+      <html>
         <head>
           <title>Solo Parents in ${currentBarangay.value}</title>
           <style>
@@ -624,9 +776,10 @@ const confirmPrint = () => {
                 window.close();
               }
             }
-          
+          <\/script>
         </body>
-      </html>`;
+      </html>
+    `;
 
     // Open new window and write content
     const printWindow = window.open('', '_blank');
@@ -638,6 +791,9 @@ const confirmPrint = () => {
 // Lifecycle hooks
 onMounted(() => {
   const unsubscribe = fetchUsers();
+  
+  // Check for restored member notification
+  checkForRestoredMemberNotification();
   
   // Cleanup on component unmount
   return () => {

@@ -95,7 +95,7 @@ const regularMenuItems = [
   { label: 'Create Attendance', path: '/barangay-admin/attendance_form', icon: 'pi pi-megaphone' },
   { label: 'Resource Inventory', path: '/barangay-admin/BarangayInventory', icon: 'pi pi-box' },
   //{ label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
-  { label: 'Block', path: '/barangay-admin/block', icon: 'pi pi-ban' }
+  { label: 'Block', path: '/barangay-admin/Block', icon: 'pi pi-ban' }
 ];
 
 // Show PrimeVue confirmation dialog
