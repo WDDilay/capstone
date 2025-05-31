@@ -264,9 +264,8 @@ const acceptApplication = async () => {
       throw new Error("No authenticated user found")
     }
 
-    // Use a transaction to ensure all operations succeed or fail together
+    // Use a transaction to ensure atomicity
     await runTransaction(db, async (transaction) => {
-      // 1. Get the application document - READ OPERATION
       const applicationRef = doc(db, "applications", application.id)
       const applicationDoc = await transaction.get(applicationRef)
 
@@ -274,64 +273,43 @@ const acceptApplication = async () => {
         throw new Error("Application not found")
       }
 
-      // 2. Check if user document exists - READ OPERATION
-      const userRef = doc(db, "users", application.userId || application.id)
-      const userDoc = await transaction.get(userRef)
+      // Use the same document ID for the user
+      const userRef = doc(db, "users", application.id)
 
-      // IMPORTANT: All reads are now complete before any writes begin
+      // Transfer all data, add role and status
+      transaction.set(userRef, {
+        ...applicationDoc.data(),
+        role: "Member",
+        status: "Active",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedBy: user.uid,
+      })
 
-      // 3. Create or update user document with ALL application data - WRITE OPERATION
-      if (!userDoc.exists()) {
-        // Create new user document with all application data
-        transaction.set(userRef, {
-          // Transfer all application data
-          ...applicationDoc.data(),
-          // Override/add specific fields
-          role: "Member",
-          status: "Active",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          updatedBy: user.uid,
-        })
-      } else {
-        // Update existing user with all application data
-        transaction.update(userRef, {
-          // Transfer all application data
-          ...applicationDoc.data(),
-          // Override/add specific fields
-          role: "Member",
-          status: "Active",
-          updatedAt: serverTimestamp(),
-          updatedBy: user.uid,
-        })
-      }
-
-      // 4. Delete the application document - WRITE OPERATION
+      // Delete the application document
       transaction.delete(applicationRef)
     })
 
-    // 5. Send email notification (outside transaction)
+    // Send email notification (outside transaction)
     const emailSubject = "Your Solo Parent Application Has Been Approved"
     const emailBody = `
       Dear ${application.firstName},
-      
+
       We are pleased to inform you that your Solo Parent application (Reference: ${application.referenceCode}) has been approved.
-      
+
       You can now log in to your account with your registered email address to access member services.
-      
+
       Thank you,
       Solo Parent Support Team
     `
-
     await sendEmailNotification(application.email, emailSubject, emailBody)
 
-    console.log("Application approved and transferred to users successfully")
     showAcceptModal.value = false
 
-    // Update local state to reflect the change
+    // Remove from local list
     const index = applications.value.findIndex((a) => a.id === application.id)
     if (index !== -1) {
-      applications.value.splice(index, 1) // Remove from the list since it's deleted
+      applications.value.splice(index, 1)
     }
   } catch (err) {
     console.error("Error approving application:", err)
