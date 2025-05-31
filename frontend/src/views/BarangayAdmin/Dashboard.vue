@@ -105,9 +105,9 @@ const isLoading = ref(true);
 const error = ref(null);
 const currentBarangay = ref('');
 const totalMembers = ref(0);
-const activeResources = ref(42); // Placeholder, replace with real data later
-const newMessages = ref(18); // Placeholder, replace with real data later
-const totalAnnouncements = ref(7); // Placeholder, replace with real data later
+const activeResources = ref(0); // Placeholder, replace with real data later
+const newMessages = ref(0); // Placeholder, replace with real data later
+const totalAnnouncements = ref(0); // Placeholder, replace with real data later
 const membersLastMonth = ref(0);
 const membersByBarangay = ref({});
 
@@ -125,21 +125,21 @@ const stats = computed(() => [
     value: activeResources.value, 
     icon: Package, 
     bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-    trend: 8.2
+    trend: 0
   },
   { 
-    title: 'New Messages', 
+    title: 'New Forms', 
     value: newMessages.value, 
     icon: MessageSquare, 
     bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
-    trend: -3.4
+    trend: 0
   },
   { 
     title: 'Announcements', 
     value: totalAnnouncements.value, 
     icon: Bell, 
     bgColor: 'bg-gradient-to-r from-amber-500 to-amber-600',
-    trend: 5.1
+    trend: 0
   }
 ]);
 

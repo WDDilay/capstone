@@ -32,7 +32,7 @@
         </div>
         <div class="stat-content">
           <h3>{{ unreadMessages }}</h3>
-          <p>Unread Messages</p>
+          <p>New Attendance</p>
         </div>
       </div>
       
