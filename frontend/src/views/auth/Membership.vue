@@ -198,6 +198,21 @@
             </div>
           </div>
         </div>
+
+        <!-- Solo Parent ID Information Group - For Current Solo Parent Members -->
+        <div class="form-section">
+          <div class="form-group">
+            <label for="soloParentId" class="form-label">Solo Parent ID Number</label>
+            <input 
+              type="text" 
+              id="soloParentId" 
+              v-model="formData.soloParentId" 
+              placeholder="Enter your Solo Parent ID number"
+              required
+            >
+            <p class="id-note">Please enter your existing Solo Parent ID number as a current member</p>
+          </div>
+        </div>
         
         <!-- Solo Parent Reason Group -->
         <div class="form-section">
@@ -260,113 +275,36 @@
           </div>
         </div>
         
-        <!-- Attachments Group - Modified for development -->
+        <!-- Solo Parent ID Attachment Group -->
         <div class="form-section">
           <div class="form-group">
-            <label class="form-label">Attachments for Requirements</label>
-            <p class="document-note">Please upload pictures of your requirements (ID, certificates, etc.)</p>
+            <label class="form-label">Solo Parent ID Attachment</label>
+            <p class="document-note">Please upload a clear photo of your Solo Parent ID</p>
             <p class="development-note">Note: File uploads are temporarily disabled in development mode. This feature will be available in production.</p>
             
-            <div v-for="(attachment, index) in attachments" :key="index" class="attachment-item">
+            <div class="attachment-item">
               <div class="attachment-row">
                 <div class="attachment-name">
                   <input 
                     type="text" 
-                    :id="`attachmentName${index}`" 
-                    v-model="attachment.name" 
-                    placeholder="Document name/description"
-                    required
+                    id="soloParentIdName" 
+                    v-model="soloParentIdAttachment.name" 
+                    placeholder="Solo Parent ID"
+                    readonly
                   >
                 </div>
                 <div class="attachment-file">
                   <input 
                     type="file" 
-                    :id="`attachmentFile${index}`" 
-                    @change="(e) => handleAttachmentChange(e, index)"
+                    id="soloParentIdFile" 
+                    @change="handleSoloParentIdChange"
                     accept="image/*"
+                    required
                   >
                 </div>
-                <button 
-                  type="button" 
-                  class="remove-attachment-btn" 
-                  @click="removeAttachment(index)"
-                  v-if="attachments.length > 1"
-                >
-                  <i class="pi pi-times"></i>
-                </button>
               </div>
-              <div v-if="attachment.preview" class="attachment-preview">
-                <img :src="attachment.preview" alt="Preview" class="preview-image" />
-              </div>
-            </div>
-            
-            <button type="button" class="add-child-btn" @click="addAttachment">
-              <i class="pi pi-plus"></i> Add Another Attachment
-            </button>
-          </div>
-          
-          <!-- Conditional documents based on solo parent reason -->
-          <div v-if="formData.soloParentReason" class="specific-documents">
-            <h4 class="documents-subtitle">Required Documents Based on Status</h4>
-            
-            <!-- Sworn Affidavit of Barangay - Required for all -->
-            <div class="form-group">
-              <label for="barangayAffidavit" class="form-label">Sworn Affidavit of Barangay</label>
-              <div class="file-input-container">
-                <input 
-                  type="file" 
-                  id="barangayAffidavit" 
-                  @change="handleFileChange($event, 'barangayAffidavit')"
-                >
-                <i class="pi pi-upload"></i>
-              </div>
-            </div>
-            
-            <div v-if="formData.soloParentReason === 'separated'" class="form-group">
-              <label for="marriageCertificate" class="form-label">Marriage Certificate</label>
-              <div class="file-input-container">
-                <input 
-                  type="file" 
-                  id="marriageCertificate" 
-                  @change="handleFileChange($event, 'marriageCertificate')"
-                >
-                <i class="pi pi-upload"></i>
-              </div>
-            </div>
-            
-            <div v-if="formData.soloParentReason === 'widow'" class="form-group">
-              <label for="deathCertificate" class="form-label">Death Certificate</label>
-              <div class="file-input-container">
-                <input 
-                  type="file" 
-                  id="deathCertificate" 
-                  @change="handleFileChange($event, 'deathCertificate')"
-                >
-                <i class="pi pi-upload"></i>
-              </div>
-            </div>
-            
-            <div v-if="formData.soloParentReason === 'custody'" class="form-group">
-              <label for="custodyDocument" class="form-label">CSWD Custody Approval Document</label>
-              <div class="file-input-container">
-                <input 
-                  type="file" 
-                  id="custodyDocument" 
-                  @change="handleFileChange($event, 'custodyDocument')"
-                >
-                <i class="pi pi-upload"></i>
-              </div>
-            </div>
-            
-            <div v-if="formData.soloParentReason === 'imprisoned'" class="form-group">
-              <label for="imprisonmentDocument" class="form-label">Imprisonment Document</label>
-              <div class="file-input-container">
-                <input 
-                  type="file" 
-                  id="imprisonmentDocument" 
-                  @change="handleFileChange($event, 'imprisonmentDocument')"
-                >
-                <i class="pi pi-upload"></i>
+              <div v-if="soloParentIdAttachment.preview" class="attachment-preview">
+                <img :src="soloParentIdAttachment.preview" alt="Solo Parent ID Preview" class="preview-image" />
               </div>
             </div>
           </div>
@@ -498,7 +436,7 @@ import { useRouter } from "vue-router"
 import { useToast } from "primevue/usetoast"
 import Button from "primevue/button"
 import Dialog from "primevue/dialog"
-import { auth, db } from "@/services/firebase" // Removed storage import
+import { auth, db } from "@/services/firebase"
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -508,7 +446,6 @@ import {
 import { doc, setDoc, collection, getDocs, serverTimestamp } from "firebase/firestore"
 
 const router = useRouter()
-const toast = useToast()
 const showPassword = ref(false)
 const showVerifyPassword = ref(false)
 const password = ref("")
@@ -547,6 +484,7 @@ const formData = reactive({
   email: "",
   contactNumber: "",
   fbName: "",
+  soloParentId: "",
   soloParentReason: "",
 })
 
@@ -623,100 +561,36 @@ const removeChild = (index) => {
   }
 }
 
-// Attachments array
-const attachments = reactive([{ name: "", file: null, preview: null }])
+// Solo Parent ID Attachment
+const soloParentIdAttachment = reactive({ name: "Solo Parent ID", file: null, preview: null })
 
-const addAttachment = () => {
-  attachments.push({ name: "", file: null, preview: null })
-}
-
-const removeAttachment = (index) => {
-  if (attachments.length > 1) {
-    attachments.splice(index, 1)
-  }
-}
-
-const handleAttachmentChange = (event, index) => {
+const handleSoloParentIdChange = (event) => {
   const file = event.target.files[0]
   if (file) {
-    attachments[index].file = file
+    soloParentIdAttachment.file = file
 
     // Create a preview for the image
     const reader = new FileReader()
     reader.onload = (e) => {
-      attachments[index].preview = e.target.result
+      soloParentIdAttachment.preview = e.target.result
     }
     reader.readAsDataURL(file)
   }
 }
 
-const files = reactive({
-  barangayAffidavit: null,
-  marriageCertificate: null,
-  deathCertificate: null,
-  custodyDocument: null,
-  imprisonmentDocument: null,
-})
-
-const handleFileChange = (event, fileType) => {
-  files[fileType] = event.target.files[0]
-}
-
-// Mock file upload for development environment
-const mockUploadFile = async (file) => {
-  if (!file) return null
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  // Return a mock URL
-  return `mock-file-url-${Date.now()}`
-}
-
-// Mock upload all attachments for development
-const mockUploadAttachments = async () => {
-  const attachmentUrls = []
-  const specificDocuments = {}
+// Mock upload for solo parent ID attachment
+const mockUploadSoloParentId = async () => {
+  let soloParentIdUrl = null
 
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
-  // Create mock data for attachments
-  for (let i = 0; i < attachments.length; i++) {
-    const attachment = attachments[i]
-    if (attachment.file && attachment.name) {
-      attachmentUrls.push({
-        name: attachment.name,
-        url: `mock-attachment-url-${i}-${Date.now()}`,
-      })
-    }
+  // Create mock data for solo parent ID attachment
+  if (soloParentIdAttachment.file) {
+    soloParentIdUrl = `mock-solo-parent-id-${Date.now()}`
   }
 
-  // Create mock data for specific documents
-  if (files.barangayAffidavit) {
-    specificDocuments.barangayAffidavit = `mock-barangay-affidavit-${Date.now()}`
-  }
-
-  if (formData.soloParentReason === "separated" && files.marriageCertificate) {
-    specificDocuments.marriageCertificate = `mock-marriage-certificate-${Date.now()}`
-  }
-
-  if (formData.soloParentReason === "widow" && files.deathCertificate) {
-    specificDocuments.deathCertificate = `mock-death-certificate-${Date.now()}`
-  }
-
-  if (formData.soloParentReason === "custody" && files.custodyDocument) {
-    specificDocuments.custodyDocument = `mock-custody-document-${Date.now()}`
-  }
-
-  if (formData.soloParentReason === "imprisoned" && files.imprisonmentDocument) {
-    specificDocuments.imprisonmentDocument = `mock-imprisonment-document-${Date.now()}`
-  }
-
-  return {
-    attachments: attachmentUrls,
-    documents: specificDocuments,
-  }
+  return soloParentIdUrl
 }
 
 // Send verification email
@@ -835,13 +709,10 @@ const handleRegistration = async () => {
     referenceCode.value = generateReferenceCode()
     console.log("Generated reference code:", referenceCode.value)
 
-    // 2. Handle file uploads (mock in development)
-    console.log("Processing attachments and documents...")
-    let uploadResults = { attachments: [], documents: {} }
-
-    // Use mock uploads in development to avoid CORS issues
-    uploadResults = await mockUploadAttachments()
-    console.log("Upload results:", uploadResults)
+    // 2. Handle solo parent ID attachment upload (mock in development)
+    console.log("Processing solo parent ID attachment...")
+    const soloParentIdUrl = await mockUploadSoloParentId()
+    console.log("Solo Parent ID upload result:", soloParentIdUrl)
 
     // 3. Save application data to Firestore with user.uid as document ID
     try {
@@ -862,10 +733,10 @@ const handleRegistration = async () => {
         email: formData.email,
         contactNumber: formData.contactNumber,
         fbName: formData.fbName,
+        soloParentId: formData.soloParentId,
         children: children,
         soloParentReason: formData.soloParentReason,
-        attachments: uploadResults.attachments,
-        documents: uploadResults.documents,
+        soloParentIdAttachment: soloParentIdUrl,
         status: "Pending", // Default status for new applications
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -876,9 +747,6 @@ const handleRegistration = async () => {
       console.error("Error saving to Firestore:", firestoreError)
       // Continue with the process even if Firestore save fails
     }
-
-    // REMOVED: The code that saves to the users collection
-    // This ensures data only goes to the applications collection
 
     // 4. Send verification email
     console.log("Sending verification email...")
@@ -919,7 +787,6 @@ const goToHome = () => {
 const goToLogin = () => {
   router.push("/login")
 }
-
 </script>
 
 <style scoped>
@@ -1036,6 +903,13 @@ const goToLogin = () => {
   font-weight: 500;
   color: #333;
   text-align: left;
+}
+
+.id-note {
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  font-style: italic;
 }
 
 input, select {
@@ -1162,18 +1036,6 @@ select {
   margin-bottom: 1rem;
 }
 
-.documents-subtitle {
-  font-weight: 500;
-  color: #8b3dff;
-  margin: 1rem 0;
-}
-
-.specific-documents {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed #e0d0ff;
-}
-
 .login-button {
   background: #8b3dff;
   color: white;
@@ -1215,16 +1077,6 @@ select {
   font-weight: 500;
 }
 
-.file-input-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.file-input-container i {
-  color: #666;
-}
-
 .attachment-item {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -1257,21 +1109,6 @@ select {
   height: auto;
   border-radius: 4px;
   border: 1px solid #ddd;
-}
-
-.remove-attachment-btn {
-  background: none;
-  border: none;
-  color: #ff3d3d;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-}
-
-.remove-attachment-btn:hover {
-  color: #ff0000;
 }
 
 .loading-indicator {
@@ -1510,15 +1347,6 @@ select {
   .attachment-item {
     margin-bottom: 0.75rem;
     padding: 0.75rem;
-  }
-  
-  .specific-documents {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-  }
-  
-  .documents-subtitle {
-    margin: 0.5rem 0;
   }
   
   .login-button {
