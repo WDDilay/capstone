@@ -7,7 +7,19 @@
         <button @click="notification.show = false" class="close-btn">&times;</button>
       </div>
 
-      <h1 class="page-title">Barangay Resource Inventory</h1>
+      <!-- Error Alert -->
+      <div v-if="authError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex justify-between items-center">
+        <span>{{ authError }}</span>
+        <button @click="authError = null" class="text-red-700">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Barangay Indicator -->
+      <div v-if="currentBarangay" class="mb-4">
+        <h1 class="page-title">{{ currentBarangay }} Resource Inventory</h1>
+        <p class="text-sm text-gray-600">Managing resources for {{ currentBarangay }}</p>
+      </div>
 
       <!-- Stat Cards -->
       <div class="stat-cards">
@@ -742,13 +754,15 @@ import {
   query,
   orderBy,
   where,
-  Timestamp
+  Timestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '@/services/firebase';
 
-// Current barangay - this would typically come from user authentication
-const currentBarangay = ref('Balite'); // Replace with actual barangay name from auth
+// Authentication and barangay detection
+const currentBarangay = ref('');
+const authError = ref(null);
 
 // Active tab
 const activeTab = ref('available');
@@ -914,16 +928,41 @@ const formatDate = (timestamp) => {
   }
 };
 
-// Check if user is authenticated
-const checkAuthentication = () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  
-  if (!user) {
-    throw new Error('User is not authenticated');
+// Check authentication and get barangay
+const checkAuthenticationAndBarangay = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User is not authenticated');
+    }
+    
+    console.log('User authenticated:', user.uid);
+    
+    // Check if user is in barangay_presidents collection
+    const barangayPresidentDocRef = doc(db, 'barangay_presidents', user.uid);
+    const barangayPresidentDoc = await getDoc(barangayPresidentDocRef);
+    
+    if (!barangayPresidentDoc.exists()) {
+      throw new Error('Your user account is not properly set up as a Barangay President. Please contact the system administrator.');
+    }
+    
+    const barangayPresidentData = barangayPresidentDoc.data();
+    if (barangayPresidentData.role !== 'BarangayPresident') {
+      throw new Error(`Your role is set to "${barangayPresidentData.role}" instead of "BarangayPresident". Please contact the system administrator.`);
+    }
+    
+    // Store the barangay for filtering
+    currentBarangay.value = barangayPresidentData.barangay;
+    console.log('User verified as BarangayPresident for:', currentBarangay.value);
+    
+    return user;
+  } catch (error) {
+    console.error('Authentication/Authorization error:', error);
+    authError.value = error.message;
+    throw error;
   }
-  
-  return user;
 };
 
 // Fetch available resources from request_history
@@ -932,9 +971,8 @@ const fetchAvailableResources = async () => {
   fetchError.value = null;
   
   try {
-    // First check if user is authenticated
-    const user = checkAuthentication();
-    console.log('User authenticated:', user.uid);
+    // First check authentication and get barangay
+    await checkAuthenticationAndBarangay();
     
     console.log('Fetching resources for barangay:', currentBarangay.value);
     
@@ -947,48 +985,56 @@ const fetchAvailableResources = async () => {
     
     console.log('Query created, executing...');
     
-    const querySnapshot = await getDocs(q);
-    
-    console.log('Query executed, documents found:', querySnapshot.size);
-    
-    const resources = [];
-    
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      console.log('Document data:', data);
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+      console.log('Query executed, documents found:', querySnapshot.size);
       
-      // Process each requested item as a separate available resource
-      if (data.requestedItems && Array.isArray(data.requestedItems)) {
-        data.requestedItems.forEach((item, index) => {
-          // Calculate remaining quantity by checking member_history
-          // For now, we'll just use the original quantity
-          resources.push({
-            id: `${doc.id}-${index}`,
-            requestId: doc.id,
-            resourceName: item.resourceName,
-            resourceType: item.resourceType,
-            quantity: parseFloat(item.quantity) || 0,
-            remainingQuantity: parseFloat(item.quantity) || 0, // Will be updated later
-            unit: item.unit || '',
-            requestDate: data.requestDate,
-            status: data.status
+      const resources = [];
+      
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        console.log('Document data:', data);
+        
+        // Process each requested item as a separate available resource
+        if (data.requestedItems && Array.isArray(data.requestedItems)) {
+          data.requestedItems.forEach((item, index) => {
+            // Calculate remaining quantity by checking member_history
+            // For now, we'll just use the original quantity
+            resources.push({
+              id: `${doc.id}-${index}`,
+              requestId: doc.id,
+              resourceName: item.resourceName,
+              resourceType: item.resourceType,
+              quantity: parseFloat(item.quantity) || 0,
+              remainingQuantity: parseFloat(item.quantity) || 0, // Will be updated later
+              unit: item.unit || '',
+              requestDate: data.requestDate,
+              status: data.status
+            });
           });
-        });
-      }
+        }
+      });
+      
+      console.log('Resources processed:', resources.length);
+      
+      // Update remaining quantities based on member_history
+      await updateRemainingQuantities(resources);
+      
+      availableResources.value = resources;
+      filterAvailableResources();
+      
+      // Update stats
+      updateStats();
+      
+      isLoading.value = false;
+    }, (error) => {
+      console.error('Error in onSnapshot:', error);
+      fetchError.value = `Failed to load resources: ${error.message}. Please check your permissions and try again.`;
+      isLoading.value = false;
     });
     
-    console.log('Resources processed:', resources.length);
-    
-    // Update remaining quantities based on member_history
-    await updateRemainingQuantities(resources);
-    
-    availableResources.value = resources;
-    filterAvailableResources();
-    
-    // Update stats
-    updateStats();
-    
-    isLoading.value = false;
+    // Store unsubscribe function for cleanup
+    return unsubscribe;
   } catch (error) {
     console.error('Error fetching available resources:', error);
     fetchError.value = `Failed to load resources: ${error.message}. Please check your permissions and try again.`;
@@ -1209,27 +1255,40 @@ const loadMemberRequests = async () => {
   isLoadingMemberRequests.value = true;
   
   try {
+    // Ensure we have the current barangay
+    if (!currentBarangay.value) {
+      await checkAuthenticationAndBarangay();
+    }
+    
     const userHistoryCollection = collection(db, 'user_history');
     const q = query(
       userHistoryCollection,
       where('barangay', '==', currentBarangay.value)
     );
     
-    const querySnapshot = await getDocs(q);
-    const requests = [];
-    
-    querySnapshot.forEach(doc => {
-      requests.push({
-        id: doc.id,
-        ...doc.data()
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const requests = [];
+      
+      querySnapshot.forEach(doc => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
+      
+      console.log('Member requests loaded:', requests.length);
+      memberRequests.value = requests;
+      filterMemberRequests();
+      
+      isLoadingMemberRequests.value = false;
+    }, (error) => {
+      console.error('Error loading member requests:', error);
+      showNotification('Failed to load member requests', 'error');
+      isLoadingMemberRequests.value = false;
     });
     
-    console.log('Member requests loaded:', requests.length);
-    memberRequests.value = requests;
-    filterMemberRequests();
-    
-    isLoadingMemberRequests.value = false;
+    return unsubscribe;
   } catch (error) {
     console.error('Error loading member requests:', error);
     showNotification('Failed to load member requests', 'error');
@@ -1336,6 +1395,11 @@ const loadMemberHistory = async () => {
   isLoadingHistory.value = true;
   
   try {
+    // Ensure we have the current barangay
+    if (!currentBarangay.value) {
+      await checkAuthenticationAndBarangay();
+    }
+    
     const memberHistoryCollection = collection(db, 'Member_history');
     const q = query(
       memberHistoryCollection,
@@ -1343,27 +1407,35 @@ const loadMemberHistory = async () => {
       orderBy('distributionDate', 'desc')
     );
     
-    const querySnapshot = await getDocs(q);
-    const history = [];
-    
-    querySnapshot.forEach(doc => {
-      history.push({
-        id: doc.id,
-        ...doc.data()
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const history = [];
+      
+      querySnapshot.forEach(doc => {
+        history.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
+      
+      memberHistory.value = history;
+      filterHistory();
+      
+      // Update stats
+      stats.value[2].value = history.length.toString();
+      
+      // Count unique members served
+      const uniqueMembers = new Set(history.map(item => item.memberID));
+      stats.value[3].value = uniqueMembers.size.toString();
+      
+      isLoadingHistory.value = false;
+    }, (error) => {
+      console.error('Error loading member history:', error);
+      showNotification('Failed to load distribution history', 'error');
+      isLoadingHistory.value = false;
     });
     
-    memberHistory.value = history;
-    filterHistory();
-    
-    // Update stats
-    stats.value[2].value = history.length.toString();
-    
-    // Count unique members served
-    const uniqueMembers = new Set(history.map(item => item.memberID));
-    stats.value[3].value = uniqueMembers.size.toString();
-    
-    isLoadingHistory.value = false;
+    return unsubscribe;
   } catch (error) {
     console.error('Error loading member history:', error);
     showNotification('Failed to load distribution history', 'error');
@@ -1438,7 +1510,9 @@ onMounted(async () => {
     await loadMemberRequests();
   } catch (error) {
     console.error('Error initializing inventory system:', error);
-    showNotification('Failed to initialize inventory system. Please refresh the page.', 'error');
+    if (!authError.value) {
+      showNotification('Failed to initialize inventory system. Please refresh the page.', 'error');
+    }
   }
 });
 
