@@ -4,17 +4,32 @@
       <div class="profile-background"></div>
       <div class="profile-avatar-container">
         <img 
-          src="/placeholder-profile.jpg" 
+          :src="profileImageUrl || '/placeholder-profile.jpg'" 
           alt="Profile Photo" 
           class="profile-avatar"
         />
-        <button class="change-photo-btn">
+        <button class="change-photo-btn" @click="triggerFileInput">
           <Camera class="icon-sm" />
         </button>
+        <input 
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          @change="handleImageUpload"
+          style="display: none;"
+        />
       </div>
       <div class="profile-name">
         <h2>{{ userProfile.firstName }} {{ userProfile.middleName ? userProfile.middleName + ' ' : '' }}{{ userProfile.lastName }}{{ userProfile.nameExt ? ' ' + userProfile.nameExt : '' }}</h2>
         <p>{{ userProfile.role }}</p>
+      </div>
+    </div>
+
+    <!-- Loading overlay for image upload -->
+    <div v-if="uploadingImage" class="upload-overlay">
+      <div class="upload-spinner">
+        <div class="spinner"></div>
+        <p>Uploading profile picture...</p>
       </div>
     </div>
 
@@ -339,8 +354,9 @@ import {
   Trash,
   X
 } from 'lucide-vue-next';
-import { getFirestore, doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { getAuth, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export default {
   setup() {
@@ -348,6 +364,14 @@ export default {
     const userStore = useUserStore();
     const db = getFirestore();
     const auth = getAuth();
+    const storage = getStorage();
+
+    // File input reference
+    const fileInput = ref(null);
+    
+    // Profile image states
+    const profileImageUrl = ref('');
+    const uploadingImage = ref(false);
 
     // Tabs configuration
     const tabs = ref([
@@ -472,6 +496,7 @@ export default {
     onMounted(async () => {
       await fetchUserProfile();
       await fetchBarangays();
+      await fetchProfileImage();
     });
 
     const fetchUserProfile = async () => {
@@ -526,6 +551,135 @@ export default {
       }
     };
 
+    // Profile image functions
+    const fetchProfileImage = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const profilesCollection = collection(db, 'profiles');
+        const q = query(profilesCollection, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const profileDoc = querySnapshot.docs[0];
+          const profileData = profileDoc.data();
+          profileImageUrl.value = profileData.imageUrl;
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    const triggerFileInput = () => {
+      fileInput.value?.click();
+    };
+
+    const handleImageUpload = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.add({
+          severity: 'error',
+          summary: 'Invalid File',
+          detail: 'Please select an image file',
+          life: 3000
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.add({
+          severity: 'error',
+          summary: 'File Too Large',
+          detail: 'Please select an image smaller than 5MB',
+          life: 3000
+        });
+        return;
+      }
+
+      uploadingImage.value = true;
+
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        // Create a unique filename
+        const timestamp = Date.now();
+        const fileName = `${user.uid}_${timestamp}_${file.name}`;
+        const imageRef = storageRef(storage, `profile-images/${fileName}`);
+
+        // Upload the file
+        const snapshot = await uploadBytes(imageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        // Check if user already has a profile image record
+        const profilesCollection = collection(db, 'profiles');
+        const q = query(profilesCollection, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+
+        const profileData = {
+          userId: user.uid,
+          userName: `${userProfile.value.firstName} ${userProfile.value.lastName}`,
+          barangay: userProfile.value.barangay,
+          referenceCode: userProfile.value.referenceCode,
+          imageUrl: downloadURL,
+          fileName: fileName,
+          uploadedAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        if (!querySnapshot.empty) {
+          // Update existing profile image record
+          const existingDoc = querySnapshot.docs[0];
+          const existingData = existingDoc.data();
+          
+          // Delete old image from storage if it exists
+          if (existingData.fileName) {
+            try {
+              const oldImageRef = storageRef(storage, `profile-images/${existingData.fileName}`);
+              await deleteObject(oldImageRef);
+            } catch (deleteError) {
+              console.warn('Could not delete old image:', deleteError);
+            }
+          }
+
+          await updateDoc(doc(db, 'profiles', existingDoc.id), profileData);
+        } else {
+          // Create new profile image record
+          await addDoc(profilesCollection, profileData);
+        }
+
+        // Update the displayed image
+        profileImageUrl.value = downloadURL;
+
+        toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Profile picture updated successfully',
+          life: 3000
+        });
+
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.add({
+          severity: 'error',
+          summary: 'Upload Failed',
+          detail: 'Failed to upload profile picture: ' + error.message,
+          life: 3000
+        });
+      } finally {
+        uploadingImage.value = false;
+        // Clear the file input
+        if (fileInput.value) {
+          fileInput.value.value = '';
+        }
+      }
+    };
+
     // Form submission handlers
     const savePersonalInfo = async () => {
       try {
@@ -543,11 +697,23 @@ export default {
           dateOfBirth: userProfile.value.dateOfBirth,
           birthplace: userProfile.value.birthplace,
           gender: userProfile.value.gender,
-          // barangay is not included here as it should not be editable
           address: userProfile.value.address,
           updatedAt: new Date(),
           updatedBy: user.uid
         });
+
+        // Update profile collection if name changed
+        const profilesCollection = collection(db, 'profiles');
+        const q = query(profilesCollection, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const profileDoc = querySnapshot.docs[0];
+          await updateDoc(doc(db, 'profiles', profileDoc.id), {
+            userName: `${userProfile.value.firstName} ${userProfile.value.lastName}`,
+            updatedAt: new Date()
+          });
+        }
         
         toast.add({
           severity: 'success',
@@ -732,6 +898,10 @@ export default {
       userStore,
       db,
       auth,
+      storage,
+      fileInput,
+      profileImageUrl,
+      uploadingImage,
       tabs,
       activeTab,
       barangays,
@@ -753,6 +923,9 @@ export default {
       notificationOptions,
       fetchUserProfile,
       fetchBarangays,
+      fetchProfileImage,
+      triggerFileInput,
+      handleImageUpload,
       savePersonalInfo,
       saveSoloParentInfo,
       changePassword,
@@ -825,6 +998,11 @@ export default {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.change-photo-btn:hover {
+  background-color: #7020c0;
 }
 
 .profile-name {
@@ -842,6 +1020,48 @@ export default {
   margin: 4px 0 0 0;
   font-size: 14px;
   color: #666;
+}
+
+.upload-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.upload-spinner {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #8528d8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.upload-spinner p {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
 }
 
 .settings-container {

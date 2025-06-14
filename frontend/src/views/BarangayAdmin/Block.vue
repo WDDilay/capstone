@@ -50,22 +50,22 @@
     <!-- Blocked Members List -->
     <div v-else class="bg-white rounded-lg shadow-md overflow-hidden">
       <!-- Table Header -->
-      <div class="hidden md:grid grid-cols-5 gap-4 p-4 bg-gray-50 border-b">
+      <div class="hidden md:grid grid-cols-6 gap-4 p-4 bg-gray-50 border-b">
         <div class="font-medium text-gray-700">Name</div>
         <div class="font-medium text-gray-700">Email</div>
         <div class="font-medium text-gray-700">Barangay</div>
         <div class="font-medium text-gray-700">Blocked Date</div>
-        <div class="font-medium text-gray-700">Actions</div>
+        <div class="font-medium text-gray-700 col-span-2">Actions</div>
       </div>
       
       <!-- Table Body (Desktop) -->
       <div class="hidden md:block">
-        <div v-for="member in paginatedMembers" :key="member.id" class="grid grid-cols-5 gap-4 p-4 border-b hover:bg-gray-50">
+        <div v-for="member in paginatedMembers" :key="member.id" class="grid grid-cols-6 gap-4 p-4 border-b hover:bg-gray-50">
           <div>{{ formatFullName(member) }}</div>
           <div>{{ member.email || 'N/A' }}</div>
           <div>{{ member.barangay }}</div>
           <div>{{ formatDate(member.blockedAt) }}</div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 col-span-2">
             <button 
               @click="viewMember(member)" 
               class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
@@ -79,6 +79,13 @@
               title="Restore Member"
             >
               <RefreshCw class="w-5 h-5" />
+            </button>
+            <button 
+              @click="confirmPermanentDelete(member)" 
+              class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+              title="Delete Permanently"
+            >
+              <Trash2 class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -105,6 +112,13 @@
               title="Restore Member"
             >
               <RefreshCw class="w-5 h-5" />
+            </button>
+            <button 
+              @click="confirmPermanentDelete(member)" 
+              class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+              title="Delete Permanently"
+            >
+              <Trash2 class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -181,6 +195,13 @@
               <RefreshCw class="w-5 h-5" />
               <span>Restore Member</span>
             </button>
+            <button
+              @click="confirmPermanentDelete(selectedMember)"
+              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+            >
+              <Trash2 class="w-5 h-5" />
+              <span>Delete Permanently</span>
+            </button>
           </div>
         </div>
       </div>
@@ -195,7 +216,7 @@
           </div>
           <h3 class="text-lg font-medium text-gray-900 mb-2">Restore Member Account</h3>
           <p class="text-sm text-gray-500 mb-6">
-            Are you sure you want to restore {{ formatFullName(memberToRestore) }}? This will allow them to log in again.
+            Are you sure you want to restore {{ formatFullName(memberToRestore) }}? This will allow them to log in again and their data will be moved back to the active members list.
           </p>
           <div class="flex justify-center gap-3">
             <button
@@ -211,6 +232,42 @@
             >
               <span v-if="isProcessing">Processing...</span>
               <span v-else>Restore Member</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permanent Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <AlertTriangle class="h-6 w-6 text-red-600" />
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Delete Member Permanently</h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Are you really sure you want to delete {{ formatFullName(memberToDelete) }} permanently? This action cannot be undone and all their data will be lost forever.
+          </p>
+          <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+            <p class="text-sm text-yellow-800">
+              <strong>Warning:</strong> This will permanently remove all records of this member from the system. Consider using the restore function instead if they might be eligible again in the future.
+            </p>
+          </div>
+          <div class="flex justify-center gap-3">
+            <button
+              @click="showDeleteModal = false"
+              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              @click="permanentlyDeleteMember"
+              :disabled="isProcessing"
+              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center"
+            >
+              <span v-if="isProcessing">Deleting...</span>
+              <span v-else>Delete Permanently</span>
             </button>
           </div>
         </div>
@@ -234,7 +291,8 @@ import {
   deleteDoc, 
   addDoc, 
   serverTimestamp,
-  setDoc
+  setDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { 
   Search, 
@@ -243,7 +301,9 @@ import {
   ChevronRight,
   X,
   RefreshCw,
-  UserX
+  UserX,
+  Trash2,
+  AlertTriangle
 } from 'lucide-vue-next';
 
 // State
@@ -261,6 +321,8 @@ const showViewModal = ref(false);
 const selectedMember = ref(null);
 const showRestoreModal = ref(false);
 const memberToRestore = ref(null);
+const showDeleteModal = ref(false);
+const memberToDelete = ref(null);
 
 // Format full name
 const formatFullName = (user) => {
@@ -311,6 +373,8 @@ const fetchBlockedMembers = async () => {
       throw new Error('No authenticated user found');
     }
     
+    console.log('Current user:', user.uid);
+    
     // Check user role (can be either FederationPresident or BarangayPresident)
     let userRole = '';
     let userBarangay = '';
@@ -321,6 +385,7 @@ const fetchBlockedMembers = async () => {
     
     if (adminDoc.exists() && adminDoc.data().role === 'FederationPresident') {
       userRole = 'FederationPresident';
+      console.log('User is FederationPresident');
     } else {
       // Check if user is BarangayPresident
       const barangayPresidentDocRef = doc(db, 'barangay_presidents', user.uid);
@@ -329,6 +394,7 @@ const fetchBlockedMembers = async () => {
       if (barangayPresidentDoc.exists() && barangayPresidentDoc.data().role === 'BarangayPresident') {
         userRole = 'BarangayPresident';
         userBarangay = barangayPresidentDoc.data().barangay;
+        console.log('User is BarangayPresident for:', userBarangay);
       }
     }
     
@@ -351,6 +417,7 @@ const fetchBlockedMembers = async () => {
     }
     
     const unsubscribe = onSnapshot(blockedMembersQuery, (snapshot) => {
+      console.log('Blocked members snapshot received, count:', snapshot.docs.length);
       blockedMembers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       isLoading.value = false;
     }, (err) => {
@@ -421,7 +488,18 @@ const confirmRestore = (member) => {
   }
 };
 
-// Restore member
+// Confirm permanent delete
+const confirmPermanentDelete = (member) => {
+  memberToDelete.value = member;
+  showDeleteModal.value = true;
+  
+  // If view modal is open, close it
+  if (showViewModal.value) {
+    showViewModal.value = false;
+  }
+};
+
+// Restore member - FIXED VERSION using batch operations
 const restoreMember = async () => {
   if (!memberToRestore.value) return;
   
@@ -431,9 +509,14 @@ const restoreMember = async () => {
   
   try {
     const member = memberToRestore.value;
+    console.log('Starting restore process for member:', member.id);
+    
+    // Use batch operations to ensure both operations succeed or fail together
+    const batch = writeBatch(db);
     
     // Check if member has previousId (original ID from users collection)
     const userId = member.previousId || member.id;
+    console.log('Restoring member with userId:', userId);
     
     // Prepare member data for users collection (remove blocked-specific fields)
     const { blockedAt, blockedBy, previousId, ...userData } = member;
@@ -442,21 +525,114 @@ const restoreMember = async () => {
     userData.status = 'Active';
     userData.updatedAt = serverTimestamp();
     
-    // Add back to users collection with original ID if possible
-    await setDoc(doc(db, 'users', userId), userData);
+    // Add to users collection
+    const userDocRef = doc(db, 'users', userId);
+    batch.set(userDocRef, userData);
     
     // Delete from blocked_members collection
-    await deleteDoc(doc(db, 'blocked_members', member.id));
+    const blockedMemberDocRef = doc(db, 'blocked_members', member.id);
+    batch.delete(blockedMemberDocRef);
+    
+    // Commit the batch
+    await batch.commit();
+    
+    console.log('Batch operation completed successfully');
+    
+    // Store restoration info for notification in data information page
+    const restoredMemberInfo = {
+      name: formatFullName(member),
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem('restoredMember', JSON.stringify(restoredMemberInfo));
     
     // Show success message
-    success.value = `${formatFullName(member)} has been restored successfully`;
+    success.value = `${formatFullName(member)} has been restored successfully and removed from blocked list`;
     
     // Close modal
     showRestoreModal.value = false;
     memberToRestore.value = null;
+    
+    console.log('Restore process completed successfully');
   } catch (err) {
     console.error('Error restoring member:', err);
-    error.value = 'Failed to restore member: ' + err.message;
+    console.error('Error details:', {
+      code: err.code,
+      message: err.message,
+      memberId: memberToRestore.value?.id
+    });
+    
+    if (err.code === 'permission-denied') {
+      error.value = 'Permission denied: You do not have permission to restore this member. Please check your Firebase security rules.';
+    } else {
+      error.value = 'Failed to restore member: ' + err.message;
+    }
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+// Permanently delete member - FIXED VERSION with better error handling
+const permanentlyDeleteMember = async () => {
+  if (!memberToDelete.value) return;
+  
+  isProcessing.value = true;
+  error.value = null;
+  success.value = null;
+  
+  try {
+    const member = memberToDelete.value;
+    console.log('Starting permanent delete process for member:', member.id);
+    console.log('Current user:', auth.currentUser?.uid);
+    
+    // Create document reference
+    const memberDocRef = doc(db, 'blocked_members', member.id);
+    
+    // Verify document exists before deletion
+    const memberDoc = await getDoc(memberDocRef);
+    if (!memberDoc.exists()) {
+      console.log('Document does not exist, treating as already deleted');
+      success.value = `${formatFullName(member)} has already been removed from the system`;
+      showDeleteModal.value = false;
+      memberToDelete.value = null;
+      return;
+    }
+    
+    console.log('Document exists, proceeding with deletion...');
+    
+    // Delete the document
+    await deleteDoc(memberDocRef);
+    
+    console.log('Delete operation completed successfully for member:', member.id);
+    
+    // Show success message
+    success.value = `${formatFullName(member)} has been permanently deleted from the system`;
+    
+    // Close modal
+    showDeleteModal.value = false;
+    memberToDelete.value = null;
+    
+    console.log('Permanent delete process completed successfully');
+  } catch (err) {
+    console.error('Error permanently deleting member:', err);
+    console.error('Error details:', {
+      code: err.code,
+      message: err.message,
+      memberId: memberToDelete.value?.id,
+      currentUser: auth.currentUser?.uid
+    });
+    
+    // Show specific error messages based on error type
+    if (err.code === 'permission-denied') {
+      error.value = 'Permission denied: You do not have permission to delete this member. Please check your Firebase security rules.';
+    } else if (err.code === 'not-found') {
+      success.value = `${formatFullName(memberToDelete.value)} was already removed from the system`;
+      showDeleteModal.value = false;
+      memberToDelete.value = null;
+    } else if (err.code === 'unavailable') {
+      error.value = 'Service unavailable: Please check your internet connection and try again.';
+    } else {
+      error.value = 'Failed to permanently delete member: ' + err.message;
+    }
   } finally {
     isProcessing.value = false;
   }
