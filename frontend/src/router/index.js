@@ -12,6 +12,7 @@ import About from '../views/LandPage/About.vue';
 import Login from '../views/auth/Login.vue';
 import Register from '../views/auth/Register.vue';
 import Membership from '../views/auth/Membership.vue';
+import PreMember from '../views/auth/Pre-member.vue';
 
 // User Page
 
@@ -34,6 +35,7 @@ import Notification from '../views/Superadmin/Notification.vue';
 import resources from '../views/Superadmin/resources.vue';
 import support from '../views/Superadmin/support.vue';
 import settings from '../views/Superadmin/settings.vue';
+import Preregister from '@/views/Superadmin/Preregister.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -46,6 +48,7 @@ import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
 import Block from '../views/BarangayAdmin/Block.vue';
 import { Apple } from 'lucide-vue-next';
+
 
 
 const routes = [
@@ -80,6 +83,12 @@ const routes = [
     path: '/register', 
     name: 'Membership', 
     component: Membership,
+    meta: { requiresAuth: false, allowedRoles: [] }
+  },
+   { 
+    path: '/pre-member', 
+    name: 'PreMember', 
+    component: PreMember,
     meta: { requiresAuth: false, allowedRoles: [] }
   },
   
@@ -134,6 +143,11 @@ const routes = [
       {
         path: 'settings', 
         component: settings,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'pre-register', 
+        component: Preregister,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
