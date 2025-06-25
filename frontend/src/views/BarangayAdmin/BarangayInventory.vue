@@ -277,6 +277,14 @@
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
+                    <button 
+                      v-if="request.status === 'Approved'" 
+                      @click="prefillMemberResourceForm(request)" 
+                      class="send-btn" 
+                      title="Send Resources"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m3 3 3 9-3 9 19-9Z"></path></svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -307,15 +315,33 @@
               </div>
 
               <div class="form-group">
-                <label for="memberID">Member ID <span class="required">*</span></label>
-                <input 
-                  id="memberID"
-                  v-model="memberResourceForm.memberID" 
-                  type="text" 
-                  required
-                  placeholder="Enter member ID"
-                  class="form-input"
-                >
+                <label for="referenceId">Reference ID <span class="required">*</span></label>
+                <div class="reference-input-container">
+                  <input 
+                    id="referenceId"
+                    v-model="memberResourceForm.referenceId" 
+                    type="text" 
+                    required
+                    placeholder="Enter reference ID or select from approved requests"
+                    class="form-input"
+                    @input="searchMemberRequests"
+                  >
+                  <div v-if="memberRequestSuggestions.length > 0" class="suggestions-dropdown">
+                    <div 
+                      v-for="suggestion in memberRequestSuggestions" 
+                      :key="suggestion.id"
+                      @click="selectMemberRequest(suggestion)"
+                      class="suggestion-item"
+                    >
+                      <div class="suggestion-main">
+                        <strong>{{ suggestion.referenceCode }}</strong> - {{ suggestion.userName }}
+                      </div>
+                      <div class="suggestion-sub">
+                        {{ suggestion.requestedItems.length }} item(s) requested
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="form-group">
@@ -497,9 +523,9 @@
                     {{ historySortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortHistory('memberID')">
-                  Member ID
-                  <span v-if="historySortField === 'memberID'" class="sort-icon">
+                <th @click="sortHistory('referenceId')">
+                  Reference ID
+                  <span v-if="historySortField === 'referenceId'" class="sort-icon">
                     {{ historySortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
@@ -514,7 +540,7 @@
               <tr v-for="history in filteredHistory" :key="history.id">
                 <td>{{ formatDate(history.distributionDate) }}</td>
                 <td>{{ history.memberName }}</td>
-                <td>{{ history.memberID }}</td>
+                <td>{{ history.referenceId }}</td>
                 <td>
                   <div class="resource-list">
                     <div 
@@ -552,8 +578,8 @@
                 <p>{{ selectedHistory.memberName }}</p>
               </div>
               <div class="detail-item">
-                <h3>Member ID</h3>
-                <p>{{ selectedHistory.memberID }}</p>
+                <h3>Reference ID</h3>
+                <p>{{ selectedHistory.referenceId }}</p>
               </div>
               <div class="detail-item">
                 <h3>Contact Number</h3>
@@ -813,16 +839,19 @@ const typeFilter = ref('');
 const sortField = ref('resourceName');
 const sortDirection = ref('asc');
 
-// Member Resource Form
+// Member Resource Form - Updated with referenceId
 const memberResourceForm = ref({
   memberName: '',
-  memberID: '',
+  referenceId: '', // Changed from memberID
   contactNumber: '',
   address: '',
   resources: [{ resourceId: '', quantity: 1 }],
   purpose: '',
   notes: ''
 });
+
+// Member request suggestions for autocomplete
+const memberRequestSuggestions = ref([]);
 
 // Member Requests
 const memberRequests = ref([]);
@@ -873,7 +902,7 @@ const getResourceTypeColor = (type, opacity = 1) => {
 
 // Computed property to check if member form is valid
 const isValidMemberForm = computed(() => {
-  if (!memberResourceForm.value.memberName || !memberResourceForm.value.memberID || !memberResourceForm.value.purpose) {
+  if (!memberResourceForm.value.memberName || !memberResourceForm.value.referenceId || !memberResourceForm.value.purpose) {
     return false;
   }
   
@@ -965,6 +994,86 @@ const checkAuthenticationAndBarangay = async () => {
   }
 };
 
+// Search member requests for autocomplete
+const searchMemberRequests = () => {
+  const searchTerm = memberResourceForm.value.referenceId.toLowerCase();
+  
+  if (searchTerm.length < 2) {
+    memberRequestSuggestions.value = [];
+    return;
+  }
+  
+  memberRequestSuggestions.value = memberRequests.value.filter(request => 
+    request.status === 'Approved' &&
+    (request.referenceCode.toLowerCase().includes(searchTerm) ||
+     request.userName.toLowerCase().includes(searchTerm))
+  ).slice(0, 5); // Limit to 5 suggestions
+};
+
+// Select member request from suggestions
+const selectMemberRequest = (request) => {
+  memberResourceForm.value.referenceId = request.referenceCode;
+  memberResourceForm.value.memberName = request.userName;
+  memberResourceForm.value.contactNumber = request.contactNumber || '';
+  memberResourceForm.value.address = request.deliveryAddress || '';
+  
+  // Clear suggestions
+  memberRequestSuggestions.value = [];
+  
+  // Optionally prefill resources based on the request
+  if (request.requestedItems && request.requestedItems.length > 0) {
+    memberResourceForm.value.resources = request.requestedItems.map(item => ({
+      resourceId: '', // Will need to be matched manually
+      quantity: item.quantity
+    }));
+  }
+};
+
+// Prefill member resource form from approved request
+const prefillMemberResourceForm = (request) => {
+  memberResourceForm.value.memberName = request.userName;
+  memberResourceForm.value.referenceId = request.referenceCode;
+  memberResourceForm.value.contactNumber = request.contactNumber || '';
+  memberResourceForm.value.address = request.deliveryAddress || '';
+  memberResourceForm.value.purpose = `Distribution for approved request: ${request.referenceCode}`;
+  
+  // Try to match requested items with available resources
+  const matchedResources = [];
+  
+  if (request.requestedItems && request.requestedItems.length > 0) {
+    request.requestedItems.forEach(requestedItem => {
+      // Find matching available resource
+      const matchingResource = availableResources.value.find(resource => 
+        resource.resourceName.toLowerCase() === requestedItem.resourceName.toLowerCase() &&
+        resource.resourceType === requestedItem.resourceType &&
+        resource.remainingQuantity >= requestedItem.quantity
+      );
+      
+      if (matchingResource) {
+        matchedResources.push({
+          resourceId: matchingResource.id,
+          quantity: Math.min(requestedItem.quantity, matchingResource.remainingQuantity)
+        });
+      } else {
+        // Add empty resource slot if no match found
+        matchedResources.push({
+          resourceId: '',
+          quantity: requestedItem.quantity
+        });
+      }
+    });
+  }
+  
+  if (matchedResources.length > 0) {
+    memberResourceForm.value.resources = matchedResources;
+  }
+  
+  // Switch to member resource tab
+  activeTab.value = 'member';
+  
+  showNotification('Form prefilled with approved request data. Please review and adjust as needed.', 'info');
+};
+
 // Fetch available resources from request_history
 const fetchAvailableResources = async () => {
   isLoading.value = true;
@@ -1045,7 +1154,7 @@ const fetchAvailableResources = async () => {
 // Update remaining quantities based on member_history
 const updateRemainingQuantities = async (resources) => {
   try {
-    const memberHistoryCollection = collection(db, 'Member_history');
+    const memberHistoryCollection = collection(db, 'member_history'); // Updated collection name
     const q = query(
       memberHistoryCollection,
       where('barangay', '==', currentBarangay.value)
@@ -1186,16 +1295,17 @@ const updateResourceDetails = (index) => {
 const resetMemberResourceForm = () => {
   memberResourceForm.value = {
     memberName: '',
-    memberID: '',
+    referenceId: '', // Updated field name
     contactNumber: '',
     address: '',
     resources: [{ resourceId: '', quantity: 1 }],
     purpose: '',
     notes: ''
   };
+  memberRequestSuggestions.value = [];
 };
 
-// Submit member resource form
+// Submit member resource form - Updated to use member_history collection
 const submitMemberResourceForm = async () => {
   if (!isValidMemberForm.value) {
     showNotification('Please fill in all required fields correctly', 'error');
@@ -1218,19 +1328,20 @@ const submitMemberResourceForm = async () => {
       };
     });
     
-    // Create distribution record
-    const memberHistoryCollection = collection(db, 'Member_history');
+    // Create distribution record in member_history collection
+    const memberHistoryCollection = collection(db, 'member_history');
     await addDoc(memberHistoryCollection, {
       barangay: currentBarangay.value,
       memberName: memberResourceForm.value.memberName,
-      memberID: memberResourceForm.value.memberID,
+      referenceId: memberResourceForm.value.referenceId, // Updated field name
       contactNumber: memberResourceForm.value.contactNumber,
       address: memberResourceForm.value.address,
       resources: resources,
       purpose: memberResourceForm.value.purpose,
       notes: memberResourceForm.value.notes,
       distributionDate: serverTimestamp(),
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      distributedBy: currentBarangay.value // Track which barangay president distributed
     });
     
     showNotification('Resources successfully sent to member', 'success');
@@ -1390,7 +1501,7 @@ const updateRequestStatus = async (request, newStatus) => {
   }
 };
 
-// Load member history
+// Load member history - Updated to use member_history collection
 const loadMemberHistory = async () => {
   isLoadingHistory.value = true;
   
@@ -1400,7 +1511,7 @@ const loadMemberHistory = async () => {
       await checkAuthenticationAndBarangay();
     }
     
-    const memberHistoryCollection = collection(db, 'Member_history');
+    const memberHistoryCollection = collection(db, 'member_history'); // Updated collection name
     const q = query(
       memberHistoryCollection,
       where('barangay', '==', currentBarangay.value),
@@ -1425,7 +1536,7 @@ const loadMemberHistory = async () => {
       stats.value[2].value = history.length.toString();
       
       // Count unique members served
-      const uniqueMembers = new Set(history.map(item => item.memberID));
+      const uniqueMembers = new Set(history.map(item => item.referenceId));
       stats.value[3].value = uniqueMembers.size.toString();
       
       isLoadingHistory.value = false;
@@ -1450,7 +1561,7 @@ const filterHistory = () => {
   filteredHistory.value = memberHistory.value.filter(history => {
     const matchesSearch = 
       history.memberName.toLowerCase().includes(search) ||
-      history.memberID.toLowerCase().includes(search) ||
+      history.referenceId.toLowerCase().includes(search) ||
       (history.purpose && history.purpose.toLowerCase().includes(search));
     
     // Check if any resource matches the type filter
@@ -1522,6 +1633,13 @@ watch(activeTab, (newTab) => {
     loadMemberRequests();
   } else if (newTab === 'history') {
     loadMemberHistory();
+  }
+});
+
+// Clear suggestions when clicking outside
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.reference-input-container')) {
+    memberRequestSuggestions.value = [];
   }
 });
 </script>
@@ -1644,6 +1762,59 @@ watch(activeTab, (newTab) => {
   font-size: 1.25rem;
   cursor: pointer;
   color: inherit;
+}
+
+/* Reference Input Container with Suggestions */
+.reference-input-container {
+  position: relative;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.suggestion-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-main {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-sub {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Send Button */
+.send-btn {
+  color: #10B981;
+}
+
+.send-btn:hover {
+  background-color: rgba(16, 185, 129, 0.1);
 }
 
 /* Error Container */
@@ -2058,7 +2229,7 @@ watch(activeTab, (newTab) => {
   gap: 0.5rem;
 }
 
-.view-btn, .approve-btn, .reject-btn {
+.view-btn, .approve-btn, .reject-btn, .send-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -2081,7 +2252,11 @@ watch(activeTab, (newTab) => {
   color: #EF4444;
 }
 
-.view-btn:hover, .approve-btn:hover, .reject-btn:hover {
+.send-btn {
+  color: #10B981;
+}
+
+.view-btn:hover, .approve-btn:hover, .reject-btn:hover, .send-btn:hover {
   background-color: rgba(0,0,0,0.05);
 }
 
@@ -2265,6 +2440,13 @@ watch(activeTab, (newTab) => {
     flex-direction: column;
     width: 100%;
     margin-bottom: 1rem;
+  }
+
+  .suggestions-dropdown {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: auto;
   }
 }
 </style>
