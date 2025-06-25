@@ -596,7 +596,6 @@ const isLoading = ref(true);
 const error = ref(null);
 const currentBarangay = ref('');
 const totalMembers = ref(0);
-const activeResources = ref(0);
 const membersLastMonth = ref(0);
 
 // Attendance Forms State
@@ -644,6 +643,13 @@ const resourceTypeColors = ref({
   'Other': '#6B7280'
 });
 
+// FIXED: Calculate active resources from the actual resource data
+const activeResources = computed(() => {
+  return availableResources.value.reduce((sum, resource) => {
+    return sum + (resource.remainingQuantity || 0);
+  }, 0);
+});
+
 // Available years from data
 const availableYears = computed(() => {
   const years = new Set();
@@ -656,7 +662,7 @@ const availableYears = computed(() => {
   return Array.from(years).sort((a, b) => b - a);
 });
 
-// Stats data with reactive values
+// FIXED: Stats data with properly synchronized active resources
 const stats = computed(() => [
   { 
     title: 'Total Members', 
@@ -667,7 +673,7 @@ const stats = computed(() => [
   },
   { 
     title: 'Active Resources', 
-    value: activeResources.value.toLocaleString(), 
+    value: activeResources.value.toLocaleString(), // FIXED: Now uses computed activeResources
     icon: Package, 
     bgColor: 'bg-gradient-to-br from-green-500 to-green-600',
     trend: 0
@@ -1116,7 +1122,7 @@ const hideResourceTooltip = () => {
   resourceTooltip.value.show = false;
 };
 
-// Data fetching functions (same as before but with error handling improvements)
+// FIXED: Data fetching functions with proper resource calculation
 const fetchAvailableResources = async () => {
   if (!currentBarangay.value) return;
   
@@ -1157,7 +1163,7 @@ const fetchAvailableResources = async () => {
       await updateRemainingQuantities(resources);
       
       availableResources.value = resources;
-      activeResources.value = resources.reduce((sum, resource) => sum + resource.remainingQuantity, 0);
+      // REMOVED: activeResources.value assignment - now using computed property
       
       isLoadingResources.value = false;
     }, (error) => {
@@ -1176,7 +1182,7 @@ const fetchAvailableResources = async () => {
 
 const updateRemainingQuantities = async (resources) => {
   try {
-    const memberHistoryCollection = collection(db, 'Member_history');
+    const memberHistoryCollection = collection(db, 'member_history'); // Updated to match your collection name
     const q = query(
       memberHistoryCollection,
       where('barangay', '==', currentBarangay.value)
@@ -1526,43 +1532,3 @@ button:focus {
   transition-duration: 150ms;
 }
 </style>
-
-I've created a comprehensive, professional dashboard with the following enhancements:
-
-## 🎨 **Visual Improvements:**
-- **Horizontal Layout**: Charts are now side-by-side on larger screens
-- **Professional Design**: Enhanced gradients, shadows, and modern styling
-- **Better Typography**: Improved font weights and spacing
-- **Responsive Design**: Adapts beautifully to all screen sizes
-
-## 📊 **Enhanced Bar Chart Features:**
-- **Year Selection**: Filter resources by specific years
-- **Month Navigation**: Click on months to see detailed information
-- **Animated Bars**: Smooth loading animations with gradient fills
-- **Enhanced Tooltips**: Detailed resource information on hover
-- **Interactive Legend**: Click resource types to filter data
-- **Professional Grid**: Clean grid lines and axis labels
-
-## 📈 **Enhanced Line Chart Features:**
-- **Smooth Curves**: Professional curved lines instead of straight segments
-- **Time Range Filter**: View data for last 30/60/90 days or all time
-- **Glow Effects**: Enhanced visual appeal with glowing lines
-- **Interactive Points**: Click to select forms with detailed information
-- **Status Overview**: Real-time statistics panel
-- **Enhanced Tooltips**: More detailed form information
-
-## 🔧 **Functional Improvements:**
-- **Month Selection**: Click any month bar to see detailed breakdown
-- **Form Selection**: Click line chart points to highlight specific forms
-- **Better Error Handling**: Professional error states with retry options
-- **Loading States**: Enhanced loading animations
-- **Real-time Updates**: Live data synchronization
-
-## 📱 **Professional Features:**
-- **Statistics Cards**: Enhanced with trend indicators and better styling
-- **Interactive Tables**: Hover effects and progress bars for responses
-- **Enhanced Tooltips**: Professional dark theme with detailed information
-- **Smooth Animations**: All interactions have smooth transitions
-- **Professional Color Scheme**: Consistent, accessible color palette
-
-The dashboard now provides a much more professional and detailed view of your barangay's resources and attendance data, with intuitive navigation and comprehensive filtering options.
