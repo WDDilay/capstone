@@ -74,8 +74,7 @@
           <h3>No attendance forms available today</h3>
           <p>There are no events requiring attendance today</p>
 
-          <!-- Add this debug button -->
-          <button @click="debugForms" class="debug-btn">Debug Forms</button>
+         
         </div>
 
         <div v-else class="forms-grid">
