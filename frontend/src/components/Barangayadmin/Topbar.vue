@@ -43,10 +43,18 @@
               Loading notifications...
             </div>
             
+            <!-- No Barangay Found -->
+            <div v-else-if="!currentUserBarangay" class="p-4 text-center text-red-500">
+              <i class="pi pi-exclamation-triangle text-2xl mb-2 block"></i>
+              <p class="font-medium">No barangay detected</p>
+              <p class="text-xs mt-1">Please check if currentbarangayuser is set</p>
+            </div>
+            
             <!-- No Notifications -->
             <div v-else-if="notifications.length === 0" class="p-4 text-center text-gray-500">
               <i class="pi pi-bell-slash text-2xl mb-2 block"></i>
-              No notifications yet
+              No notifications for {{ currentUserBarangay }}
+              <p class="text-xs mt-2">Waiting for resources sent to your barangay...</p>
             </div>
             
             <!-- Notifications List -->
@@ -89,7 +97,12 @@
       
       <div class="flex items-center gap-2">
         <span class="hidden sm:inline">{{ userName }}</span>
-        <i class="pi pi-user text-xl"></i>
+        <div class="flex items-center gap-1">
+          <i class="pi pi-user text-xl"></i>
+          <span v-if="currentUserBarangay" class="text-xs bg-primary-700 px-2 py-1 rounded">
+            {{ currentUserBarangay }}
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -163,11 +176,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue';
 import Button from 'primevue/button';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 
 defineProps({
   title: {
@@ -178,6 +191,7 @@ defineProps({
 
 // User state
 const userName = ref('User');
+const currentUserBarangay = ref('');
 
 // Notification state
 const showNotifications = ref(false);
@@ -186,6 +200,47 @@ const selectedNotification = ref(null);
 const notifications = ref([]);
 const isLoadingNotifications = ref(false);
 const notificationListener = ref(null);
+
+// Try to get the current barangay from various sources
+const getCurrentBarangay = () => {
+  // Method 1: Try to access global/injected variables
+  try {
+    // Try common variable names that might exist in your app
+    const possibleSources = [
+      window.currentbarangayuser,
+      window.currentBarangay,
+      window.userBarangay,
+      // Add more possible global variable names here
+    ];
+
+    for (const source of possibleSources) {
+      if (source) {
+        return source;
+      }
+    }
+  } catch (error) {
+  }
+
+  // Method 2: Try to inject from parent component
+  try {
+    const injectedBarangay = inject('currentBarangay', null);
+    if (injectedBarangay) {
+      return injectedBarangay;
+    }
+  } catch (error) {
+  }
+
+  // Method 3: Check if it's stored in localStorage (as a fallback)
+  try {
+    const storedBarangay = localStorage.getItem('currentBarangay') || localStorage.getItem('userBarangay');
+    if (storedBarangay) {
+      return storedBarangay;
+    }
+  } catch (error) {
+  }
+
+  return null;
+};
 
 // Calculate unread notifications count
 const unreadCount = computed(() => {
@@ -256,33 +311,44 @@ const createNotificationFromRequest = (requestData, requestId) => {
 
 // Setup Firebase listener for notifications
 const setupNotificationListener = () => {
+  if (!currentUserBarangay.value) {
+    isLoadingNotifications.value = false;
+    return;
+  }
+
   isLoadingNotifications.value = true;
 
   try {
-    // Query for all requests - you'll need to filter by barangay based on your existing logic
+    if (notificationListener.value) {
+      notificationListener.value();
+    }
+
     const q = query(
       collection(db, 'request_history'),
+      where('barangay', '==', currentUserBarangay.value),
       orderBy('createdAt', 'desc'),
-      limit(50) // Get more to allow for filtering
+      limit(20)
     );
 
     notificationListener.value = onSnapshot(q, (snapshot) => {
-      const allNotifications = [];
+      
+      const barangayNotifications = [];
       
       snapshot.forEach((doc) => {
-        const notification = createNotificationFromRequest(doc.data(), doc.id);
-        allNotifications.push(notification);
+        const data = doc.data();
+        const notification = createNotificationFromRequest(data, doc.id);
+        barangayNotifications.push(notification);
       });
 
-      // Sort by timestamp (newest first)
-      allNotifications.sort((a, b) => {
+      barangayNotifications.sort((a, b) => {
         const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0);
         const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0);
         return timeB - timeA;
       });
 
-      notifications.value = allNotifications;
+      notifications.value = barangayNotifications;
       isLoadingNotifications.value = false;
+      
     }, (error) => {
       console.error('Error listening to notifications:', error);
       isLoadingNotifications.value = false;
@@ -301,13 +367,11 @@ const toggleNotifications = () => {
 
 // Handle notification click
 const handleNotificationClick = (notification) => {
-  // Mark as read
   if (!notification.read) {
     notification.read = true;
     markNotificationAsRead(notification.id);
   }
   
-  // Show details modal
   selectedNotification.value = notification;
   showNotificationModal.value = true;
   showNotifications.value = false;
@@ -330,7 +394,6 @@ const markAllAsRead = () => {
 // Handle view all notifications
 const handleViewAll = () => {
   showNotifications.value = false;
-  console.log('Navigate to notifications page');
 };
 
 // Get status styling class
@@ -372,15 +435,18 @@ const updateUserName = () => {
 onMounted(() => {
   document.addEventListener('keydown', handleEscKey);
   
-  // Set up auth state listener
+  // Get current barangay
+  const barangay = getCurrentBarangay();
+  if (barangay) {
+    currentUserBarangay.value = barangay;
+  }
+  
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     updateUserName();
     
-    if (user) {
-      // Setup notification listener when user is authenticated
+    if (user && currentUserBarangay.value) {
       setupNotificationListener();
     } else {
-      // Clear notifications when user logs out
       notifications.value = [];
       if (notificationListener.value) {
         notificationListener.value();
@@ -389,13 +455,12 @@ onMounted(() => {
     }
   });
   
-  // Initial check for current user
   updateUserName();
-  if (auth.currentUser) {
+  
+  if (auth.currentUser && currentUserBarangay.value) {
     setupNotificationListener();
   }
   
-  // Clean up on unmount
   onUnmounted(() => {
     document.removeEventListener('keydown', handleEscKey);
     if (notificationListener.value) {
@@ -403,6 +468,13 @@ onMounted(() => {
     }
     unsubscribe();
   });
+});
+
+// Watch for changes in currentUserBarangay
+watch(currentUserBarangay, (newBarangay, oldBarangay) => {
+  if (newBarangay !== oldBarangay && newBarangay) {
+    setupNotificationListener();
+  }
 });
 </script>
 
