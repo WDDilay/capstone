@@ -75,6 +75,7 @@ import {
   Calendar, 
   User, 
   FileText, 
+  ClipboardCheck,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -111,7 +112,7 @@ const navItems = [
   { 
     title: 'Attendance', 
     path: '/user-dashboard/Attendance', 
-    icon: FileText 
+    icon:  ClipboardCheck 
   },
   { 
     title: 'Settings', 

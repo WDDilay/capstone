@@ -1,8 +1,6 @@
-```vue type="vue" project="Solo Parent Application" file="Application.vue"
-[v0-no-op-code-block-prefix]\`\`\`vue type="vue" project="Solo Parent Application" file="Application.vue"
-[v0-no-op-code-block-prefix]<script setup>
+<script setup>
 import { ref, computed, onMounted } from "vue"
-import { db, auth } from "@/services/firebase" // Ensure Firebase is configured correctly
+import { db, auth } from "@/services/firebase"
 import {
   collection,
   getDocs,
@@ -54,7 +52,6 @@ const formatDate = (timestamp) => {
   if (!timestamp) return "N/A"
 
   try {
-    // Handle Firestore Timestamp
     const date =
       timestamp instanceof Timestamp
         ? timestamp.toDate()
@@ -75,23 +72,48 @@ const formatDate = (timestamp) => {
   }
 }
 
+// Helper function to check if file is an image
+const isImageFile = (filename) => {
+  if (!filename) return false
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+  const lowerFilename = filename.toLowerCase()
+  return imageExtensions.some(ext => lowerFilename.includes(ext))
+}
+
+// Helper function to get attachment URL
+const getAttachmentUrl = (attachmentRef) => {
+  if (!attachmentRef) return ''
+  
+  // If it's already a full URL, return as is
+  if (attachmentRef.startsWith('http')) {
+    return attachmentRef
+  }
+  
+  // If it's a Firebase Storage reference, construct the URL
+  // Replace 'your-project-id' with your actual Firebase project ID
+  return `https://firebasestorage.googleapis.com/v0/b/your-project-id.appspot.com/o/${encodeURIComponent(attachmentRef)}?alt=media`
+}
+
+// Handle image loading errors
+const handleImageError = (event) => {
+  console.error('Error loading image:', event.target.src)
+  event.target.style.display = 'none'
+}
+
 // Fetch applications from Firestore
 const fetchApplications = async () => {
   try {
-    // First, verify that the current user is in the admins collection with the correct role
     const user = auth.currentUser
     if (!user) {
       throw new Error("No authenticated user found")
     }
 
-    // Check if user is in admins collection with FederationPresident role
     const adminDocRef = doc(db, "admins", user.uid)
     const adminDoc = await getDoc(adminDocRef)
 
     if (!adminDoc.exists()) {
       console.error("User not found in admins collection")
-      error.value =
-        "Your user account is not properly set up as a Federation President. Please contact the system administrator."
+      error.value = "Your user account is not properly set up as a Federation President. Please contact the system administrator."
       return null
     }
 
@@ -104,15 +126,14 @@ const fetchApplications = async () => {
 
     console.log("User verified as FederationPresident:", user.uid)
 
-    // Now fetch applications
     const unsubscribe = onSnapshot(collection(db, "applications"), (snapshot) => {
       applications.value = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((app) => app.status === "Pending" || !app.status) // Only show pending applications
+        .filter((app) => app.status === "Pending" || !app.status)
 
-      sortApplications() // Sort initially
+      sortApplications()
     })
-    return unsubscribe // Return unsubscribe function for cleanup
+    return unsubscribe
   } catch (error) {
     console.error("Error fetching applications:", error)
     error.value = "Error fetching applications: " + error.message
@@ -132,15 +153,12 @@ const toggleSort = (field) => {
   const actualField = field === "date" ? "createdAt" : field
 
   if (sortField.value === actualField) {
-    // Toggle direction if same field
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc"
   } else {
-    // New field, default to ascending
     sortField.value = actualField
     sortDirection.value = "asc"
   }
 
-  // Update the select dropdown to match
   const displayField = actualField === "createdAt" ? "date" : actualField
   sortOption.value = `${displayField}-${sortDirection.value}`
   sortApplications()
@@ -157,7 +175,6 @@ const sortApplications = () => {
       valueA = formatFullName(a).toLowerCase()
       valueB = formatFullName(b).toLowerCase()
     } else if (field === "createdAt") {
-      // Handle date sorting
       valueA = a[field] instanceof Timestamp ? a[field].toMillis() : a[field]?.seconds ? a[field].seconds * 1000 : 0
       valueB = b[field] instanceof Timestamp ? b[field].toMillis() : b[field]?.seconds ? b[field].seconds * 1000 : 0
     } else {
@@ -230,18 +247,7 @@ const openRejectModal = (application) => {
 // Send email notification
 const sendEmailNotification = async (to, subject, body) => {
   try {
-    // This would typically call a server function or API endpoint
-    // For demonstration, we'll log the email details
     console.log("Sending email:", { to, subject, body })
-
-    // In a real implementation, you would call a Cloud Function or API
-    // Example:
-    // await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ to, subject, body })
-    // });
-
     return true
   } catch (error) {
     console.error("Error sending email:", error)
@@ -264,7 +270,6 @@ const acceptApplication = async () => {
       throw new Error("No authenticated user found")
     }
 
-    // Use a transaction to ensure atomicity
     await runTransaction(db, async (transaction) => {
       const applicationRef = doc(db, "applications", application.id)
       const applicationDoc = await transaction.get(applicationRef)
@@ -273,10 +278,8 @@ const acceptApplication = async () => {
         throw new Error("Application not found")
       }
 
-      // Use the same document ID for the user
       const userRef = doc(db, "users", application.id)
 
-      // Transfer all data, add role and status
       transaction.set(userRef, {
         ...applicationDoc.data(),
         role: "Member",
@@ -286,11 +289,9 @@ const acceptApplication = async () => {
         updatedBy: user.uid,
       })
 
-      // Delete the application document
       transaction.delete(applicationRef)
     })
 
-    // Send email notification (outside transaction)
     const emailSubject = "Your Solo Parent Application Has Been Approved"
     const emailBody = `
       Dear ${application.firstName},
@@ -306,7 +307,6 @@ const acceptApplication = async () => {
 
     showAcceptModal.value = false
 
-    // Remove from local list
     const index = applications.value.findIndex((a) => a.id === application.id)
     if (index !== -1) {
       applications.value.splice(index, 1)
@@ -319,7 +319,7 @@ const acceptApplication = async () => {
   }
 }
 
-// Reject application without using a transaction
+// Reject application
 const rejectApplication = async () => {
   rejectionSubmitted.value = true
 
@@ -337,7 +337,6 @@ const rejectApplication = async () => {
       throw new Error("No authenticated user found")
     }
 
-    // 1. Send email notification first (in case deletion fails, at least they get notified)
     const emailSubject = "Update on Your Solo Parent Application"
     const emailBody = `
       Dear ${application.firstName},
@@ -354,11 +353,9 @@ const rejectApplication = async () => {
 
     await sendEmailNotification(application.email, emailSubject, emailBody)
 
-    // 2. Delete the application document directly (no transaction)
     const applicationRef = doc(db, "applications", application.id)
     await deleteDoc(applicationRef)
 
-    // 3. If there's a corresponding user document, delete it too
     if (application.userId) {
       const userRef = doc(db, "users", application.userId)
       await deleteDoc(userRef)
@@ -369,10 +366,9 @@ const rejectApplication = async () => {
     rejectionReason.value = ""
     rejectionSubmitted.value = false
 
-    // Update local state to reflect the change
     const index = applications.value.findIndex((a) => a.id === application.id)
     if (index !== -1) {
-      applications.value.splice(index, 1) // Remove from the list
+      applications.value.splice(index, 1)
     }
   } catch (err) {
     console.error("Error rejecting application:", err)
@@ -386,12 +382,10 @@ const rejectApplication = async () => {
 onMounted(() => {
   const unsubscribe = fetchApplications()
 
-  // Cleanup on component unmount
   return () => {
     if (unsubscribe) unsubscribe()
   }
 })
-
 </script>
 
 <template>
@@ -537,6 +531,41 @@ onMounted(() => {
               <p><span class="font-medium">Solo Parent Reason:</span> {{ selectedApplication.soloParentReason }}</p>
               <p><span class="font-medium">Status:</span> {{ selectedApplication.status }}</p>
               <p><span class="font-medium">Applied on:</span> {{ formatDate(selectedApplication.createdAt) }}</p>
+            </div>
+          </div>
+
+          <!-- Solo Parent ID Information Section -->
+          <div v-if="selectedApplication.soloParentId || selectedApplication.soloParentIdAttachment" class="mt-4">
+            <h3 class="font-medium text-gray-700 mb-2">Solo Parent ID Information</h3>
+            <div class="bg-gray-50 p-4 rounded-lg space-y-2">
+              <p v-if="selectedApplication.soloParentId">
+                <span class="font-medium">Solo Parent ID:</span> {{ selectedApplication.soloParentId }}
+              </p>
+              <div v-if="selectedApplication.soloParentIdAttachment">
+                <p class="font-medium mb-2">Solo Parent ID Attachment:</p>
+                <div class="border border-gray-200 rounded-lg p-3 bg-white">
+                  <p class="text-sm text-gray-600 mb-2">File Reference: {{ selectedApplication.soloParentIdAttachment }}</p>
+                  <!-- If the attachment is an image, display it -->
+                  <div v-if="isImageFile(selectedApplication.soloParentIdAttachment)" class="mb-2">
+                    <img 
+                      :src="getAttachmentUrl(selectedApplication.soloParentIdAttachment)" 
+                      :alt="'Solo Parent ID for ' + formatFullName(selectedApplication)"
+                      class="max-w-full h-auto max-h-64 rounded border border-gray-200"
+                      @error="handleImageError"
+                    />
+                  </div>
+                  <!-- Download/View link -->
+                  <a 
+                    :href="getAttachmentUrl(selectedApplication.soloParentIdAttachment)" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <Eye class="w-4 h-4 mr-1" />
+                    View Attachment
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
           

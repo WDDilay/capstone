@@ -60,6 +60,34 @@ const formatDate = (timestamp) => {
   }
 };
 
+// Helper function to check if file is an image
+const isImageFile = (filename) => {
+  if (!filename) return false;
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+  const lowerFilename = filename.toLowerCase();
+  return imageExtensions.some(ext => lowerFilename.includes(ext));
+};
+
+// Helper function to get attachment URL
+const getAttachmentUrl = (attachmentRef) => {
+  if (!attachmentRef) return '';
+  
+  // If it's already a full URL, return as is
+  if (attachmentRef.startsWith('http')) {
+    return attachmentRef;
+  }
+  
+  // If it's a Firebase Storage reference, construct the URL
+  // Replace 'your-project-id' with your actual Firebase project ID
+  return `https://firebasestorage.googleapis.com/v0/b/your-project-id.appspot.com/o/${encodeURIComponent(attachmentRef)}?alt=media`;
+};
+
+// Handle image loading errors
+const handleImageError = (event) => {
+  console.error('Error loading image:', event.target.src);
+  event.target.style.display = 'none';
+};
+
 // Get status badge class
 const getStatusBadgeClass = (status) => {
   switch(status) {
@@ -387,6 +415,41 @@ onMounted(() => {
               <p><span class="font-medium">Solo Parent Reason:</span> {{ selectedApplication.soloParentReason }}</p>
               <p><span class="font-medium">Applied on:</span> {{ formatDate(selectedApplication.createdAt) }}</p>
               <p v-if="selectedApplication.updatedAt"><span class="font-medium">Last Updated:</span> {{ formatDate(selectedApplication.updatedAt) }}</p>
+            </div>
+          </div>
+
+          <!-- Solo Parent ID Information Section -->
+          <div v-if="selectedApplication.soloParentId || selectedApplication.soloParentIdAttachment" class="mt-4">
+            <h3 class="font-medium text-gray-700 mb-2">Solo Parent ID Information</h3>
+            <div class="bg-gray-50 p-4 rounded-lg space-y-2">
+              <p v-if="selectedApplication.soloParentId">
+                <span class="font-medium">Solo Parent ID:</span> {{ selectedApplication.soloParentId }}
+              </p>
+              <div v-if="selectedApplication.soloParentIdAttachment">
+                <p class="font-medium mb-2">Solo Parent ID Attachment:</p>
+                <div class="border border-gray-200 rounded-lg p-3 bg-white">
+                  <p class="text-sm text-gray-600 mb-2">File Reference: {{ selectedApplication.soloParentIdAttachment }}</p>
+                  <!-- If the attachment is an image, display it -->
+                  <div v-if="isImageFile(selectedApplication.soloParentIdAttachment)" class="mb-2">
+                    <img 
+                      :src="getAttachmentUrl(selectedApplication.soloParentIdAttachment)" 
+                      :alt="'Solo Parent ID for ' + formatFullName(selectedApplication)"
+                      class="max-w-full h-auto max-h-64 rounded border border-gray-200"
+                      @error="handleImageError"
+                    />
+                  </div>
+                  <!-- Download/View link -->
+                  <a 
+                    :href="getAttachmentUrl(selectedApplication.soloParentIdAttachment)" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <Eye class="w-4 h-4 mr-1" />
+                    View Attachment
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
           

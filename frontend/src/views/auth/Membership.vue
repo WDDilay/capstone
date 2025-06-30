@@ -444,6 +444,9 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth"
 import { doc, setDoc, collection, getDocs, serverTimestamp } from "firebase/firestore"
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"
+const storage = getStorage()
+
 
 const router = useRouter()
 const showPassword = ref(false)
@@ -579,112 +582,21 @@ const handleSoloParentIdChange = (event) => {
 }
 
 // Mock upload for solo parent ID attachment
-const mockUploadSoloParentId = async () => {
-  let soloParentIdUrl = null
+const uploadSoloParentId = async () => {
+  if (!soloParentIdAttachment.file) return null
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  // Create mock data for solo parent ID attachment
-  if (soloParentIdAttachment.file) {
-    soloParentIdUrl = `mock-solo-parent-id-${Date.now()}`
-  }
-
-  return soloParentIdUrl
-}
-
-// Send verification email
-const sendVerificationEmailToUser = async (user) => {
-  if (!user) {
-    console.error("User is undefined, cannot send verification email")
-    return false
-  }
+  const file = soloParentIdAttachment.file
+  const timestamp = Date.now()
+  const filePath = `attachments/solo-parent-id-${timestamp}-${file.name}`
+  const fileRef = storageRef(storage, filePath)
 
   try {
-    await sendEmailVerification(user)
-    console.log("Verification email sent successfully")
-    return true
+    const snapshot = await uploadBytes(fileRef, file)
+    const downloadURL = await getDownloadURL(snapshot.ref)
+    return downloadURL
   } catch (error) {
-    console.error("Error sending verification email:", error)
-    return false
-  }
-}
-
-// Resend verification email
-const resendVerificationEmail = async () => {
-  try {
-    if (!currentUser.value) {
-      // Sign in again to get the current user
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value)
-      currentUser.value = userCredential.user
-    }
-
-    await sendEmailVerification(currentUser.value)
-    toastInstance.add({
-      severity: "success",
-      summary: "Email Sent",
-      detail: "Verification email has been resent",
-      life: 3000,
-    })
-  } catch (error) {
-    console.error("Error resending verification email:", error)
-    toastInstance.add({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to resend verification email",
-      life: 3000,
-    })
-  }
-}
-
-// Check if user has verified their email
-const checkVerificationStatus = async () => {
-  try {
-    // Sign out and sign in again to refresh the user's auth state
-    await signOut(auth)
-    const userCredential = await signInWithEmailAndPassword(auth, formData.email, password.value)
-    const user = userCredential.user
-    currentUser.value = user
-
-    // Force refresh the token to get the latest emailVerified status
-    await user.reload()
-
-    if (user.emailVerified) {
-      try {
-        // Update the application status in Firestore
-        await setDoc(
-          doc(db, "applications", user.uid),
-          {
-            emailVerified: true,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        )
-
-        showVerificationDialog.value = false
-        showSuccessDialog.value = true
-      } catch (firestoreError) {
-        console.error("Error updating Firestore:", firestoreError)
-        // Still show success even if Firestore update fails
-        showVerificationDialog.value = false
-        showSuccessDialog.value = true
-      }
-    } else {
-      toastInstance.add({
-        severity: "warn",
-        summary: "Not Verified",
-        detail: "Your email is not verified yet. Please check your inbox.",
-        life: 3000,
-      })
-    }
-  } catch (error) {
-    console.error("Error checking verification status:", error)
-    toastInstance.add({
-      severity: "error",
-      summary: "Error",
-      detail: "Failed to check verification status",
-      life: 3000,
-    })
+    console.error("Error uploading Solo Parent ID:", error)
+    return null
   }
 }
 
@@ -699,69 +611,62 @@ const handleRegistration = async () => {
   try {
     console.log("Starting registration process...")
 
-    // 1. Create user in Firebase Authentication
+    // 1. Upload the Solo Parent ID attachment before creating user
+    console.log("Uploading Solo Parent ID...")
+    const soloParentIdUrl = await uploadSoloParentId()
+    console.log("Uploaded Solo Parent ID:", soloParentIdUrl)
+
+    // 2. Create user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, formData.email, password.value)
     const user = userCredential.user
     currentUser.value = user
-    console.log("User created in Authentication:", user.uid)
+    console.log("User created:", user.uid)
 
-    // Generate reference code
+    // 3. Generate Reference Code
     referenceCode.value = generateReferenceCode()
-    console.log("Generated reference code:", referenceCode.value)
+    console.log("Reference code:", referenceCode.value)
 
-    // 2. Handle solo parent ID attachment upload (mock in development)
-    console.log("Processing solo parent ID attachment...")
-    const soloParentIdUrl = await mockUploadSoloParentId()
-    console.log("Solo Parent ID upload result:", soloParentIdUrl)
+    // 4. Save data to Firestore
+    await setDoc(doc(db, "applications", user.uid), {
+      userId: user.uid,
+      referenceCode: referenceCode.value,
+      lastName: formData.lastName,
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      nameExt: formData.nameExt,
+      dateOfBirth: formData.dateOfBirth,
+      age: formData.age,
+      birthplace: formData.birthplace,
+      gender: formData.gender,
+      address: formData.address,
+      barangay: formData.barangay,
+      email: formData.email,
+      contactNumber: formData.contactNumber,
+      fbName: formData.fbName,
+      soloParentId: formData.soloParentId,
+      children: children,
+      soloParentReason: formData.soloParentReason,
+      soloParentIdAttachment: soloParentIdUrl,
+      status: "Pending",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      emailVerified: false,
+    })
 
-    // 3. Save application data to Firestore with user.uid as document ID
-    try {
-      console.log("Saving application data to Firestore...")
-      await setDoc(doc(db, "applications", user.uid), {
-        userId: user.uid,
-        referenceCode: referenceCode.value,
-        lastName: formData.lastName,
-        firstName: formData.firstName,
-        middleName: formData.middleName,
-        nameExt: formData.nameExt,
-        dateOfBirth: formData.dateOfBirth,
-        age: formData.age,
-        birthplace: formData.birthplace,
-        gender: formData.gender,
-        address: formData.address,
-        barangay: formData.barangay,
-        email: formData.email,
-        contactNumber: formData.contactNumber,
-        fbName: formData.fbName,
-        soloParentId: formData.soloParentId,
-        children: children,
-        soloParentReason: formData.soloParentReason,
-        soloParentIdAttachment: soloParentIdUrl,
-        status: "Pending", // Default status for new applications
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        emailVerified: false,
-      })
-      console.log("Application data saved to Firestore")
-    } catch (firestoreError) {
-      console.error("Error saving to Firestore:", firestoreError)
-      // Continue with the process even if Firestore save fails
-    }
+    console.log("Saved to Firestore")
 
-    // 4. Send verification email
-    console.log("Sending verification email...")
+    // 5. Send Verification Email
     await sendVerificationEmailToUser(user)
 
-    // 5. Show verification dialog
+    // 6. Show Verification Dialog
     showVerificationDialog.value = true
 
-    console.log("Registration process completed successfully")
   } catch (error) {
     console.error("Registration Error:", error.code, error.message)
     let errorMessage = "Registration failed. Please try again."
 
     if (error.code === "auth/email-already-in-use") {
-      errorMessage = "This email is already registered. Please use a different email or try logging in."
+      errorMessage = "This email is already registered."
     } else if (error.code === "auth/weak-password") {
       errorMessage = "Password is too weak. Please use a stronger password."
     }
@@ -771,7 +676,6 @@ const handleRegistration = async () => {
     isSubmitting.value = false
   }
 }
-
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }

@@ -34,6 +34,7 @@ const sidebarStore = useSidebarStore();
 
 const menuItems = ref([
   { name: 'Dashboard', icon: 'pi pi-home', route: '/super-admin/super-dashboard' },
+  { name: 'Sentiment', icon: 'pi pi-comments', route: '/super-admin/sentiment' },
   { name: 'Members', icon: 'pi pi-users', route: '/super-admin/members' },
   { name: 'Events', icon: 'pi pi-calendar', route: '/super-admin/events' },
   { name: 'Applications', icon: 'pi pi-file', route: '/super-admin/application' },

@@ -10,7 +10,6 @@ import About from '../views/LandPage/About.vue';
 
 //Authentication
 import Login from '../views/auth/Login.vue';
-import Register from '../views/auth/Register.vue';
 import Membership from '../views/auth/Membership.vue';
 import PreMember from '../views/auth/Pre-member.vue';
 
@@ -23,6 +22,7 @@ import Profile from '@/views/UserPage/Profile.vue';
 import user_settings from '@/views/UserPage/user_settings.vue';
 import user_resource from '@/views/UserPage/user_resource.vue';
 import Attendance from '@/views/UserPage/Attendance.vue';
+import Feedback from '@/views/UserPage/Feedback.vue';
 
 //Super Admin
 import SuperAdmin from '../views/Superadmin/Superadmin.vue';
@@ -36,6 +36,7 @@ import resources from '../views/Superadmin/resources.vue';
 import support from '../views/Superadmin/support.vue';
 import settings from '../views/Superadmin/settings.vue';
 import Preregister from '@/views/Superadmin/Preregister.vue';
+import Sentiment from '@/views/Superadmin/Sentiment.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -48,6 +49,7 @@ import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
 import Block from '../views/BarangayAdmin/Block.vue';
 import { Apple } from 'lucide-vue-next';
+
 
 
 
@@ -149,6 +151,11 @@ const routes = [
         path: 'pre-register', 
         component: Preregister,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'sentiment', 
+        component: Sentiment,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
   },
@@ -239,6 +246,11 @@ const routes = [
       { 
         path: 'Attendance', 
         component: Attendance,
+        meta: { requiresAuth: true, allowedRoles: ['Member'] },
+      },
+      { 
+        path: 'Feedback', 
+        component: Feedback,
         meta: { requiresAuth: true, allowedRoles: ['Member'] },
       }
     ] 
