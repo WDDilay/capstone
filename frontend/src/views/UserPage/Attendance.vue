@@ -38,6 +38,15 @@
             <p class="stat-label">Upcoming Events</p>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background-color: #8B5CF6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ confirmedEvents }}</h3>
+            <p class="stat-label">Confirmed Events</p>
+          </div>
+        </div>
       </div>
 
       <!-- Tabs -->
@@ -49,16 +58,16 @@
           Today's Attendance
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'history' }]" 
-          @click="activeTab = 'history'; loadAttendanceHistory()"
-        >
-          My Attendance History
-        </button>
-        <button 
           :class="['tab-btn', { active: activeTab === 'upcoming' }]" 
           @click="activeTab = 'upcoming'; loadUpcomingEvents()"
         >
           Upcoming Events
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'history' }]" 
+          @click="activeTab = 'history'; loadAttendanceHistory()"
+        >
+          My History
         </button>
       </div>
 
@@ -73,20 +82,22 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
           <h3>No attendance forms available today</h3>
           <p>There are no events requiring attendance today</p>
-
-         
         </div>
 
         <div v-else class="forms-grid">
           <div v-for="form in todayForms" :key="form.id" class="form-card">
             <div class="form-card-header">
-              <div class="status-indicator active"></div>
+              <div :class="['status-indicator', getFormStatus(form)]"></div>
               <h3 class="form-card-title">{{ form.eventName }}</h3>
             </div>
             <div class="form-card-content">
               <div class="form-card-detail">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 <span>Event Date: {{ formatDate(form.eventDate) }}</span>
+              </div>
+              <div class="form-card-detail">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Event Time: {{ form.eventTime }}</span>
               </div>
               <div class="form-card-detail" v-if="form.eventLocation">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -96,13 +107,28 @@
                 {{ truncateText(form.eventDescription, 100) }}
               </p>
               
+              <!-- Form Status Display -->
+              <div class="form-status-info">
+                <div v-if="getFormStatus(form) === 'upcoming'" class="status-message upcoming">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  Form will be available at {{ form.eventTime }}
+                </div>
+                <div v-else-if="getFormStatus(form) === 'closed'" class="status-message closed">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                  Form closed at 10:00 PM
+                </div>
+              </div>
+
+              <!-- Attendance Status -->
               <div class="attendance-status" v-if="hasSubmittedAttendance(form.id)">
                 <div class="status-badge submitted">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                  You Already Submitted
+                  Attendance Already Submitted
                 </div>
               </div>
-              <div v-else>
+              
+              <!-- Attendance Form (only show if active and not submitted) -->
+              <div v-else-if="getFormStatus(form) === 'active'">
                 <form @submit.prevent="submitAttendance(form)" class="attendance-form">
                   <div class="form-group">
                     <label for="memberName">Your Name <span class="required">*</span></label>
@@ -117,11 +143,35 @@
                   </div>
                   
                   <div class="form-group">
+                    <label>Attendance Status <span class="required">*</span></label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input 
+                          type="radio" 
+                          v-model="attendanceData.status" 
+                          value="present"
+                          required
+                        >
+                        <span class="radio-label present">Present</span>
+                      </label>
+                      <label class="radio-option">
+                        <input 
+                          type="radio" 
+                          v-model="attendanceData.status" 
+                          value="absent"
+                          required
+                        >
+                        <span class="radio-label absent">Absent</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
                     <label for="comments">Comments (Optional)</label>
                     <textarea 
                       id="comments"
                       v-model="attendanceData.comments" 
-                      placeholder="Any comments about the event"
+                      placeholder="Any comments about your attendance"
                       rows="2"
                       class="form-textarea"
                     ></textarea>
@@ -134,60 +184,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Attendance History Tab -->
-      <div v-if="activeTab === 'history'" class="tab-content">
-        <div v-if="isLoadingHistory" class="loading-container">
-          <div class="loading-spinner"></div>
-          <p>Loading attendance history...</p>
-        </div>
-
-        <div v-else-if="attendanceHistory.length === 0" class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          <h3>No attendance history</h3>
-          <p>You haven't submitted any attendance yet</p>
-        </div>
-
-        <div v-else class="resource-table-container">
-          <table class="resource-table">
-            <thead>
-              <tr>
-                <th @click="sortHistory('submittedAt')">
-                  Date Submitted
-                  <span v-if="historySortField === 'submittedAt'" class="sort-icon">
-                    {{ historySortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortHistory('eventName')">
-                  Event
-                  <span v-if="historySortField === 'eventName'" class="sort-icon">
-                    {{ historySortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortHistory('eventDate')">
-                  Event Date
-                  <span v-if="historySortField === 'eventDate'" class="sort-icon">
-                    {{ historySortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="record in attendanceHistory" :key="record.id">
-                <td>{{ formatDateTime(record.submittedAt) }}</td>
-                <td>{{ record.eventName }}</td>
-                <td>{{ formatDate(record.eventDate) }}</td>
-                <td>
-                  <button @click="viewAttendanceDetails(record)" class="view-btn" title="View Details">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -217,7 +213,7 @@
               </div>
               <div class="form-card-detail">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                <span>Attendance Date: {{ formatDate(event.attendanceDate) }}</span>
+                <span>Event Time: {{ event.eventTime }}</span>
               </div>
               <div class="form-card-detail" v-if="event.eventLocation">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -226,6 +222,89 @@
               <p v-if="event.eventDescription" class="form-card-description">
                 {{ truncateText(event.eventDescription, 100) }}
               </p>
+
+              <!-- Event Confirmation Section -->
+              <div class="event-confirmation-section">
+                <h4 class="confirmation-title">Will you attend this event?</h4>
+                
+                <!-- Show confirmation status if already submitted -->
+                <div v-if="hasConfirmedEvent(event.id)" class="confirmation-status">
+                  <div :class="['confirmation-badge', getEventConfirmation(event.id) ? 'yes' : 'no']">
+                    <svg v-if="getEventConfirmation(event.id)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    {{ getEventConfirmation(event.id) ? 'You will attend' : 'You won\'t attend' }}
+                  </div>
+                  <p class="confirmation-note">You can change your response anytime before the event</p>
+                </div>
+
+                <!-- Show confirmation form if not submitted or want to change -->
+                <div v-if="!hasConfirmedEvent(event.id) || editingConfirmation === event.id" class="confirmation-form">
+                  <form @submit.prevent="submitEventConfirmation(event)" class="event-confirmation-form">
+                    <div class="form-group">
+                      <label for="memberName">Your Name <span class="required">*</span></label>
+                      <input 
+                        id="memberName"
+                        v-model="confirmationData.memberName" 
+                        type="text" 
+                        required
+                        placeholder="Enter your full name"
+                        class="form-input"
+                      >
+                    </div>
+                    
+                    <div class="form-group">
+                      <label>Will you attend? <span class="required">*</span></label>
+                      <div class="radio-group">
+                        <label class="radio-option">
+                          <input 
+                            type="radio" 
+                            v-model="confirmationData.willAttend" 
+                            :value="true"
+                            required
+                          >
+                          <span class="radio-label yes">Yes, I will attend</span>
+                        </label>
+                        <label class="radio-option">
+                          <input 
+                            type="radio" 
+                            v-model="confirmationData.willAttend" 
+                            :value="false"
+                            required
+                          >
+                          <span class="radio-label no">No, I won't attend</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="confirmationComments">Comments (Optional)</label>
+                      <textarea 
+                        id="confirmationComments"
+                        v-model="confirmationData.comments" 
+                        placeholder="Any additional comments"
+                        rows="2"
+                        class="form-textarea"
+                      ></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                      <button type="submit" class="submit-btn" :disabled="isSubmittingConfirmation">
+                        {{ isSubmittingConfirmation ? 'Submitting...' : 'Submit Response' }}
+                      </button>
+                      <button v-if="editingConfirmation === event.id" type="button" @click="cancelEdit" class="cancel-btn">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Change response button -->
+                <div v-if="hasConfirmedEvent(event.id) && editingConfirmation !== event.id" class="change-response">
+                  <button @click="showChangeConfirmation(event)" class="change-btn">
+                    Change Response
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="form-card-footer">
               <button @click="viewEventDetails(event)" class="view-btn">
@@ -233,6 +312,146 @@
                 View Details
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div v-if="activeTab === 'history'" class="tab-content">
+        <div class="history-tabs">
+          <button 
+            :class="['history-tab-btn', { active: historyTab === 'confirmations' }]" 
+            @click="historyTab = 'confirmations'"
+          >
+            Event Confirmations
+          </button>
+          <button 
+            :class="['history-tab-btn', { active: historyTab === 'attendance' }]" 
+            @click="historyTab = 'attendance'"
+          >
+            Attendance Records
+          </button>
+        </div>
+
+        <!-- Event Confirmations History -->
+        <div v-if="historyTab === 'confirmations'">
+          <div v-if="isLoadingHistory" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading confirmation history...</p>
+          </div>
+
+          <div v-else-if="eventConfirmations.length === 0" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <h3>No confirmation history</h3>
+            <p>You haven't confirmed any events yet</p>
+          </div>
+
+          <div v-else class="resource-table-container">
+            <table class="resource-table">
+              <thead>
+                <tr>
+                  <th @click="sortConfirmationHistory('submittedAt')">
+                    Date Submitted
+                    <span v-if="confirmationSortField === 'submittedAt'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortConfirmationHistory('eventName')">
+                    Event
+                    <span v-if="confirmationSortField === 'eventName'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortConfirmationHistory('eventDate')">
+                    Event Date
+                    <span v-if="confirmationSortField === 'eventDate'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortConfirmationHistory('willAttend')">
+                    Response
+                    <span v-if="confirmationSortField === 'willAttend'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th>Comments</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="confirmation in eventConfirmations" :key="confirmation.id">
+                  <td>{{ formatDateTime(confirmation.submittedAt) }}</td>
+                  <td>{{ confirmation.eventName }}</td>
+                  <td>{{ formatDate(confirmation.eventDate) }}</td>
+                  <td>
+                    <span :class="['confirmation-badge', confirmation.willAttend ? 'yes' : 'no']">
+                      {{ confirmation.willAttend ? 'Will Attend' : 'Won\'t Attend' }}
+                    </span>
+                  </td>
+                  <td>{{ confirmation.comments || 'No comments' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Attendance Records History -->
+        <div v-if="historyTab === 'attendance'">
+          <div v-if="isLoadingHistory" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading attendance history...</p>
+          </div>
+
+          <div v-else-if="attendanceHistory.length === 0" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <h3>No attendance history</h3>
+            <p>You haven't submitted any attendance yet</p>
+          </div>
+
+          <div v-else class="resource-table-container">
+            <table class="resource-table">
+              <thead>
+                <tr>
+                  <th @click="sortAttendanceHistory('submittedAt')">
+                    Date Submitted
+                    <span v-if="attendanceSortField === 'submittedAt'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortAttendanceHistory('eventName')">
+                    Event
+                    <span v-if="attendanceSortField === 'eventName'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortAttendanceHistory('eventDate')">
+                    Event Date
+                    <span v-if="attendanceSortField === 'eventDate'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortAttendanceHistory('status')">
+                    Status
+                    <span v-if="attendanceSortField === 'status'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th>Comments</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="record in attendanceHistory" :key="record.id">
+                  <td>{{ formatDateTime(record.submittedAt) }}</td>
+                  <td>{{ record.eventName }}</td>
+                  <td>{{ formatDate(record.eventDate) }}</td>
+                  <td>
+                    <span :class="['status-badge', record.status === 'present' ? 'present' : 'absent']">
+                      {{ record.status === 'present' ? 'Present' : 'Absent' }}
+                    </span>
+                  </td>
+                  <td>{{ record.comments || 'No comments' }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -255,15 +474,14 @@
                 <p>{{ formatDate(selectedEvent.eventDate) }}</p>
               </div>
               <div class="detail-item">
-                <h3>Attendance Date</h3>
-                <p>{{ formatDate(selectedEvent.attendanceDate) }}</p>
+                <h3>Event Time</h3>
+                <p>{{ selectedEvent.eventTime }}</p>
               </div>
               <div class="detail-item" v-if="selectedEvent.eventLocation">
                 <h3>Location</h3>
                 <p>{{ selectedEvent.eventLocation }}</p>
               </div>
             </div>
-
             <div class="detail-section" v-if="selectedEvent.eventDescription">
               <h3>Description</h3>
               <p>{{ selectedEvent.eventDescription }}</p>
@@ -271,44 +489,6 @@
           </div>
           <div class="modal-footer">
             <button @click="showEventModal = false" class="close-btn">Close</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Attendance Details Modal -->
-      <div v-if="showAttendanceModal" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>Attendance Details</h2>
-            <button @click="showAttendanceModal = false" class="close-modal">&times;</button>
-          </div>
-          <div class="modal-body" v-if="selectedAttendance">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <h3>Event</h3>
-                <p>{{ selectedAttendance.eventName }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Event Date</h3>
-                <p>{{ formatDate(selectedAttendance.eventDate) }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Submitted At</h3>
-                <p>{{ formatDateTime(selectedAttendance.submittedAt) }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Member Name</h3>
-                <p>{{ selectedAttendance.memberName }}</p>
-              </div>
-            </div>
-
-            <div class="detail-section" v-if="selectedAttendance.comments">
-              <h3>Comments</h3>
-              <p>{{ selectedAttendance.comments }}</p>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button @click="showAttendanceModal = false" class="close-btn">Close</button>
           </div>
         </div>
       </div>
@@ -328,7 +508,8 @@ import {
   query,
   orderBy,
   where,
-  Timestamp
+  Timestamp,
+  updateDoc
 } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '@/services/firebase';
@@ -340,12 +521,14 @@ const userReferenceCode = ref('');
 
 // Active tab
 const activeTab = ref('today');
+const historyTab = ref('confirmations');
 
 // Loading states
 const isLoading = ref(true);
 const isLoadingHistory = ref(false);
 const isLoadingUpcoming = ref(false);
 const isSubmitting = ref(false);
+const isSubmittingConfirmation = ref(false);
 
 // Notification
 const notification = ref({ show: false, message: '', type: 'success' });
@@ -356,25 +539,46 @@ const todayForms = ref([]);
 // Attendance data
 const attendanceData = ref({
   memberName: '',
+  status: '',
+  comments: ''
+});
+
+// Event confirmation data
+const confirmationData = ref({
+  memberName: '',
+  willAttend: null,
   comments: ''
 });
 
 // Attendance history
 const attendanceHistory = ref([]);
-const historySortField = ref('submittedAt');
-const historySortDirection = ref('desc');
+const attendanceSortField = ref('submittedAt');
+const attendanceSortDirection = ref('desc');
 
 // Upcoming events
 const upcomingEventsList = ref([]);
 
+// Event confirmations
+const eventConfirmations = ref([]);
+const confirmationSortField = ref('submittedAt');
+const confirmationSortDirection = ref('desc');
+
+// Editing state
+const editingConfirmation = ref(null);
+
 // Modals
 const showEventModal = ref(false);
 const selectedEvent = ref(null);
-const showAttendanceModal = ref(false);
-const selectedAttendance = ref(null);
 
 // Stats
-const availableForms = computed(() => todayForms.value.length);
+const availableForms = computed(() => {
+  const now = new Date();
+  return todayForms.value.filter(form => {
+    const status = getFormStatus(form);
+    return status === 'active';
+  }).length;
+});
+
 const completedAttendance = computed(() => {
   return attendanceHistory.value.filter(record => {
     const today = new Date();
@@ -386,7 +590,12 @@ const completedAttendance = computed(() => {
     return submittedDate.getTime() === today.getTime();
   }).length;
 });
+
 const upcomingEvents = computed(() => upcomingEventsList.value.length);
+
+const confirmedEvents = computed(() => {
+  return eventConfirmations.value.filter(confirmation => confirmation.willAttend).length;
+});
 
 // Show notification
 const showNotification = (message, type = 'success') => {
@@ -465,51 +674,35 @@ const truncateText = (text, maxLength) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// Debug function to check all forms
-const debugForms = async () => {
-  try {
-    showNotification('Checking all attendance forms...', 'info');
+// Get form status based on current time
+const getFormStatus = (form) => {
+  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const eventDate = new Date(form.eventDate);
+  eventDate.setHours(0, 0, 0, 0);
+  
+  if (eventDate.getTime() > today.getTime()) {
+    return 'upcoming';
+  } else if (eventDate.getTime() === today.getTime()) {
+    // Check if form is currently active (between event time and 10 PM)
+    const [hours, minutes] = form.eventTime.split(':');
+    const eventDateTime = new Date(form.eventDate);
+    eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
     
-    const attendanceFormsCollection = collection(db, 'attendance_forms');
-    const querySnapshot = await getDocs(attendanceFormsCollection);
+    const endDateTime = new Date(form.eventDate);
+    endDateTime.setHours(22, 0, 0, 0); // 10 PM
     
-    console.log(`Total forms in database: ${querySnapshot.size}`);
-    console.log(`Current user barangay: ${currentBarangay.value}`);
-    
-    const formsData = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      formsData.push({
-        id: doc.id,
-        barangay: data.barangay,
-        eventName: data.eventName,
-        attendanceDate: data.attendanceDate,
-        createdBy: data.createdBy
-      });
-      
-      console.log(`Form: ${doc.id}`);
-      console.log(`- Barangay: "${data.barangay}"`);
-      console.log(`- Event: ${data.eventName}`);
-      console.log(`- Attendance Date: ${data.attendanceDate}`);
-      console.log(`- Created By: ${data.createdBy}`);
-    });
-    
-    // Check if any forms match the user's barangay
-    const matchingForms = formsData.filter(form => 
-      form.barangay && form.barangay.trim().toLowerCase() === currentBarangay.value.toLowerCase()
-    );
-    
-    console.log(`Forms matching user's barangay: ${matchingForms.length}`);
-    console.log('Matching forms:', matchingForms);
-    
-    if (matchingForms.length > 0) {
-      showNotification(`Found ${matchingForms.length} forms for your barangay, but none for today.`, 'info');
+    if (now >= eventDateTime && now <= endDateTime) {
+      return 'active';
+    } else if (now < eventDateTime) {
+      return 'upcoming';
     } else {
-      showNotification('No forms found for your barangay.', 'info');
+      return 'closed';
     }
-  } catch (error) {
-    console.error('Error debugging forms:', error);
-    showNotification('Error checking forms: ' + error.message, 'error');
+  } else {
+    return 'closed';
   }
 };
 
@@ -518,7 +711,6 @@ const initializeUserData = async () => {
   try {
     const auth = getAuth();
     
-    // Wait for auth state to be ready
     const user = await new Promise((resolve) => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe();
@@ -535,7 +727,6 @@ const initializeUserData = async () => {
     console.log("User authenticated:", user.uid);
     currentUser.value = user;
     
-    // Get user data to determine barangay
     const userDocRef = doc(db, 'users', user.uid);
     const userDocSnap = await getDoc(userDocRef);
     
@@ -543,7 +734,6 @@ const initializeUserData = async () => {
       const userData = userDocSnap.data();
       console.log("User data:", userData);
       
-      // Try different possible field names for barangay
       const possibleBarangayFields = ['barangay', 'Barangay', 'BARANGAY', 'brgy', 'Brgy'];
       let foundBarangay = '';
       
@@ -555,7 +745,6 @@ const initializeUserData = async () => {
         }
       }
       
-      // Normalize barangay name (trim whitespace and convert to consistent case)
       currentBarangay.value = foundBarangay.trim();
       console.log("Normalized barangay:", currentBarangay.value);
       
@@ -563,6 +752,7 @@ const initializeUserData = async () => {
       
       // Pre-fill name if available
       attendanceData.value.memberName = userData.fullName || userData.name || userData.displayName || '';
+      confirmationData.value.memberName = userData.fullName || userData.name || userData.displayName || '';
       
       console.log("User reference code:", userReferenceCode.value);
     } else {
@@ -591,26 +781,10 @@ const loadTodayForms = async () => {
     console.log("Fetching attendance forms for date:", todayStr);
     console.log("Fetching for barangay:", currentBarangay.value);
     
-    // First, let's check what attendance forms exist for today
     const attendanceFormsCollection = collection(db, 'attendance_forms');
-    const allFormsQuery = query(
-      attendanceFormsCollection,
-      where('attendanceDate', '==', todayStr)
-    );
-    
-    const allFormsSnapshot = await getDocs(allFormsQuery);
-    console.log(`Found ${allFormsSnapshot.size} total forms for today`);
-    
-    // Log all forms to see their barangay values
-    allFormsSnapshot.forEach(doc => {
-      const data = doc.data();
-      console.log(`Form ID: ${doc.id}, Barangay: ${data.barangay}, Event: ${data.eventName}`);
-    });
-    
-    // Now try to fetch forms for the specific barangay
     const q = query(
       attendanceFormsCollection,
-      where('attendanceDate', '==', todayStr)
+      where('eventDate', '==', todayStr)
     );
     
     const querySnapshot = await getDocs(q);
@@ -619,7 +793,6 @@ const loadTodayForms = async () => {
     querySnapshot.forEach(doc => {
       const data = doc.data();
       
-      // Compare barangay case-insensitively
       if (data.barangay && 
           data.barangay.trim().toLowerCase() === currentBarangay.value.toLowerCase()) {
         console.log(`Matched form: ${doc.id}, Event: ${data.eventName}`);
@@ -694,10 +867,9 @@ const loadUpcomingEvents = async () => {
     const todayStr = today.toISOString().split('T')[0];
     
     const attendanceFormsCollection = collection(db, 'attendance_forms');
-    // Only filter by attendance date, then filter by barangay client-side
     const q = query(
       attendanceFormsCollection,
-      where('attendanceDate', '>', todayStr)
+      where('eventDate', '>', todayStr)
     );
     
     const querySnapshot = await getDocs(q);
@@ -706,7 +878,6 @@ const loadUpcomingEvents = async () => {
     querySnapshot.forEach(doc => {
       const data = doc.data();
       
-      // Compare barangay case-insensitively
       if (data.barangay && 
           data.barangay.trim().toLowerCase() === currentBarangay.value.toLowerCase()) {
         events.push({
@@ -716,14 +887,17 @@ const loadUpcomingEvents = async () => {
       }
     });
     
-    // Sort by attendance date
+    // Sort by event date
     events.sort((a, b) => {
-      const dateA = new Date(a.attendanceDate);
-      const dateB = new Date(b.attendanceDate);
+      const dateA = new Date(a.eventDate);
+      const dateB = new Date(b.eventDate);
       return dateA - dateB;
     });
     
     upcomingEventsList.value = events;
+    
+    // Load event confirmations
+    await loadEventConfirmations();
     
     isLoadingUpcoming.value = false;
   } catch (error) {
@@ -733,9 +907,51 @@ const loadUpcomingEvents = async () => {
   }
 };
 
+// Load event confirmations
+const loadEventConfirmations = async () => {
+  if (!currentUser.value) {
+    return;
+  }
+  
+  try {
+    const confirmationsCollection = collection(db, 'event_confirmations');
+    const q = query(
+      confirmationsCollection,
+      where('userId', '==', currentUser.value.uid),
+      orderBy('submittedAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const confirmations = [];
+    
+    querySnapshot.forEach(doc => {
+      confirmations.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    eventConfirmations.value = confirmations;
+  } catch (error) {
+    console.error('Error loading event confirmations:', error);
+    showNotification('Failed to load event confirmations: ' + error.message, 'error');
+  }
+};
+
 // Check if already submitted attendance for a form
 const hasSubmittedAttendance = (formId) => {
   return attendanceHistory.value.some(record => record.formId === formId);
+};
+
+// Check if already confirmed event
+const hasConfirmedEvent = (formId) => {
+  return eventConfirmations.value.some(confirmation => confirmation.formId === formId);
+};
+
+// Get event confirmation response
+const getEventConfirmation = (formId) => {
+  const confirmation = eventConfirmations.value.find(confirmation => confirmation.formId === formId);
+  return confirmation ? confirmation.willAttend : null;
 };
 
 // Submit attendance
@@ -753,14 +969,6 @@ const submitAttendance = async (form) => {
   isSubmitting.value = true;
   
   try {
-    // Get the form details
-    const formDetails = {
-      eventName: form.eventName,
-      eventDate: form.eventDate,
-      eventLocation: form.eventLocation || ''
-    };
-    
-    // Create attendance record
     const attendanceCollection = collection(db, 'Attendance');
     await addDoc(attendanceCollection, {
       formId: form.id,
@@ -768,14 +976,19 @@ const submitAttendance = async (form) => {
       memberName: attendanceData.value.memberName,
       referenceCode: userReferenceCode.value,
       barangay: currentBarangay.value,
+      status: attendanceData.value.status,
       comments: attendanceData.value.comments,
-      submittedAt: serverTimestamp(),
-      ...formDetails
+      eventName: form.eventName,
+      eventDate: form.eventDate,
+      eventTime: form.eventTime,
+      eventLocation: form.eventLocation || '',
+      submittedAt: serverTimestamp()
     });
     
     showNotification('Attendance submitted successfully', 'success');
     
     // Reset form
+    attendanceData.value.status = '';
     attendanceData.value.comments = '';
     
     // Refresh attendance history
@@ -788,20 +1001,102 @@ const submitAttendance = async (form) => {
   }
 };
 
-// Sort history
-const sortHistory = (field) => {
-  if (historySortField.value === field) {
-    historySortDirection.value = historySortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    historySortField.value = field;
-    historySortDirection.value = 'desc';
+// Submit event confirmation
+const submitEventConfirmation = async (event) => {
+  if (!currentUser.value || !userReferenceCode.value) {
+    showNotification('You must be logged in to submit confirmation.', 'error');
+    return;
   }
   
-  attendanceHistory.value.sort((a, b) => {
+  if (confirmationData.value.willAttend === null) {
+    showNotification('Please select whether you will attend or not.', 'error');
+    return;
+  }
+  
+  isSubmittingConfirmation.value = true;
+  
+  try {
+    const confirmationsCollection = collection(db, 'event_confirmations');
+    
+    // Check if already confirmed
+    const existingConfirmation = eventConfirmations.value.find(c => c.formId === event.id);
+    
+    if (existingConfirmation) {
+      // Update existing confirmation
+      const confirmationRef = doc(db, 'event_confirmations', existingConfirmation.id);
+      await updateDoc(confirmationRef, {
+        memberName: confirmationData.value.memberName,
+        willAttend: confirmationData.value.willAttend,
+        comments: confirmationData.value.comments,
+        updatedAt: serverTimestamp()
+      });
+      
+      showNotification('Event confirmation updated successfully', 'success');
+    } else {
+      // Create new confirmation
+      await addDoc(confirmationsCollection, {
+        formId: event.id,
+        userId: currentUser.value.uid,
+        memberName: confirmationData.value.memberName,
+        referenceCode: userReferenceCode.value,
+        barangay: currentBarangay.value,
+        willAttend: confirmationData.value.willAttend,
+        comments: confirmationData.value.comments,
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+        eventTime: event.eventTime,
+        eventLocation: event.eventLocation || '',
+        submittedAt: serverTimestamp()
+      });
+      
+      showNotification('Event confirmation submitted successfully', 'success');
+    }
+    
+    // Reset form
+    confirmationData.value.willAttend = null;
+    confirmationData.value.comments = '';
+    editingConfirmation.value = null;
+    
+    // Refresh confirmations
+    await loadEventConfirmations();
+  } catch (error) {
+    console.error('Error submitting event confirmation:', error);
+    showNotification('Failed to submit event confirmation: ' + error.message, 'error');
+  } finally {
+    isSubmittingConfirmation.value = false;
+  }
+};
+
+// Show change confirmation form
+const showChangeConfirmation = (event) => {
+  const existingConfirmation = eventConfirmations.value.find(c => c.formId === event.id);
+  if (existingConfirmation) {
+    confirmationData.value.willAttend = existingConfirmation.willAttend;
+    confirmationData.value.comments = existingConfirmation.comments || '';
+    editingConfirmation.value = event.id;
+  }
+};
+
+// Cancel edit
+const cancelEdit = () => {
+  editingConfirmation.value = null;
+  confirmationData.value.willAttend = null;
+  confirmationData.value.comments = '';
+};
+
+// Sort confirmation history
+const sortConfirmationHistory = (field) => {
+  if (confirmationSortField.value === field) {
+    confirmationSortDirection.value = confirmationSortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    confirmationSortField.value = field;
+    confirmationSortDirection.value = 'desc';
+  }
+  
+  eventConfirmations.value.sort((a, b) => {
     let valueA = a[field];
     let valueB = b[field];
     
-    // Handle date fields
     if (field === 'submittedAt' || field === 'eventDate') {
       if (valueA instanceof Timestamp) valueA = valueA.toDate();
       if (valueB instanceof Timestamp) valueB = valueB.toDate();
@@ -811,7 +1106,37 @@ const sortHistory = (field) => {
       if (typeof valueB === 'string') valueB = new Date(valueB);
     }
     
-    if (historySortDirection.value === 'asc') {
+    if (confirmationSortDirection.value === 'asc') {
+      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+    } else {
+      return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+    }
+  });
+};
+
+// Sort attendance history
+const sortAttendanceHistory = (field) => {
+  if (attendanceSortField.value === field) {
+    attendanceSortDirection.value = attendanceSortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    attendanceSortField.value = field;
+    attendanceSortDirection.value = 'desc';
+  }
+  
+  attendanceHistory.value.sort((a, b) => {
+    let valueA = a[field];
+    let valueB = b[field];
+    
+    if (field === 'submittedAt' || field === 'eventDate') {
+      if (valueA instanceof Timestamp) valueA = valueA.toDate();
+      if (valueB instanceof Timestamp) valueB = valueB.toDate();
+      if (valueA.seconds) valueA = new Date(valueA.seconds * 1000);
+      if (valueB.seconds) valueB = new Date(valueB.seconds * 1000);
+      if (typeof valueA === 'string') valueA = new Date(valueA);
+      if (typeof valueB === 'string') valueB = new Date(valueB);
+    }
+    
+    if (attendanceSortDirection.value === 'asc') {
       return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
     } else {
       return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
@@ -823,12 +1148,6 @@ const sortHistory = (field) => {
 const viewEventDetails = (event) => {
   selectedEvent.value = event;
   showEventModal.value = true;
-};
-
-// View attendance details
-const viewAttendanceDetails = (attendance) => {
-  selectedAttendance.value = attendance;
-  showAttendanceModal.value = true;
 };
 
 // Initialize
@@ -989,6 +1308,33 @@ onMounted(async () => {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* History Tabs */
+.history-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 1.5rem;
+}
+
+.history-tab-btn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.history-tab-btn:hover {
+  color: #333;
+}
+
+.history-tab-btn.active {
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
+}
+
 /* Loading */
 .loading-container {
   display: flex;
@@ -1037,28 +1383,13 @@ onMounted(async () => {
 }
 
 .empty-state p {
-  margin: 0;
-}
-
-/* Debug Button */
-.debug-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #6B7280;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.debug-btn:hover {
-  background-color: #4B5563;
+  margin: 0 0 1.5rem 0;
 }
 
 /* Forms Grid */
 .forms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
 }
 
@@ -1140,22 +1471,45 @@ onMounted(async () => {
   padding: 1rem;
   border-top: 1px solid #eee;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+}
+
+/* Form Status Info */
+.form-status-info {
+  margin: 1rem 0;
+}
+
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-message.upcoming {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-message.closed {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 /* Attendance Status */
 .attendance-status {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
+  margin: 1rem 0;
 }
 
 .status-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -1165,16 +1519,31 @@ onMounted(async () => {
   color: #065f46;
 }
 
-.status-badge.closed {
-  background-color: #f3f4f6;
-  color: #374151;
+.status-badge.present {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.absent {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 /* Attendance Form */
 .attendance-form {
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.event-confirmation-form {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
 }
 
 .form-group {
@@ -1185,6 +1554,7 @@ onMounted(async () => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .required {
@@ -1193,11 +1563,12 @@ onMounted(async () => {
 
 .form-input, .form-textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-family: inherit;
   background-color: white;
+  font-size: 0.875rem;
 }
 
 .form-input:focus, .form-textarea:focus {
@@ -1208,13 +1579,63 @@ onMounted(async () => {
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
 }
 
-.submit-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #2c3e50;
-  color: white;
+/* Radio Group */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+}
+
+.radio-label {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.radio-label.present {
+  color: #065f46;
+}
+
+.radio-label.absent {
+  color: #991b1b;
+}
+
+.radio-label.yes {
+  color: #065f46;
+}
+
+.radio-label.no {
+  color: #991b1b;
+}
+
+.radio-option:hover .radio-label {
+  background-color: #f3f4f6;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.submit-btn, .cancel-btn, .view-btn, .change-btn {
+  padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -1223,7 +1644,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  width: 100%;
+  font-size: 0.875rem;
+}
+
+.submit-btn {
+  background-color: #2c3e50;
+  color: white;
+  flex: 1;
 }
 
 .submit-btn:hover {
@@ -1235,22 +1662,82 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* View Button */
+.cancel-btn {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background-color: #dee2e6;
+}
+
 .view-btn {
-  padding: 0.5rem 0.75rem;
   background-color: #e9ecef;
   color: #2c3e50;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
 }
 
 .view-btn:hover {
   background-color: #dee2e6;
+}
+
+.change-btn {
+  background-color: #fff3cd;
+  color: #856404;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.change-btn:hover {
+  background-color: #ffeeba;
+}
+
+/* Event Confirmation Section */
+.event-confirmation-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.confirmation-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #2c3e50;
+}
+
+.confirmation-status {
+  margin-bottom: 1rem;
+}
+
+.confirmation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.confirmation-badge.yes {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.confirmation-badge.no {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.confirmation-note {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0;
+}
+
+.change-response {
+  margin-top: 0.5rem;
 }
 
 /* Resource Table */
@@ -1273,6 +1760,7 @@ onMounted(async () => {
   background-color: #f8f9fa;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.875rem;
 }
 
 .resource-table th:hover {
@@ -1286,6 +1774,10 @@ onMounted(async () => {
 
 .resource-table tbody tr:hover {
   background-color: #f8f9fa;
+}
+
+.resource-table td {
+  font-size: 0.875rem;
 }
 
 /* Modal Styles */
@@ -1383,9 +1875,17 @@ onMounted(async () => {
   .forms-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .radio-group {
+    gap: 0.75rem;
   }
 }
 </style>

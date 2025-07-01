@@ -25,12 +25,21 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </div>
           <div class="stat-content">
-            <h3 class="stat-value">{{ totalAttendees }}</h3>
-            <p class="stat-label">Total Attendees</p>
+            <h3 class="stat-value">{{ totalConfirmations }}</h3>
+            <p class="stat-label">Event Confirmations</p>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon" style="background-color: #F59E0B">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ totalAttendance }}</h3>
+            <p class="stat-label">Attendance Responses</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background-color: #8B5CF6">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
           </div>
           <div class="stat-content">
@@ -55,10 +64,16 @@
           Manage Forms
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'responses' }]" 
-          @click="activeTab = 'responses'; loadAttendanceResponses()"
+          :class="['tab-btn', { active: activeTab === 'confirmations' }]" 
+          @click="activeTab = 'confirmations'; loadEventConfirmations()"
         >
-          View Responses
+          Event Confirmations
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'attendance' }]" 
+          @click="activeTab = 'attendance'; loadAttendanceResponses()"
+        >
+          Attendance Responses
         </button>
       </div>
 
@@ -79,7 +94,6 @@
                 class="form-input"
               >
             </div>
-
             <div class="form-group">
               <label for="eventDate">Event Date <span class="required">*</span></label>
               <input 
@@ -90,19 +104,17 @@
                 class="form-input"
               >
             </div>
-
             <div class="form-group">
-              <label for="attendanceDate">Attendance Date <span class="required">*</span></label>
+              <label for="eventTime">Event Start Time <span class="required">*</span></label>
               <input 
-                id="attendanceDate"
-                v-model="formData.attendanceDate" 
-                type="date" 
+                id="eventTime"
+                v-model="formData.eventTime" 
+                type="time" 
                 required
                 class="form-input"
               >
-              <p class="form-help">Members can only submit attendance on this date</p>
+              <p class="form-help">Attendance form will become available at this time</p>
             </div>
-
             <div class="form-group">
               <label for="eventDescription">Event Description</label>
               <textarea 
@@ -113,7 +125,6 @@
                 class="form-textarea"
               ></textarea>
             </div>
-
             <div class="form-group">
               <label for="eventLocation">Event Location</label>
               <input 
@@ -125,7 +136,6 @@
               >
             </div>
           </div>
-
           <div class="form-actions">
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
               {{ isSubmitting ? 'Creating...' : 'Create Attendance Form' }}
@@ -151,8 +161,8 @@
           <div class="filter-box">
             <select v-model="statusFilter" @change="filterForms">
               <option value="">All Status</option>
-              <option value="active">Active</option>
               <option value="upcoming">Upcoming</option>
+              <option value="active">Active</option>
               <option value="closed">Closed</option>
             </select>
           </div>
@@ -183,15 +193,19 @@
               </div>
               <div class="form-card-detail">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                <span>Attendance Date: {{ formatDate(form.attendanceDate) }}</span>
+                <span>Event Time: {{ form.eventTime }}</span>
               </div>
               <div class="form-card-detail" v-if="form.eventLocation">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                 <span>Location: {{ form.eventLocation }}</span>
               </div>
               <div class="form-card-detail">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span>Confirmations: {{ getConfirmationCount(form.id) }}</span>
+              </div>
+              <div class="form-card-detail">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                <span>Responses: {{ getResponseCount(form.id) }}</span>
+                <span>Attendance: {{ getAttendanceCount(form.id) }}</span>
               </div>
               <p v-if="form.eventDescription" class="form-card-description">
                 {{ truncateText(form.eventDescription, 100) }}
@@ -211,33 +225,134 @@
         </div>
       </div>
 
-      <!-- View Responses Tab -->
-      <div v-if="activeTab === 'responses'" class="tab-content">
+      <!-- Event Confirmations Tab -->
+      <div v-if="activeTab === 'confirmations'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="responseSearchQuery" 
+              v-model="confirmationSearchQuery" 
               type="text" 
-              placeholder="Search responses..." 
-              @input="filterResponses"
+              placeholder="Search confirmations..." 
+              @input="filterConfirmations"
             >
           </div>
           <div class="filter-box">
-            <select v-model="responseFormFilter" @change="filterResponses">
+            <select v-model="confirmationFormFilter" @change="filterConfirmations">
               <option value="">All Events</option>
               <option v-for="form in attendanceForms" :key="form.id" :value="form.id">
                 {{ form.eventName }}
               </option>
             </select>
           </div>
+          <div class="filter-box">
+            <select v-model="confirmationStatusFilter" @change="filterConfirmations">
+              <option value="">All Responses</option>
+              <option value="yes">Will Attend</option>
+              <option value="no">Won't Attend</option>
+            </select>
+          </div>
         </div>
 
-        <div v-if="isLoadingResponses" class="loading-container">
+        <div v-if="isLoadingConfirmations" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading event confirmations...</p>
+        </div>
+
+        <div v-else-if="filteredConfirmations.length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <h3>No event confirmations found</h3>
+          <p>No members have confirmed attendance for upcoming events yet</p>
+        </div>
+
+        <div v-else class="resource-table-container">
+          <table class="resource-table">
+            <thead>
+              <tr>
+                <th @click="sortConfirmations('submittedAt')">
+                  Date Submitted
+                  <span v-if="confirmationSortField === 'submittedAt'" class="sort-icon">
+                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortConfirmations('memberName')">
+                  Member Name
+                  <span v-if="confirmationSortField === 'memberName'" class="sort-icon">
+                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortConfirmations('barangay')">
+                  Barangay
+                  <span v-if="confirmationSortField === 'barangay'" class="sort-icon">
+                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortConfirmations('formId')">
+                  Event
+                  <span v-if="confirmationSortField === 'formId'" class="sort-icon">
+                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th @click="sortConfirmations('willAttend')">
+                  Response
+                  <span v-if="confirmationSortField === 'willAttend'" class="sort-icon">
+                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th>Comments</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="confirmation in filteredConfirmations" :key="confirmation.id">
+                <td>{{ formatDateTime(confirmation.submittedAt) }}</td>
+                <td>{{ confirmation.memberName }}</td>
+                <td>{{ confirmation.barangay }}</td>
+                <td>{{ getEventName(confirmation.formId) }}</td>
+                <td>
+                  <span :class="['confirmation-badge', confirmation.willAttend ? 'yes' : 'no']">
+                    {{ confirmation.willAttend ? 'Will Attend' : 'Won\'t Attend' }}
+                  </span>
+                </td>
+                <td>{{ confirmation.comments || 'No comments' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Attendance Responses Tab -->
+      <div v-if="activeTab === 'attendance'" class="tab-content">
+        <div class="list-controls">
+          <div class="search-box">
+            <input 
+              v-model="attendanceSearchQuery" 
+              type="text" 
+              placeholder="Search attendance..." 
+              @input="filterAttendanceResponses"
+            >
+          </div>
+          <div class="filter-box">
+            <select v-model="attendanceFormFilter" @change="filterAttendanceResponses">
+              <option value="">All Events</option>
+              <option v-for="form in attendanceForms" :key="form.id" :value="form.id">
+                {{ form.eventName }}
+              </option>
+            </select>
+          </div>
+          <div class="filter-box">
+            <select v-model="attendanceStatusFilter" @change="filterAttendanceResponses">
+              <option value="">All Status</option>
+              <option value="present">Present</option>
+              <option value="absent">Absent</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="isLoadingAttendance" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading attendance responses...</p>
         </div>
 
-        <div v-else-if="filteredResponses.length === 0" class="empty-state">
+        <div v-else-if="filteredAttendanceResponses.length === 0" class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           <h3>No attendance responses found</h3>
           <p>No members have submitted attendance yet</p>
@@ -247,44 +362,51 @@
           <table class="resource-table">
             <thead>
               <tr>
-                <th @click="sortResponses('submittedAt')">
+                <th @click="sortAttendanceResponses('submittedAt')">
                   Date Submitted
-                  <span v-if="responseSortField === 'submittedAt'" class="sort-icon">
-                    {{ responseSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span v-if="attendanceSortField === 'submittedAt'" class="sort-icon">
+                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortResponses('memberName')">
+                <th @click="sortAttendanceResponses('memberName')">
                   Member Name
-                  <span v-if="responseSortField === 'memberName'" class="sort-icon">
-                    {{ responseSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span v-if="attendanceSortField === 'memberName'" class="sort-icon">
+                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortResponses('referenceCode')">
-                  Reference Code
-                  <span v-if="responseSortField === 'referenceCode'" class="sort-icon">
-                    {{ responseSortDirection === 'asc' ? '▲' : '▼' }}
+                <th @click="sortAttendanceResponses('barangay')">
+                  Barangay
+                  <span v-if="attendanceSortField === 'barangay'" class="sort-icon">
+                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortResponses('formId')">
+                <th @click="sortAttendanceResponses('formId')">
                   Event
-                  <span v-if="responseSortField === 'formId'" class="sort-icon">
-                    {{ responseSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span v-if="attendanceSortField === 'formId'" class="sort-icon">
+                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th>Actions</th>
+                <th @click="sortAttendanceResponses('status')">
+                  Status
+                  <span v-if="attendanceSortField === 'status'" class="sort-icon">
+                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </th>
+                <th>Comments</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="response in filteredResponses" :key="response.id">
-                <td>{{ formatDateTime(response.submittedAt) }}</td>
-                <td>{{ response.memberName }}</td>
-                <td>{{ response.referenceCode }}</td>
-                <td>{{ getEventName(response.formId) }}</td>
+              <tr v-for="attendance in filteredAttendanceResponses" :key="attendance.id">
+                <td>{{ formatDateTime(attendance.submittedAt) }}</td>
+                <td>{{ attendance.memberName }}</td>
+                <td>{{ attendance.barangay }}</td>
+                <td>{{ getEventName(attendance.formId) }}</td>
                 <td>
-                  <button @click="viewResponseDetails(response)" class="view-btn" title="View Details">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  </button>
+                  <span :class="['status-badge', attendance.status === 'present' ? 'present' : 'absent']">
+                    {{ attendance.status === 'present' ? 'Present' : 'Absent' }}
+                  </span>
                 </td>
+                <td>{{ attendance.comments || 'No comments' }}</td>
               </tr>
             </tbody>
           </table>
@@ -309,8 +431,8 @@
                 <p>{{ formatDate(selectedForm.eventDate) }}</p>
               </div>
               <div class="detail-item">
-                <h3>Attendance Date</h3>
-                <p>{{ formatDate(selectedForm.attendanceDate) }}</p>
+                <h3>Event Time</h3>
+                <p>{{ selectedForm.eventTime }}</p>
               </div>
               <div class="detail-item">
                 <h3>Status</h3>
@@ -332,72 +454,26 @@
                 <p>{{ formatDateTime(selectedForm.createdAt) }}</p>
               </div>
             </div>
-
             <div class="detail-section" v-if="selectedForm.eventDescription">
               <h3>Description</h3>
               <p>{{ selectedForm.eventDescription }}</p>
             </div>
-
             <div class="detail-section">
-              <h3>Attendance Responses</h3>
-              <p v-if="getResponseCount(selectedForm.id) === 0">No responses yet</p>
-              <div v-else class="response-summary">
+              <h3>Response Summary</h3>
+              <div class="response-summary">
                 <div class="response-count">
-                  <span class="count">{{ getResponseCount(selectedForm.id) }}</span>
-                  <span class="label">Total Responses</span>
+                  <span class="count">{{ getConfirmationCount(selectedForm.id) }}</span>
+                  <span class="label">Event Confirmations</span>
                 </div>
-              </div>
-            </div>
-
-            <div class="qr-section">
-              <h3>Attendance QR Code</h3>
-              <p>Members can scan this QR code to access the attendance form:</p>
-              <div class="qr-placeholder">
-                <p>QR Code for form ID: {{ selectedForm.id }}</p>
-                <p class="qr-help">Implement QR code generation here</p>
+                <div class="response-count">
+                  <span class="count">{{ getAttendanceCount(selectedForm.id) }}</span>
+                  <span class="label">Attendance Responses</span>
+                </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
             <button @click="showFormModal = false" class="close-btn">Close</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Response Details Modal -->
-      <div v-if="showResponseModal" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>Attendance Response Details</h2>
-            <button @click="showResponseModal = false" class="close-modal">&times;</button>
-          </div>
-          <div class="modal-body" v-if="selectedResponse">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <h3>Member Name</h3>
-                <p>{{ selectedResponse.memberName }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Reference Code</h3>
-                <p>{{ selectedResponse.referenceCode }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Event</h3>
-                <p>{{ getEventName(selectedResponse.formId) }}</p>
-              </div>
-              <div class="detail-item">
-                <h3>Submitted At</h3>
-                <p>{{ formatDateTime(selectedResponse.submittedAt) }}</p>
-              </div>
-            </div>
-
-            <div class="detail-section" v-if="selectedResponse.comments">
-              <h3>Comments</h3>
-              <p>{{ selectedResponse.comments }}</p>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button @click="showResponseModal = false" class="close-btn">Close</button>
           </div>
         </div>
       </div>
@@ -455,7 +531,8 @@ const activeTab = ref('create');
 
 // Loading states
 const isLoading = ref(false);
-const isLoadingResponses = ref(false);
+const isLoadingConfirmations = ref(false);
+const isLoadingAttendance = ref(false);
 const isSubmitting = ref(false);
 
 // Notification
@@ -465,7 +542,7 @@ const notification = ref({ show: false, message: '', type: 'success' });
 const formData = ref({
   eventName: '',
   eventDate: '',
-  attendanceDate: '',
+  eventTime: '',
   eventDescription: '',
   eventLocation: ''
 });
@@ -476,40 +553,54 @@ const filteredForms = ref([]);
 const searchQuery = ref('');
 const statusFilter = ref('');
 
+// Event confirmations
+const eventConfirmations = ref([]);
+const filteredConfirmations = ref([]);
+const confirmationSearchQuery = ref('');
+const confirmationFormFilter = ref('');
+const confirmationStatusFilter = ref('');
+const confirmationSortField = ref('submittedAt');
+const confirmationSortDirection = ref('desc');
+
 // Attendance responses
 const attendanceResponses = ref([]);
-const filteredResponses = ref([]);
-const responseSearchQuery = ref('');
-const responseFormFilter = ref('');
-const responseSortField = ref('submittedAt');
-const responseSortDirection = ref('desc');
+const filteredAttendanceResponses = ref([]);
+const attendanceSearchQuery = ref('');
+const attendanceFormFilter = ref('');
+const attendanceStatusFilter = ref('');
+const attendanceSortField = ref('submittedAt');
+const attendanceSortDirection = ref('desc');
 
 // Modals
 const showFormModal = ref(false);
 const selectedForm = ref(null);
-const showResponseModal = ref(false);
-const selectedResponse = ref(null);
 const showDeleteModal = ref(false);
 const formToDelete = ref(null);
 
 // Stats
 const totalForms = computed(() => attendanceForms.value.length);
-const totalAttendees = computed(() => {
-  // Count unique attendees
-  const uniqueAttendees = new Set();
-  attendanceResponses.value.forEach(response => {
-    uniqueAttendees.add(response.referenceCode);
-  });
-  return uniqueAttendees.size;
-});
+const totalConfirmations = computed(() => eventConfirmations.value.length);
+const totalAttendance = computed(() => attendanceResponses.value.length);
 const activeFormsToday = computed(() => {
+  const now = new Date();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
   return attendanceForms.value.filter(form => {
-    const attendanceDate = new Date(form.attendanceDate);
-    attendanceDate.setHours(0, 0, 0, 0);
-    return attendanceDate.getTime() === today.getTime();
+    const eventDate = new Date(form.eventDate);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    if (eventDate.getTime() !== today.getTime()) return false;
+    
+    // Check if form is currently active (between event time and 10 PM)
+    const [hours, minutes] = form.eventTime.split(':');
+    const eventDateTime = new Date(form.eventDate);
+    eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    const endDateTime = new Date(form.eventDate);
+    endDateTime.setHours(22, 0, 0, 0); // 10 PM
+    
+    return now >= eventDateTime && now <= endDateTime;
   }).length;
 });
 
@@ -595,7 +686,6 @@ const initializeUserData = async () => {
   try {
     const auth = getAuth();
     
-    // Wait for auth state to be ready
     const user = await new Promise((resolve) => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe();
@@ -612,7 +702,6 @@ const initializeUserData = async () => {
     console.log("User authenticated:", user.uid);
     currentUser.value = user;
     
-    // Check if user is a barangay president
     const barangayPresidentRef = doc(db, 'barangay_presidents', user.uid);
     const barangayPresidentSnap = await getDoc(barangayPresidentRef);
     
@@ -620,7 +709,6 @@ const initializeUserData = async () => {
       const data = barangayPresidentSnap.data();
       console.log("Barangay president data:", data);
       
-      // Try different possible field names for barangay
       const possibleBarangayFields = ['barangay', 'Barangay', 'BARANGAY', 'brgy', 'Brgy'];
       let foundBarangay = '';
       
@@ -632,7 +720,6 @@ const initializeUserData = async () => {
         }
       }
       
-      // Normalize barangay name (trim whitespace)
       currentBarangay.value = foundBarangay.trim();
       console.log("Normalized barangay:", currentBarangay.value);
     } else {
@@ -650,7 +737,7 @@ const resetForm = () => {
   formData.value = {
     eventName: '',
     eventDate: '',
-    attendanceDate: '',
+    eventTime: '',
     eventDescription: '',
     eventLocation: ''
   };
@@ -666,14 +753,12 @@ const submitAttendanceForm = async () => {
   isSubmitting.value = true;
   
   try {
-    // Create the attendance_forms collection if it doesn't exist
     const attendanceFormsCollection = collection(db, 'attendance_forms');
     
-    // Add the document to the attendance_forms collection
     const docRef = await addDoc(attendanceFormsCollection, {
       eventName: formData.value.eventName,
       eventDate: formData.value.eventDate,
-      attendanceDate: formData.value.attendanceDate,
+      eventTime: formData.value.eventTime,
       eventDescription: formData.value.eventDescription,
       eventLocation: formData.value.eventLocation,
       barangay: currentBarangay.value,
@@ -685,7 +770,6 @@ const submitAttendanceForm = async () => {
     showNotification('Attendance form created successfully', 'success');
     resetForm();
     
-    // Switch to manage tab and refresh
     activeTab.value = 'manage';
     await loadAttendanceForms();
   } catch (error) {
@@ -733,22 +817,67 @@ const loadAttendanceForms = async () => {
   }
 };
 
+// Load event confirmations
+const loadEventConfirmations = async () => {
+  if (!currentUser.value || !currentBarangay.value) {
+    return;
+  }
+  
+  isLoadingConfirmations.value = true;
+  
+  try {
+    const formIds = attendanceForms.value.map(form => form.id);
+    
+    if (formIds.length === 0) {
+      eventConfirmations.value = [];
+      filteredConfirmations.value = [];
+      isLoadingConfirmations.value = false;
+      return;
+    }
+    
+    const confirmationsCollection = collection(db, 'event_confirmations');
+    const q = query(
+      confirmationsCollection,
+      where('formId', 'in', formIds),
+      orderBy('submittedAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const confirmations = [];
+    
+    querySnapshot.forEach(doc => {
+      confirmations.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    eventConfirmations.value = confirmations;
+    filterConfirmations();
+    
+    isLoadingConfirmations.value = false;
+  } catch (error) {
+    console.error('Error loading event confirmations:', error);
+    showNotification('Failed to load event confirmations: ' + error.message, 'error');
+    isLoadingConfirmations.value = false;
+  }
+};
+
 // Load attendance responses
 const loadAttendanceResponses = async () => {
   if (!currentUser.value || !currentBarangay.value) {
     return;
   }
   
-  isLoadingResponses.value = true;
+  isLoadingAttendance.value = true;
   
   try {
-    // First, get all form IDs for this barangay
     const formIds = attendanceForms.value.map(form => form.id);
     
     if (formIds.length === 0) {
       attendanceResponses.value = [];
-      filteredResponses.value = [];
-      isLoadingResponses.value = false;
+      filteredAttendanceResponses.value = [];
+      isLoadingAttendance.value = false;
       return;
     }
     
@@ -770,13 +899,13 @@ const loadAttendanceResponses = async () => {
     });
     
     attendanceResponses.value = responses;
-    filterResponses();
+    filterAttendanceResponses();
     
-    isLoadingResponses.value = false;
+    isLoadingAttendance.value = false;
   } catch (error) {
     console.error('Error loading attendance responses:', error);
     showNotification('Failed to load attendance responses: ' + error.message, 'error');
-    isLoadingResponses.value = false;
+    isLoadingAttendance.value = false;
   }
 };
 
@@ -796,38 +925,61 @@ const filterForms = () => {
   });
 };
 
-// Filter responses
-const filterResponses = () => {
-  const search = responseSearchQuery.value.toLowerCase();
+// Filter confirmations
+const filterConfirmations = () => {
+  const search = confirmationSearchQuery.value.toLowerCase();
   
-  filteredResponses.value = attendanceResponses.value.filter(response => {
+  filteredConfirmations.value = eventConfirmations.value.filter(confirmation => {
     const matchesSearch = 
-      response.memberName.toLowerCase().includes(search) ||
-      response.referenceCode.toLowerCase().includes(search) ||
-      (response.comments && response.comments.toLowerCase().includes(search));
+      confirmation.memberName.toLowerCase().includes(search) ||
+      (confirmation.barangay && confirmation.barangay.toLowerCase().includes(search)) ||
+      (confirmation.comments && confirmation.comments.toLowerCase().includes(search));
     
-    const matchesForm = !responseFormFilter.value || response.formId === responseFormFilter.value;
+    const matchesForm = !confirmationFormFilter.value || confirmation.formId === confirmationFormFilter.value;
     
-    return matchesSearch && matchesForm;
+    const matchesStatus = !confirmationStatusFilter.value || 
+      (confirmationStatusFilter.value === 'yes' && confirmation.willAttend) ||
+      (confirmationStatusFilter.value === 'no' && !confirmation.willAttend);
+    
+    return matchesSearch && matchesForm && matchesStatus;
   });
   
-  sortResponses(responseSortField.value);
+  sortConfirmations(confirmationSortField.value);
 };
 
-// Sort responses
-const sortResponses = (field) => {
-  if (responseSortField.value === field) {
-    responseSortDirection.value = responseSortDirection.value === 'asc' ? 'desc' : 'asc';
+// Filter attendance responses
+const filterAttendanceResponses = () => {
+  const search = attendanceSearchQuery.value.toLowerCase();
+  
+  filteredAttendanceResponses.value = attendanceResponses.value.filter(response => {
+    const matchesSearch = 
+      response.memberName.toLowerCase().includes(search) ||
+      (response.barangay && response.barangay.toLowerCase().includes(search)) ||
+      (response.comments && response.comments.toLowerCase().includes(search));
+    
+    const matchesForm = !attendanceFormFilter.value || response.formId === attendanceFormFilter.value;
+    
+    const matchesStatus = !attendanceStatusFilter.value || response.status === attendanceStatusFilter.value;
+    
+    return matchesSearch && matchesForm && matchesStatus;
+  });
+  
+  sortAttendanceResponses(attendanceSortField.value);
+};
+
+// Sort confirmations
+const sortConfirmations = (field) => {
+  if (confirmationSortField.value === field) {
+    confirmationSortDirection.value = confirmationSortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
-    responseSortField.value = field;
-    responseSortDirection.value = 'desc';
+    confirmationSortField.value = field;
+    confirmationSortDirection.value = 'desc';
   }
   
-  filteredResponses.value.sort((a, b) => {
+  filteredConfirmations.value.sort((a, b) => {
     let valueA = a[field];
     let valueB = b[field];
     
-    // Handle date fields
     if (field === 'submittedAt') {
       if (valueA instanceof Timestamp) valueA = valueA.toDate();
       if (valueB instanceof Timestamp) valueB = valueB.toDate();
@@ -837,13 +989,47 @@ const sortResponses = (field) => {
       if (typeof valueB === 'string') valueB = new Date(valueB);
     }
     
-    // Handle form ID (convert to event name)
     if (field === 'formId') {
       valueA = getEventName(valueA);
       valueB = getEventName(valueB);
     }
     
-    if (responseSortDirection.value === 'asc') {
+    if (confirmationSortDirection.value === 'asc') {
+      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+    } else {
+      return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+    }
+  });
+};
+
+// Sort attendance responses
+const sortAttendanceResponses = (field) => {
+  if (attendanceSortField.value === field) {
+    attendanceSortDirection.value = attendanceSortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    attendanceSortField.value = field;
+    attendanceSortDirection.value = 'desc';
+  }
+  
+  filteredAttendanceResponses.value.sort((a, b) => {
+    let valueA = a[field];
+    let valueB = b[field];
+    
+    if (field === 'submittedAt') {
+      if (valueA instanceof Timestamp) valueA = valueA.toDate();
+      if (valueB instanceof Timestamp) valueB = valueB.toDate();
+      if (valueA.seconds) valueA = new Date(valueA.seconds * 1000);
+      if (valueB.seconds) valueB = new Date(valueB.seconds * 1000);
+      if (typeof valueA === 'string') valueA = new Date(valueA);
+      if (typeof valueB === 'string') valueB = new Date(valueB);
+    }
+    
+    if (field === 'formId') {
+      valueA = getEventName(valueA);
+      valueB = getEventName(valueB);
+    }
+    
+    if (attendanceSortDirection.value === 'asc') {
       return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
     } else {
       return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
@@ -853,16 +1039,31 @@ const sortResponses = (field) => {
 
 // Get form status
 const getFormStatus = (form) => {
+  const now = new Date();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const attendanceDate = new Date(form.attendanceDate);
-  attendanceDate.setHours(0, 0, 0, 0);
+  const eventDate = new Date(form.eventDate);
+  eventDate.setHours(0, 0, 0, 0);
   
-  if (attendanceDate.getTime() === today.getTime()) {
-    return 'active';
-  } else if (attendanceDate.getTime() > today.getTime()) {
+  if (eventDate.getTime() > today.getTime()) {
     return 'upcoming';
+  } else if (eventDate.getTime() === today.getTime()) {
+    // Check if form is currently active (between event time and 10 PM)
+    const [hours, minutes] = form.eventTime.split(':');
+    const eventDateTime = new Date(form.eventDate);
+    eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    const endDateTime = new Date(form.eventDate);
+    endDateTime.setHours(22, 0, 0, 0); // 10 PM
+    
+    if (now >= eventDateTime && now <= endDateTime) {
+      return 'active';
+    } else if (now < eventDateTime) {
+      return 'upcoming';
+    } else {
+      return 'closed';
+    }
   } else {
     return 'closed';
   }
@@ -873,7 +1074,7 @@ const getFormStatusText = (form) => {
   const status = getFormStatus(form);
   
   if (status === 'active') {
-    return 'Active Today';
+    return 'Active Now';
   } else if (status === 'upcoming') {
     return 'Upcoming';
   } else {
@@ -881,8 +1082,13 @@ const getFormStatusText = (form) => {
   }
 };
 
-// Get response count for a form
-const getResponseCount = (formId) => {
+// Get confirmation count for a form
+const getConfirmationCount = (formId) => {
+  return eventConfirmations.value.filter(confirmation => confirmation.formId === formId).length;
+};
+
+// Get attendance count for a form
+const getAttendanceCount = (formId) => {
   return attendanceResponses.value.filter(response => response.formId === formId).length;
 };
 
@@ -896,12 +1102,6 @@ const getEventName = (formId) => {
 const viewFormDetails = (form) => {
   selectedForm.value = form;
   showFormModal.value = true;
-};
-
-// View response details
-const viewResponseDetails = (response) => {
-  selectedResponse.value = response;
-  showResponseModal.value = true;
 };
 
 // Delete form
@@ -922,16 +1122,13 @@ const confirmDelete = async () => {
     
     showNotification('Attendance form deleted successfully', 'success');
     
-    // Remove from local array
     const index = attendanceForms.value.findIndex(form => form.id === formToDelete.value.id);
     if (index !== -1) {
       attendanceForms.value.splice(index, 1);
     }
     
-    // Re-filter
     filterForms();
     
-    // Close modal
     showDeleteModal.value = false;
     formToDelete.value = null;
   } catch (error) {
@@ -1217,6 +1414,8 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .search-box input, .filter-box select {
@@ -1436,6 +1635,35 @@ onMounted(async () => {
   color: #374151;
 }
 
+.status-badge.present {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.absent {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Confirmation Badge */
+.confirmation-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.confirmation-badge.yes {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.confirmation-badge.no {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
 /* Resource Table */
 .resource-table-container {
   overflow-x: auto;
@@ -1570,32 +1798,11 @@ onMounted(async () => {
   font-size: 0.875rem;
 }
 
-/* QR Code Section */
-.qr-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #eee;
-}
-
-.qr-placeholder {
-  background-color: #f8f9fa;
-  border: 1px dashed #ccc;
-  border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.qr-help {
-  font-size: 0.75rem;
-  color: #666;
-  margin-top: 0.5rem;
-}
-
 /* Response Summary */
 .response-summary {
   display: flex;
   justify-content: center;
+  gap: 2rem;
   margin-top: 1rem;
 }
 
@@ -1619,6 +1826,7 @@ onMounted(async () => {
   font-size: 0.875rem;
   color: #666;
   margin-top: 0.25rem;
+  text-align: center;
 }
 
 /* Responsive Adjustments */
@@ -1633,6 +1841,15 @@ onMounted(async () => {
   
   .forms-grid {
     grid-template-columns: 1fr;
+  }
+
+  .list-controls {
+    flex-direction: column;
+  }
+
+  .response-summary {
+    flex-direction: column;
+    gap: 1rem;
   }
 }
 </style>
