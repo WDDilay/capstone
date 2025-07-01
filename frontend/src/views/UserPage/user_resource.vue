@@ -556,6 +556,42 @@
               <h3>Admin Feedback</h3>
               <p>{{ selectedRequest.adminFeedback }}</p>
             </div>
+            <!-- Add this section after the existing adminFeedback section -->
+            <div class="detail-section" v-if="selectedRequest.status === 'Rejected' && (selectedRequest.rejectionReason || selectedRequest.rejectionCategory)">
+              <h3>Rejection Details</h3>
+              
+              <div v-if="selectedRequest.rejectionCategory" class="rejection-category">
+                <h4>Category:</h4>
+                <span class="category-badge">{{ formatRejectionCategory(selectedRequest.rejectionCategory) }}</span>
+              </div>
+              
+              <div v-if="selectedRequest.rejectionReason" class="rejection-reason">
+                <h4>Reason:</h4>
+                <p class="rejection-text">{{ selectedRequest.rejectionReason }}</p>
+              </div>
+              
+              <div v-if="selectedRequest.rejectionSuggestions" class="rejection-suggestions">
+                <h4>Suggestions for Improvement:</h4>
+                <p class="suggestion-text">{{ selectedRequest.rejectionSuggestions }}</p>
+              </div>
+              
+              <div v-if="selectedRequest.rejectedBy" class="rejected-by">
+                <h4>Rejected By:</h4>
+                <p>{{ selectedRequest.rejectedBy }}</p>
+              </div>
+              
+              <div v-if="selectedRequest.rejectedAt" class="rejected-date">
+                <h4>Rejection Date:</h4>
+                <p>{{ formatDate(selectedRequest.rejectedAt) }}</p>
+              </div>
+              
+              <div v-if="selectedRequest.allowResubmission !== undefined" class="resubmission-status">
+                <h4>Resubmission:</h4>
+                <span :class="['resubmission-badge', selectedRequest.allowResubmission ? 'allowed' : 'not-allowed']">
+                  {{ selectedRequest.allowResubmission ? 'Allowed after addressing issues' : 'Not allowed' }}
+                </span>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button 
@@ -1307,6 +1343,20 @@ const confirmCancelRequest = async () => {
     showNotification('Failed to cancel request: ' + error.message, 'error');
   }
 };
+
+// Format rejection category for display
+const formatRejectionCategory = (category) => {
+  const categoryMap = {
+    'insufficient-documentation': 'Insufficient Documentation',
+    'duplicate-request': 'Duplicate Request',
+    'ineligible-resource': 'Ineligible for Requested Resource',
+    'resource-unavailable': 'Resource Currently Unavailable',
+    'incomplete-information': 'Incomplete Information',
+    'policy-violation': 'Policy Violation',
+    'other': 'Other'
+  }
+  return categoryMap[category] || category
+}
 
 // Watch for tab changes
 watch(activeTab, (newTab) => {
@@ -2248,5 +2298,71 @@ onMounted(async () => {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Rejection Details Styles */
+.rejection-category {
+  margin-bottom: 1rem;
+}
+
+.rejection-category h4,
+.rejection-reason h4,
+.rejection-suggestions h4,
+.rejected-by h4,
+.rejected-date h4,
+.resubmission-status h4 {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.category-badge {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.rejection-text,
+.suggestion-text {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+  padding: 0.75rem;
+  margin: 0;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
+
+.suggestion-text {
+  background-color: #f0f9ff;
+  border-left-color: #3b82f6;
+}
+
+.resubmission-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.resubmission-badge.allowed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.resubmission-badge.not-allowed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.rejection-reason,
+.rejection-suggestions,
+.rejected-by,
+.rejected-date,
+.resubmission-status {
+  margin-bottom: 1rem;
 }
 </style>

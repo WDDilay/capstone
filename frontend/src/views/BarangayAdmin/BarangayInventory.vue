@@ -271,7 +271,7 @@
                     </button>
                     <button 
                       v-if="request.status === 'Pending'" 
-                      @click="updateRequestStatus(request, 'Rejected')" 
+                      @click="openRejectModal(request)" 
                       class="reject-btn" 
                       title="Reject Request"
                     >
@@ -313,7 +313,6 @@
                   class="form-input"
                 >
               </div>
-
               <div class="form-group">
                 <label for="referenceId">Reference ID <span class="required">*</span></label>
                 <div class="reference-input-container">
@@ -343,7 +342,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="form-group">
                 <label for="contactNumber">Contact Number</label>
                 <input 
@@ -354,7 +352,6 @@
                   class="form-input"
                 >
               </div>
-
               <div class="form-group">
                 <label for="address">Address</label>
                 <input 
@@ -452,7 +449,6 @@
                 class="form-textarea"
               ></textarea>
             </div>
-
             <div class="form-group">
               <label for="notes">Additional Notes</label>
               <textarea 
@@ -754,12 +750,128 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 Approve Request
               </button>
-              <button @click="updateRequestStatus(selectedMemberRequest, 'Rejected')" class="reject-btn-large">
+              <button @click="openRejectModal(selectedMemberRequest)" class="reject-btn-large">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 Reject Request
               </button>
             </div>
             <button @click="showMemberRequestModal = false" class="close-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rejection Reason Modal - ADD THIS SECTION -->
+      <div v-if="showRejectModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Reject Resource Request</h2>
+            <button @click="closeRejectModal" class="close-modal">&times;</button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="request-summary" v-if="requestToReject">
+              <h3>Request Summary</h3>
+              <div class="summary-details">
+                <div class="detail-item">
+                  <span class="label">Member:</span>
+                  <span class="value">{{ requestToReject.userName || 'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Reference Code:</span>
+                  <span class="value">{{ requestToReject.referenceCode }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Request Date:</span>
+                  <span class="value">{{ formatDate(requestToReject.requestDate) }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Urgency:</span>
+                  <span class="value">{{ requestToReject.urgency }}</span>
+                </div>
+              </div>
+              
+              <div class="requested-resources-summary">
+                <h4>Requested Resources:</h4>
+                <ul>
+                  <li v-for="(item, index) in requestToReject.requestedItems" :key="index">
+                    {{ item.resourceName }} ({{ item.quantity }} {{ item.unit }}) - {{ item.resourceType }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="rejection-form">
+              <h3>Rejection Reason <span class="required">*</span></h3>
+              <p class="form-description">
+                Please provide a clear reason for rejecting this request. This will help the member understand the decision and potentially resubmit with corrections.
+              </p>
+              
+              <div class="form-group">
+                <label for="rejectionCategory">Rejection Category</label>
+                <select 
+                  id="rejectionCategory"
+                  v-model="rejectionForm.category" 
+                  class="form-select"
+                  @change="updateRejectionReason"
+                >
+                  <option value="">Select a category</option>
+                  <option value="insufficient-documentation">Insufficient Documentation</option>
+                  <option value="duplicate-request">Duplicate Request</option>
+                  <option value="ineligible-resource">Ineligible for Requested Resource</option>
+                  <option value="resource-unavailable">Resource Currently Unavailable</option>
+                  <option value="incomplete-information">Incomplete Information</option>
+                  <option value="policy-violation">Policy Violation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="rejectionReason">Detailed Reason <span class="required">*</span></label>
+                <textarea 
+                  id="rejectionReason"
+                  v-model="rejectionForm.reason" 
+                  placeholder="Please provide a detailed explanation for the rejection..."
+                  rows="4"
+                  class="form-textarea"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="suggestions">Suggestions for Resubmission (Optional)</label>
+                <textarea 
+                  id="suggestions"
+                  v-model="rejectionForm.suggestions" 
+                  placeholder="Provide suggestions on how the member can improve their request for future submissions..."
+                  rows="3"
+                  class="form-textarea"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    v-model="rejectionForm.allowResubmission"
+                    class="form-checkbox"
+                  >
+                  Allow member to resubmit this request after addressing the issues
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button 
+              @click="confirmRejectRequest" 
+              class="confirm-reject-btn"
+              :disabled="!rejectionForm.reason.trim() || isProcessingRejection"
+            >
+              {{ isProcessingRejection ? 'Processing...' : 'Confirm Rejection' }}
+            </button>
+            <button @click="closeRejectModal" class="cancel-btn" :disabled="isProcessingRejection">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -873,6 +985,30 @@ const historySortDirection = ref('desc');
 const showHistoryModal = ref(false);
 const selectedHistory = ref(null);
 
+// ADD THESE NEW REACTIVE VARIABLES FOR REJECTION MODAL
+const showRejectModal = ref(false);
+const requestToReject = ref(null);
+const isProcessingRejection = ref(false);
+
+// Rejection form
+const rejectionForm = ref({
+  category: '',
+  reason: '',
+  suggestions: '',
+  allowResubmission: true
+});
+
+// Predefined rejection reasons based on category
+const rejectionReasons = {
+  'insufficient-documentation': 'The request lacks sufficient supporting documentation to process.',
+  'duplicate-request': 'A similar request has already been submitted and is being processed.',
+  'ineligible-resource': 'The requested resource is not available for your eligibility category.',
+  'resource-unavailable': 'The requested resource is currently unavailable in our inventory.',
+  'incomplete-information': 'The request contains incomplete or missing required information.',
+  'policy-violation': 'The request does not comply with our resource allocation policies.',
+  'other': ''
+};
+
 // Resource type colors
 const resourceTypeColors = {
   'Financial': '#3B82F6', // blue
@@ -954,6 +1090,82 @@ const formatDate = (timestamp) => {
   } catch (error) {
     console.error('Error formatting date:', error);
     return 'Invalid date';
+  }
+};
+
+// ADD THESE NEW METHODS FOR REJECTION MODAL
+// Update rejection reason based on category
+const updateRejectionReason = () => {
+  if (rejectionForm.value.category && rejectionReasons[rejectionForm.value.category]) {
+    rejectionForm.value.reason = rejectionReasons[rejectionForm.value.category];
+  }
+};
+
+// Open reject modal
+const openRejectModal = (request) => {
+  requestToReject.value = request;
+  showRejectModal.value = true;
+  
+  // Reset form
+  rejectionForm.value.category = '';
+  rejectionForm.value.reason = '';
+  rejectionForm.value.suggestions = '';
+  rejectionForm.value.allowResubmission = true;
+};
+
+// Close reject modal
+const closeRejectModal = () => {
+  showRejectModal.value = false;
+  requestToReject.value = null;
+  
+  // Reset form
+  rejectionForm.value.category = '';
+  rejectionForm.value.reason = '';
+  rejectionForm.value.suggestions = '';
+  rejectionForm.value.allowResubmission = true;
+};
+
+// Confirm reject request
+const confirmRejectRequest = async () => {
+  if (!rejectionForm.value.reason.trim()) {
+    showNotification('Please provide a reason for rejection', 'error');
+    return;
+  }
+
+  isProcessingRejection.value = true;
+
+  try {
+    // Update the request in user_history collection
+    const requestRef = doc(db, 'user_history', requestToReject.value.id);
+    
+    await updateDoc(requestRef, {
+      status: 'Rejected',
+      rejectionReason: rejectionForm.value.reason.trim(),
+      rejectionCategory: rejectionForm.value.category,
+      rejectionSuggestions: rejectionForm.value.suggestions.trim(),
+      allowResubmission: rejectionForm.value.allowResubmission,
+      rejectedBy: currentBarangay.value + ' Admin',
+      rejectedAt: serverTimestamp(),
+      adminFeedback: `Rejected: ${rejectionForm.value.reason.trim()}${rejectionForm.value.suggestions ? '\n\nSuggestions: ' + rejectionForm.value.suggestions.trim() : ''}`,
+      updatedAt: serverTimestamp()
+    });
+
+    showNotification('Request has been rejected with detailed reason', 'success');
+    closeRejectModal();
+    
+    // Close member request modal if open
+    if (showMemberRequestModal.value) {
+      showMemberRequestModal.value = false;
+    }
+    
+    // Refresh the requests list
+    await loadMemberRequests();
+    
+  } catch (error) {
+    console.error('Error rejecting request:', error);
+    showNotification('Failed to reject request: ' + error.message, 'error');
+  } finally {
+    isProcessingRejection.value = false;
   }
 };
 
@@ -1284,10 +1496,13 @@ const removeResourceItem = (index) => {
 // Update resource details when selection changes
 const updateResourceDetails = (index) => {
   const item = memberResourceForm.value.resources[index];
-  const resource = getResourceById(item.resourceId);
+  const resource = getResourceById(item.resource);
   
-  if (resource && item.quantity > resource.remainingQuantity) {
-    item.quantity = resource.remainingQuantity;
+  if (resource) {
+    // Ensure quantity doesn't exceed available
+    if (item.quantity > resource.remainingQuantity) {
+      item.quantity = resource.remainingQuantity;
+    }
   }
 };
 
@@ -1295,7 +1510,7 @@ const updateResourceDetails = (index) => {
 const resetMemberResourceForm = () => {
   memberResourceForm.value = {
     memberName: '',
-    referenceId: '', // Updated field name
+    referenceId: '',
     contactNumber: '',
     address: '',
     resources: [{ resourceId: '', quantity: 1 }],
@@ -1305,7 +1520,7 @@ const resetMemberResourceForm = () => {
   memberRequestSuggestions.value = [];
 };
 
-// Submit member resource form - Updated to use member_history collection
+// Submit member resource form
 const submitMemberResourceForm = async () => {
   if (!isValidMemberForm.value) {
     showNotification('Please fill in all required fields correctly', 'error');
@@ -1315,12 +1530,11 @@ const submitMemberResourceForm = async () => {
   isSubmitting.value = true;
   
   try {
-    // Prepare resources data
-    const resources = memberResourceForm.value.resources.map(item => {
+    // Prepare resource data with additional details
+    const resourcesWithDetails = memberResourceForm.value.resources.map(item => {
       const resource = getResourceById(item.resourceId);
       return {
         requestId: resource.requestId,
-        resourceId: item.resourceId,
         resourceName: resource.resourceName,
         resourceType: resource.resourceType,
         quantity: item.quantity,
@@ -1328,81 +1542,69 @@ const submitMemberResourceForm = async () => {
       };
     });
     
-    // Create distribution record in member_history collection
+    // Add to member_history collection
     const memberHistoryCollection = collection(db, 'member_history');
     await addDoc(memberHistoryCollection, {
-      barangay: currentBarangay.value,
       memberName: memberResourceForm.value.memberName,
-      referenceId: memberResourceForm.value.referenceId, // Updated field name
+      referenceId: memberResourceForm.value.referenceId,
       contactNumber: memberResourceForm.value.contactNumber,
       address: memberResourceForm.value.address,
-      resources: resources,
+      resources: resourcesWithDetails,
       purpose: memberResourceForm.value.purpose,
       notes: memberResourceForm.value.notes,
+      barangay: currentBarangay.value,
       distributionDate: serverTimestamp(),
-      createdAt: serverTimestamp(),
-      distributedBy: currentBarangay.value // Track which barangay president distributed
+      createdAt: serverTimestamp()
     });
     
-    showNotification('Resources successfully sent to member', 'success');
+    showNotification('Resources sent to member successfully', 'success');
     resetMemberResourceForm();
     
-    // Refresh available resources
+    // Refresh available resources to update remaining quantities
     await fetchAvailableResources();
     
     // Switch to history tab
     activeTab.value = 'history';
     await loadMemberHistory();
   } catch (error) {
-    console.error('Error sending resources to member:', error);
-    showNotification('Failed to send resources to member', 'error');
+    console.error('Error submitting member resource form:', error);
+    showNotification('Failed to send resources: ' + error.message, 'error');
   } finally {
     isSubmitting.value = false;
   }
 };
 
-// Load member requests from user_history
+// Load member requests
 const loadMemberRequests = async () => {
   isLoadingMemberRequests.value = true;
   
   try {
-    // Ensure we have the current barangay
-    if (!currentBarangay.value) {
-      await checkAuthenticationAndBarangay();
-    }
+    await checkAuthenticationAndBarangay();
     
     const userHistoryCollection = collection(db, 'user_history');
     const q = query(
       userHistoryCollection,
-      where('barangay', '==', currentBarangay.value)
+      where('barangay', '==', currentBarangay.value),
+      orderBy('requestDate', 'desc')
     );
     
-    // Use onSnapshot for real-time updates
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const requests = [];
-      
-      querySnapshot.forEach(doc => {
-        requests.push({
-          id: doc.id,
-          ...doc.data()
-        });
+    const querySnapshot = await getDocs(q);
+    const requests = [];
+    
+    querySnapshot.forEach(doc => {
+      requests.push({
+        id: doc.id,
+        ...doc.data()
       });
-      
-      console.log('Member requests loaded:', requests.length);
-      memberRequests.value = requests;
-      filterMemberRequests();
-      
-      isLoadingMemberRequests.value = false;
-    }, (error) => {
-      console.error('Error loading member requests:', error);
-      showNotification('Failed to load member requests', 'error');
-      isLoadingMemberRequests.value = false;
     });
     
-    return unsubscribe;
+    memberRequests.value = requests;
+    filterMemberRequests();
+    
+    isLoadingMemberRequests.value = false;
   } catch (error) {
     console.error('Error loading member requests:', error);
-    showNotification('Failed to load member requests', 'error');
+    showNotification('Failed to load member requests: ' + error.message, 'error');
     isLoadingMemberRequests.value = false;
   }
 };
@@ -1415,11 +1617,10 @@ const filterMemberRequests = () => {
     const matchesSearch = 
       (request.userName && request.userName.toLowerCase().includes(search)) ||
       (request.referenceCode && request.referenceCode.toLowerCase().includes(search)) ||
-      (request.reason && request.reason.toLowerCase().includes(search)) ||
-      (request.requestedItems && request.requestedItems.some(item => 
+      request.requestedItems.some(item => 
         item.resourceName.toLowerCase().includes(search) ||
         item.resourceType.toLowerCase().includes(search)
-      ));
+      );
     
     const matchesStatus = !memberRequestStatusFilter.value || request.status === memberRequestStatusFilter.value;
     
@@ -1435,7 +1636,7 @@ const sortMemberRequests = (field) => {
     memberRequestSortDirection.value = memberRequestSortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     memberRequestSortField.value = field;
-    memberRequestSortDirection.value = 'desc';
+    memberRequestSortDirection.value = 'asc';
   }
   
   filteredMemberRequests.value.sort((a, b) => {
@@ -1486,13 +1687,7 @@ const updateRequestStatus = async (request, newStatus) => {
       memberRequests.value[index].status = newStatus;
     }
     
-    // Re-filter the list
     filterMemberRequests();
-    
-    // Close modal if open
-    if (showMemberRequestModal.value) {
-      showMemberRequestModal.value = false;
-    }
     
     showNotification(`Request ${newStatus.toLowerCase()} successfully`, 'success');
   } catch (error) {
@@ -1501,55 +1696,44 @@ const updateRequestStatus = async (request, newStatus) => {
   }
 };
 
-// Load member history - Updated to use member_history collection
+// Load member history
 const loadMemberHistory = async () => {
   isLoadingHistory.value = true;
   
   try {
-    // Ensure we have the current barangay
-    if (!currentBarangay.value) {
-      await checkAuthenticationAndBarangay();
-    }
+    await checkAuthenticationAndBarangay();
     
-    const memberHistoryCollection = collection(db, 'member_history'); // Updated collection name
+    const memberHistoryCollection = collection(db, 'member_history');
     const q = query(
       memberHistoryCollection,
       where('barangay', '==', currentBarangay.value),
       orderBy('distributionDate', 'desc')
     );
     
-    // Use onSnapshot for real-time updates
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const history = [];
-      
-      querySnapshot.forEach(doc => {
-        history.push({
-          id: doc.id,
-          ...doc.data()
-        });
+    const querySnapshot = await getDocs(q);
+    const history = [];
+    
+    querySnapshot.forEach(doc => {
+      history.push({
+        id: doc.id,
+        ...doc.data()
       });
-      
-      memberHistory.value = history;
-      filterHistory();
-      
-      // Update stats
-      stats.value[2].value = history.length.toString();
-      
-      // Count unique members served
-      const uniqueMembers = new Set(history.map(item => item.referenceId));
-      stats.value[3].value = uniqueMembers.size.toString();
-      
-      isLoadingHistory.value = false;
-    }, (error) => {
-      console.error('Error loading member history:', error);
-      showNotification('Failed to load distribution history', 'error');
-      isLoadingHistory.value = false;
     });
     
-    return unsubscribe;
+    memberHistory.value = history;
+    filterHistory();
+    
+    // Update stats
+    stats.value[2].value = history.length.toString();
+    
+    // Count unique members served
+    const uniqueMembers = new Set(history.map(h => h.referenceId));
+    stats.value[3].value = uniqueMembers.size.toString();
+    
+    isLoadingHistory.value = false;
   } catch (error) {
     console.error('Error loading member history:', error);
-    showNotification('Failed to load distribution history', 'error');
+    showNotification('Failed to load history: ' + error.message, 'error');
     isLoadingHistory.value = false;
   }
 };
@@ -1562,13 +1746,13 @@ const filterHistory = () => {
     const matchesSearch = 
       history.memberName.toLowerCase().includes(search) ||
       history.referenceId.toLowerCase().includes(search) ||
-      (history.purpose && history.purpose.toLowerCase().includes(search));
+      history.resources.some(resource => 
+        resource.resourceName.toLowerCase().includes(search) ||
+        resource.resourceType.toLowerCase().includes(search)
+      );
     
-    // Check if any resource matches the type filter
     const matchesType = !historyTypeFilter.value || 
-      (history.resources && history.resources.some(
-        resource => resource.resourceType === historyTypeFilter.value
-      ));
+      history.resources.some(resource => resource.resourceType === historyTypeFilter.value);
     
     return matchesSearch && matchesType;
   });
@@ -1582,7 +1766,7 @@ const sortHistory = (field) => {
     historySortDirection.value = historySortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     historySortField.value = field;
-    historySortDirection.value = 'desc';
+    historySortDirection.value = 'asc';
   }
   
   filteredHistory.value.sort((a, b) => {
@@ -1613,20 +1797,6 @@ const viewHistoryDetails = (history) => {
   showHistoryModal.value = true;
 };
 
-// Initialize
-onMounted(async () => {
-  try {
-    await fetchAvailableResources();
-    await loadMemberHistory();
-    await loadMemberRequests();
-  } catch (error) {
-    console.error('Error initializing inventory system:', error);
-    if (!authError.value) {
-      showNotification('Failed to initialize inventory system. Please refresh the page.', 'error');
-    }
-  }
-});
-
 // Watch for tab changes
 watch(activeTab, (newTab) => {
   if (newTab === 'memberRequest') {
@@ -1636,10 +1806,12 @@ watch(activeTab, (newTab) => {
   }
 });
 
-// Clear suggestions when clicking outside
-document.addEventListener('click', (event) => {
-  if (!event.target.closest('.reference-input-container')) {
-    memberRequestSuggestions.value = [];
+// Initialize
+onMounted(async () => {
+  try {
+    await fetchAvailableResources();
+  } catch (error) {
+    console.error('Error initializing inventory system:', error);
   }
 });
 </script>
@@ -1654,7 +1826,7 @@ document.addEventListener('click', (event) => {
 }
 
 .main-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -1663,7 +1835,49 @@ document.addEventListener('click', (event) => {
   font-size: 1.75rem;
   font-weight: 700;
   color: #2c3e50;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Notification */
+.notification {
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.notification.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.notification.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: inherit;
 }
 
 /* Stat Cards */
@@ -1720,133 +1934,6 @@ document.addEventListener('click', (event) => {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
-}
-
-/* Notification */
-.notification {
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.notification.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.notification.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.notification.info {
-  background-color: #d1ecf1;
-  color: #0c5460;
-  border: 1px solid #bee5eb;
-}
-
-.notification.warning {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeeba;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: inherit;
-}
-
-/* Reference Input Container with Suggestions */
-.reference-input-container {
-  position: relative;
-}
-
-.suggestions-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.suggestion-item {
-  padding: 0.75rem;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.suggestion-item:hover {
-  background-color: #f8f9fa;
-}
-
-.suggestion-item:last-child {
-  border-bottom: none;
-}
-
-.suggestion-main {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.suggestion-sub {
-  font-size: 0.875rem;
-  color: #666;
-}
-
-/* Send Button */
-.send-btn {
-  color: #10B981;
-}
-
-.send-btn:hover {
-  background-color: rgba(16, 185, 129, 0.1);
-}
-
-/* Error Container */
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: #721c24;
-  background-color: #f8d7da;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.error-icon {
-  margin-bottom: 1rem;
-  color: #dc3545;
-}
-
-.retry-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.retry-btn:hover {
-  background-color: #1a2530;
 }
 
 /* Tabs */
@@ -1923,7 +2010,37 @@ document.addEventListener('click', (event) => {
   to { transform: rotate(360deg); }
 }
 
-/* Resource Table */
+/* Error Container */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: #666;
+}
+
+.error-icon {
+  margin-bottom: 1rem;
+  color: #ef4444;
+}
+
+.retry-btn {
+  padding: 0.5rem 1rem;
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.retry-btn:hover {
+  background-color: #1a2530;
+}
+
+/* Tables */
 .resource-table-container {
   overflow-x: auto;
 }
@@ -1931,10 +2048,11 @@ document.addEventListener('click', (event) => {
 .resource-table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 1rem;
 }
 
 .resource-table th, .resource-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid #eee;
 }
@@ -1943,6 +2061,7 @@ document.addEventListener('click', (event) => {
   background-color: #f8f9fa;
   font-weight: 600;
   cursor: pointer;
+  user-select: none;
 }
 
 .resource-table th:hover {
@@ -1950,7 +2069,7 @@ document.addEventListener('click', (event) => {
 }
 
 .sort-icon {
-  margin-left: 0.25rem;
+  margin-left: 0.5rem;
   font-size: 0.75rem;
 }
 
@@ -1960,20 +2079,12 @@ document.addEventListener('click', (event) => {
 
 .no-data {
   text-align: center;
-  padding: 2rem;
   color: #666;
+  font-style: italic;
+  padding: 2rem;
 }
 
-/* Resource Type Badge */
-.resource-type-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-/* Status Badge */
+/* Status Badges */
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -1982,19 +2093,94 @@ document.addEventListener('click', (event) => {
   font-weight: 500;
 }
 
-.status-badge.approved {
-  background-color: #d4edda;
-  color: #155724;
-}
-
 .status-badge.pending {
   background-color: #fff3cd;
   color: #856404;
 }
 
+.status-badge.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
 .status-badge.rejected {
   background-color: #f8d7da;
   color: #721c24;
+}
+
+.resource-type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Resource Lists */
+.resource-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resource-item {
+  padding: 0.25rem 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid;
+  font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.view-btn, .approve-btn, .reject-btn, .send-btn {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-btn {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.view-btn:hover {
+  background-color: #dee2e6;
+}
+
+.approve-btn {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.approve-btn:hover {
+  background-color: #c3e6cb;
+}
+
+.reject-btn {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.reject-btn:hover {
+  background-color: #f5c6cb;
+}
+
+.send-btn {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.send-btn:hover {
+  background-color: #bee5eb;
 }
 
 /* Section Titles */
@@ -2013,6 +2199,12 @@ document.addEventListener('click', (event) => {
 }
 
 /* Form Styles */
+.member-resource-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .form-section {
   margin-bottom: 2rem;
   padding: 1.5rem;
@@ -2061,13 +2253,50 @@ document.addEventListener('click', (event) => {
   min-height: 100px;
 }
 
-/* Member Resource Form */
-.member-resource-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* Reference Input with Suggestions */
+.reference-input-container {
+  position: relative;
 }
 
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.suggestion-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-main {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-sub {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Resource Selection */
 .requested-resources {
   display: flex;
   flex-direction: column;
@@ -2083,7 +2312,7 @@ document.addEventListener('click', (event) => {
 
 .resource-selection {
   display: grid;
-  grid-template-columns: 3fr 1fr auto auto;
+  grid-template-columns: 2fr 1fr auto auto;
   gap: 1rem;
   align-items: flex-end;
 }
@@ -2096,10 +2325,9 @@ document.addEventListener('click', (event) => {
 .resource-unit {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
-  height: 100%;
-  padding-bottom: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
 }
 
 .unit-label {
@@ -2110,6 +2338,7 @@ document.addEventListener('click', (event) => {
 
 .unit-value {
   font-weight: 500;
+  color: #2c3e50;
 }
 
 .remove-btn {
@@ -2137,16 +2366,15 @@ document.addEventListener('click', (event) => {
 
 .resource-info {
   margin-top: 0.5rem;
-  display: flex;
-  gap: 0.5rem;
 }
 
 .info-badge {
   background-color: #e9ecef;
   color: #495057;
-  font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
+  font-size: 0.75rem;
+  display: inline-block;
 }
 
 .add-item-btn {
@@ -2209,87 +2437,6 @@ document.addEventListener('click', (event) => {
   background-color: #dee2e6;
 }
 
-/* Resource List in History */
-.resource-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.resource-item {
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
-  border-left: 3px solid;
-  background-color: #f8f9fa;
-}
-
-/* Action Buttons */
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.view-btn, .approve-btn, .reject-btn, .send-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.view-btn {
-  color: #2196f3;
-}
-
-.approve-btn {
-  color: #10B981;
-}
-
-.reject-btn {
-  color: #EF4444;
-}
-
-.send-btn {
-  color: #10B981;
-}
-
-.view-btn:hover, .approve-btn:hover, .reject-btn:hover, .send-btn:hover {
-  background-color: rgba(0,0,0,0.05);
-}
-
-.approve-btn-large, .reject-btn-large {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.approve-btn-large {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.approve-btn-large:hover {
-  background-color: #c3e6cb;
-}
-
-.reject-btn-large {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.reject-btn-large:hover {
-  background-color: #f5c6cb;
-}
-
 /* Modal Styles */
 .modal {
   position: fixed;
@@ -2347,12 +2494,6 @@ document.addEventListener('click', (event) => {
   gap: 0.5rem;
 }
 
-.status-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-right: auto;
-}
-
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -2403,6 +2544,139 @@ document.addEventListener('click', (event) => {
   background-color: #f8f9fa;
 }
 
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.approve-btn-large, .reject-btn-large {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.approve-btn-large {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.approve-btn-large:hover {
+  background-color: #c3e6cb;
+}
+
+.reject-btn-large {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.reject-btn-large:hover {
+  background-color: #f5c6cb;
+}
+
+/* ADD THESE STYLES FOR REJECTION MODAL */
+/* Request summary styles */
+.request-summary {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.request-summary h3 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.summary-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.label {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.value {
+  color: #1f2937;
+}
+
+.requested-resources-summary h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.requested-resources-summary ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.requested-resources-summary li {
+  margin-bottom: 0.25rem;
+  color: #4b5563;
+}
+
+/* Form styles */
+.rejection-form h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.form-description {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal !important;
+}
+
+.form-checkbox {
+  margin-top: 0.125rem;
+}
+
+/* Button styles */
+.confirm-reject-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.confirm-reject-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.confirm-reject-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .resource-selection {
@@ -2422,31 +2696,19 @@ document.addEventListener('click', (event) => {
     grid-template-columns: 1fr;
   }
   
-  .tabs {
-    flex-direction: column;
-  }
-  
-  .tab-btn {
-    text-align: left;
-    padding: 0.5rem 1rem;
-  }
-  
   .action-buttons {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 0.5rem;
   }
   
   .status-actions {
     flex-direction: column;
     width: 100%;
-    margin-bottom: 1rem;
   }
-
-  .suggestions-dropdown {
-    position: fixed;
-    left: 1rem;
-    right: 1rem;
-    top: auto;
+  
+  .approve-btn-large, .reject-btn-large {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
