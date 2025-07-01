@@ -176,20 +176,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue';
-import Button from 'primevue/button';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import Button from 'primevue/button';
 
-defineProps({
-  title: {
-    type: String,
-    default: 'Data Information'
-  }
-});
-
-// User state
 const userName = ref('User');
 const currentUserBarangay = ref('');
 
@@ -201,115 +193,38 @@ const notifications = ref([]);
 const isLoadingNotifications = ref(false);
 const notificationListener = ref(null);
 
-// Try to get the current barangay from various sources
-const getCurrentBarangay = () => {
-  // Method 1: Try to access global/injected variables
-  try {
-    // Try common variable names that might exist in your app
-    const possibleSources = [
-      window.currentbarangayuser,
-      window.currentBarangay,
-      window.userBarangay,
-      // Add more possible global variable names here
-    ];
+// Fetch the current user's barangay from Firestore
+const fetchUserBarangay = async () => {
+  const user = auth.currentUser; // Get the current logged-in user
 
-    for (const source of possibleSources) {
-      if (source) {
-        return source;
+  if (user) {
+    try {
+      const userRef = doc(db, 'users', user.uid); // Reference to the user document
+      const userSnap = await getDoc(userRef); // Fetch the user document
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const barangay = userData.barangay; // Get the barangay from the user document
+        currentUserBarangay.value = barangay; // Set the barangay to the reactive variable
+        console.log('Barangay fetched from Firestore:', barangay);
+      } else {
+        console.warn('No user document found in Firestore.');
       }
+    } catch (error) {
+      console.error('Error fetching user barangay from Firestore:', error);
     }
-  } catch (error) {
+  } else {
+    console.log('User is not authenticated.');
   }
-
-  // Method 2: Try to inject from parent component
-  try {
-    const injectedBarangay = inject('currentBarangay', null);
-    if (injectedBarangay) {
-      return injectedBarangay;
-    }
-  } catch (error) {
-  }
-
-  // Method 3: Check if it's stored in localStorage (as a fallback)
-  try {
-    const storedBarangay = localStorage.getItem('currentBarangay') || localStorage.getItem('userBarangay');
-    if (storedBarangay) {
-      return storedBarangay;
-    }
-  } catch (error) {
-  }
-
-  return null;
 };
+
 
 // Calculate unread notifications count
 const unreadCount = computed(() => {
   return notifications.value.filter(notification => !notification.read).length;
 });
 
-// Get read notifications from localStorage
-const getReadNotifications = () => {
-  try {
-    const stored = localStorage.getItem('readNotifications');
-    return new Set(stored ? JSON.parse(stored) : []);
-  } catch (error) {
-    console.error('Error reading notifications from localStorage:', error);
-    return new Set();
-  }
-};
-
-// Mark notification as read in localStorage
-const markNotificationAsRead = (notificationId) => {
-  const readNotifications = getReadNotifications();
-  readNotifications.add(notificationId);
-  localStorage.setItem('readNotifications', JSON.stringify([...readNotifications]));
-};
-
-// Format timestamp to relative time
-const formatTimeAgo = (timestamp) => {
-  if (!timestamp) return 'Just now';
-
-  try {
-    const now = new Date();
-    const time = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    const diffInSeconds = Math.floor((now - time) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-
-    return time.toLocaleDateString();
-  } catch (error) {
-    console.error('Error formatting time:', error);
-    return 'Recently';
-  }
-};
-
-// Create notification object from request data
-const createNotificationFromRequest = (requestData, requestId) => {
-  const resourceCount = requestData.requestedItems?.length || 0;
-  const resourceText = resourceCount === 1 ? 'resource' : 'resources';
-  const readNotifications = getReadNotifications();
-
-  return {
-    id: requestId,
-    title: 'New Resource Request',
-    message: `${resourceCount} ${resourceText} sent to your barangay`,
-    time: formatTimeAgo(requestData.createdAt),
-    read: readNotifications.has(requestId),
-    icon: 'pi pi-box',
-    iconClass: 'text-blue-500',
-    barangay: requestData.barangay,
-    adminName: requestData.adminName,
-    resourceCount,
-    purpose: requestData.purpose,
-    status: requestData.status || 'Pending',
-    timestamp: requestData.createdAt
-  };
-};
-
-// Setup Firebase listener for notifications
+// Setup notifications listener from Firestore based on barangay
 const setupNotificationListener = () => {
   if (!currentUserBarangay.value) {
     isLoadingNotifications.value = false;
@@ -323,55 +238,82 @@ const setupNotificationListener = () => {
       notificationListener.value();
     }
 
-    const q = query(
-      collection(db, 'request_history'),
+    // Fetch announcements made by FederationPresident for the current barangay
+    const announcementsQuery = query(
+      collection(db, 'announcements'),
+      where('createdBy', '==', 'FederationPresident'),
       where('barangay', '==', currentUserBarangay.value),
       orderBy('createdAt', 'desc'),
-      limit(20)
+      limit(5)
     );
 
-    notificationListener.value = onSnapshot(q, (snapshot) => {
-      
-      const barangayNotifications = [];
-      
-      snapshot.forEach((doc) => {
+    const announcementsUnsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
+      const newAnnouncements = snapshot.docs.map(doc => {
         const data = doc.data();
-        const notification = createNotificationFromRequest(data, doc.id);
-        barangayNotifications.push(notification);
+        return {
+          id: doc.id,
+          type: 'announcement',
+          title: data.title || 'New Announcement',
+          message: data.message || '',
+          timestamp: data.createdAt,
+          read: false,
+          createdBy: data.createdBy,
+          barangay: data.barangay,
+          icon: 'pi pi-megaphone'
+        };
       });
 
-      barangayNotifications.sort((a, b) => {
-        const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0);
-        const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0);
-        return timeB - timeA;
-      });
-
-      notifications.value = barangayNotifications;
-      isLoadingNotifications.value = false;
-      
-    }, (error) => {
-      console.error('Error listening to notifications:', error);
-      isLoadingNotifications.value = false;
+      mergeNotifications(newAnnouncements);
     });
 
+    unsubscribers.value.push(announcementsUnsubscribe);
+
+    // Fetch applications specific to the current barangay
+    const applicationsQuery = query(
+      collection(db, 'applications'),
+      where('barangay', '==', currentUserBarangay.value),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+
+    const applicationsUnsubscribe = onSnapshot(applicationsQuery, (snapshot) => {
+      const newApplications = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          type: 'application',
+          title: 'New Membership Application',
+          message: `${data.name || 'Someone'} has applied for membership`,
+          timestamp: data.createdAt,
+          read: false,
+          applicantName: data.name,
+          barangay: data.barangay,
+          icon: 'pi pi-file'
+        };
+      });
+
+      mergeNotifications(newApplications);
+    });
+
+    unsubscribers.value.push(applicationsUnsubscribe);
   } catch (error) {
-    console.error('Error setting up notification listener:', error);
+    console.error('Error fetching notifications:', error);
     isLoadingNotifications.value = false;
   }
 };
 
-// Toggle notifications panel
-const toggleNotifications = () => {
-  showNotifications.value = !showNotifications.value;
+// Merge new notifications with existing ones
+const mergeNotifications = (newNotifications) => {
+  const existingIds = notifications.value.map(n => n.id);
+  newNotifications.forEach(notification => {
+    if (!existingIds.includes(notification.id)) {
+      notifications.value.unshift(notification);
+    }
+  });
 };
 
 // Handle notification click
 const handleNotificationClick = (notification) => {
-  if (!notification.read) {
-    notification.read = true;
-    markNotificationAsRead(notification.id);
-  }
-  
   selectedNotification.value = notification;
   showNotificationModal.value = true;
   showNotifications.value = false;
@@ -379,104 +321,42 @@ const handleNotificationClick = (notification) => {
 
 // Mark all notifications as read
 const markAllAsRead = () => {
-  const readNotifications = getReadNotifications();
-  
   notifications.value.forEach(notification => {
-    if (!notification.read) {
-      notification.read = true;
-      readNotifications.add(notification.id);
-    }
+    notification.read = true;
   });
-  
-  localStorage.setItem('readNotifications', JSON.stringify([...readNotifications]));
 };
 
-// Handle view all notifications
+// Handle "View All" button click
 const handleViewAll = () => {
   showNotifications.value = false;
 };
 
-// Get status styling class
-const getStatusClass = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'approved':
-      return 'bg-green-100 text-green-800';
-    case 'rejected':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
+// Toggle notifications panel visibility
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value;
 };
 
-// Close notifications panel when clicking escape key
-const handleEscKey = (event) => {
-  if (event.key === 'Escape') {
-    if (showNotificationModal.value) {
-      showNotificationModal.value = false;
-    } else if (showNotifications.value) {
-      showNotifications.value = false;
-    }
-  }
-};
-
-// Function to update user name from current auth state
-const updateUserName = () => {
-  const user = auth.currentUser;
-  if (user) {
-    userName.value = user.displayName || user.email || user.uid;
-  } else {
-    userName.value = 'User';
-  }
-};
-
-// Add and remove event listeners
+// Initialize user state and fetch barangay
 onMounted(() => {
-  document.addEventListener('keydown', handleEscKey);
-  
-  // Get current barangay
-  const barangay = getCurrentBarangay();
-  if (barangay) {
-    currentUserBarangay.value = barangay;
-  }
-  
   const unsubscribe = onAuthStateChanged(auth, (user) => {
-    updateUserName();
-    
-    if (user && currentUserBarangay.value) {
-      setupNotificationListener();
+    if (user) {
+      // Fetch the user name and barangay after login
+      userName.value = user.displayName || user.email || user.uid;
+      fetchUserBarangay(); // Fetch the barangay from Firestore after login
     } else {
-      notifications.value = [];
-      if (notificationListener.value) {
-        notificationListener.value();
-        notificationListener.value = null;
-      }
+      userName.value = 'User'; // Reset to default user name if not authenticated
+      currentUserBarangay.value = ''; // Reset barangay if user logs out
     }
   });
-  
-  updateUserName();
-  
-  if (auth.currentUser && currentUserBarangay.value) {
-    setupNotificationListener();
-  }
-  
+
   onUnmounted(() => {
-    document.removeEventListener('keydown', handleEscKey);
-    if (notificationListener.value) {
-      notificationListener.value();
-    }
     unsubscribe();
   });
 });
 
-// Watch for changes in currentUserBarangay
-watch(currentUserBarangay, (newBarangay, oldBarangay) => {
-  if (newBarangay !== oldBarangay && newBarangay) {
-    setupNotificationListener();
-  }
-});
+
 </script>
+
 
 <style scoped>
 .animate-pulse {

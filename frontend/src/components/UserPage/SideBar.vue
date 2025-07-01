@@ -100,6 +100,11 @@ const navItems = [
     icon: Calendar 
   },
   { 
+    title: 'Feedback', 
+    path: '/user-dashboard/Feedback', 
+    icon: FileText 
+  },
+  { 
     title: 'Profile', 
     path: '/user-dashboard/Profile', 
     icon: User 
@@ -109,6 +114,7 @@ const navItems = [
     path: '/user-dashboard/user_resource', 
     icon: FileText 
   },
+  
   { 
     title: 'Attendance', 
     path: '/user-dashboard/Attendance', 

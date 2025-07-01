@@ -83,10 +83,10 @@ const setupNotificationListeners = () => {
   unsubscribers.value.forEach(unsub => unsub());
   unsubscribers.value = [];
   
-  // 1. Listen for announcements (from FederationPresident and BarangayPresident)
+  // 1. Listen for announcements created by BarangayPresident only
   const announcementsQuery = query(
     collection(db, 'announcements'),
-    where('createdBy', 'in', ['FederationPresident', 'BarangayPresident']),
+    where('createdBy', '==', 'BarangayPresident'),
     orderBy('createdAt', 'desc'),
     limit(5)
   );
@@ -183,7 +183,41 @@ const setupNotificationListeners = () => {
   });
   
   unsubscribers.value.push(applicationsUnsubscribe);
+
+  // 4. Listen for pre-registration notifications (new preregistration data)
+  const preregistrationQuery = query(
+  collection(db, 'preregistration'),
+  orderBy('timestamp', 'desc'),
+  limit(5)
+);
+
+const preregistrationUnsubscribe = onSnapshot(preregistrationQuery, (snapshot) => {
+  const newPreregistration = snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      type: 'preregistration',
+      title: 'New Pre-registration Request',
+      message: `${data.firstName} ${data.lastName} (${data.role || 'Visitor'}) has submitted a pre-registration request. Email: ${data.email}`,
+      timestamp: data.timestamp,
+      read: false,
+      applicantName: `${data.firstName} ${data.lastName}`,
+      role: data.role,
+      address: data.address,
+      contactNumber: data.contactNumber,
+      facebookAccount: data.facebookAccount,
+      icon: 'pi-id-card'
+    };
+  });
+  
+  mergeNotifications(newPreregistration);
+}, (error) => {
+  console.error('Error fetching preregistration data:', error);
+});
+
+unsubscribers.value.push(preregistrationUnsubscribe);
 };
+
 
 // Merge new notifications with existing ones, avoiding duplicates
 const mergeNotifications = (newItems) => {
@@ -234,16 +268,19 @@ const handleNotificationClick = (notification) => {
   // Navigate based on notification type
   switch (notification.type) {
     case 'announcement':
-      router.push('/announcements');
+      router.push('/super-admin/events');  // Navigates to the Events page
       break;
     case 'event':
-      router.push(`/events/${notification.id}`);
+      router.push(`/super-admin/events/${notification.id}`);  // Navigates to a specific event
       break;
     case 'application':
-      router.push(`/applications/${notification.id}`);
+      router.push(`/super-admin/application/${notification.id}`);  // Navigates to the specific application page
+      break;
+    case 'preregistration':
+      router.push('/super-admin/pre-register');  // Navigates to the Pre-registration page
       break;
     default:
-      router.push('/dashboard');
+      router.push('/super-admin/notification');  // Default: Go to notifications page
   }
 };
 

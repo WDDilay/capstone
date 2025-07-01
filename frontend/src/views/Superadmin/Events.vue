@@ -178,139 +178,144 @@
         </div>
       </div>
 
-      <!-- Enhanced Event Dialog with Time and Location -->
-      <Dialog 
-        v-model:visible="eventDialog" 
-        :header="editMode ? 'Edit Event' : 'Add New Event'" 
-        :modal="true" 
-        class="p-fluid no-scrollbar-dialog" 
-        :style="{width: '550px'}"
-        :showHeader="false"
-        :dismissableMask="true"
-      >
-        <div class="bg-gradient-to-r from-primary-600 to-primary-400 p-5 -m-4 mb-4 relative">
-          <Button 
-            icon="pi pi-times" 
-            @click="hideEventDialog" 
-            class="p-button-rounded p-button-text p-button-sm absolute right-3 top-3 text-white hover:bg-white/20"
-          />
-          <h2 class="text-2xl font-bold text-white mb-1">
-            {{ editMode ? 'Edit Event' : 'Create New Event' }}
-          </h2>
-          <p class="text-white/80 text-sm">
-            {{ editMode ? 'Update your event details' : 'Add details for your new event' }}
-          </p>
-        </div>
-        
-        <div class="p-4">
-          <div class="field mb-5">
-            <label for="eventTitle" class="block text-sm font-medium text-surface-700 mb-2">Event Title</label>
-            <InputText 
-              id="eventTitle" 
-              v-model="newEvent.title" 
-              required 
-              autofocus 
-              class="w-full p-inputtext-sm rounded-lg border-surface-200 shadow-sm"
-              placeholder="Enter event title"
-            />
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            <div class="field">
-              <label for="eventDate" class="block text-sm font-medium text-surface-700 mb-2">Date</label>
-              <DatePicker 
-                id="eventDate" 
-                v-model="newEvent.date" 
-                dateFormat="yy-mm-dd" 
-                showIcon 
-                @date-select="updateEventDate" 
-              />
-            </div>
-            
-            <div class="field">
-              <label for="eventTime" class="block text-sm font-medium text-surface-700 mb-2">Time</label>
-              <DatePicker
-                id="eventTime" 
-                v-model="newEvent.date" 
-                timeOnly 
-                hourFormat="12"
-                showIcon
-              />
-            </div>
-          </div>
-          
-          <div class="field mb-5">
-            <label for="eventLocation" class="block text-sm font-medium text-surface-700 mb-2">Location</label>
-            <InputText 
-              id="eventLocation" 
-              v-model="newEvent.location" 
-              class="w-full p-inputtext-sm rounded-lg border-surface-200 shadow-sm"
-              placeholder="Enter event location"
-            />
-          </div>
-          
-          <div class="field mb-5">
-            <label for="eventType" class="block text-sm font-medium text-surface-700 mb-2">Event Type</label>
-            <Dropdown 
-              id="eventType" 
-              v-model="newEvent.type" 
-              :options="eventTypes" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Event Type" 
-              required 
-              class="w-full p-inputtext-sm"
-            >
-              <template #value="slotProps">
-                <div v-if="slotProps.value" class="flex items-center">
-                  <span :class="`w-3 h-3 ${getEventTypeColor(slotProps.value)} rounded-full mr-2`"></span>
-                  {{ getEventTypeLabel(slotProps.value) }}
+      <!-- Enhanced Modal Event Dialog -->
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div v-if="eventDialog" class="modal-backdrop" @click="hideEventDialog">
+            <div class="modal-container" @click.stop>
+              <div class="modal-content">
+                <!-- Header -->
+                <div class="modal-header">
+                  <h2 class="modal-title">
+                    {{ editMode ? 'Edit Event' : 'Create New Event' }}
+                  </h2>
+                  <Button 
+                    icon="pi pi-times" 
+                    @click="hideEventDialog" 
+                    class="p-button-rounded p-button-text close-button"
+                    aria-label="Close"
+                  />
                 </div>
-                <span v-else>{{ slotProps.placeholder }}</span>
-              </template>
-              <template #option="slotProps">
-                <div class="flex items-center">
-                  <span :class="`w-3 h-3 ${getEventTypeColor(slotProps.option.value)} rounded-full mr-2`"></span>
-                  {{ slotProps.option.label }}
+                
+                <!-- Body -->
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="eventTitle">Event Title</label>
+                    <InputText 
+                      id="eventTitle" 
+                      v-model="newEvent.title" 
+                      required 
+                      autofocus 
+                      class="form-control"
+                      placeholder="Enter event title"
+                    />
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="eventDate">Date</label>
+                      <DatePicker 
+                        id="eventDate" 
+                        v-model="newEvent.date" 
+                        dateFormat="yy-mm-dd" 
+                        showIcon 
+                        @date-select="updateEventDate"
+                        class="date-picker"
+                      />
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="eventTime">Time</label>
+                      <DatePicker
+                        id="eventTime" 
+                        v-model="newEvent.date" 
+                        timeOnly 
+                        hourFormat="12"
+                        showIcon
+                        class="time-picker"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="eventLocation">Location</label>
+                    <InputText 
+                      id="eventLocation" 
+                      v-model="newEvent.location" 
+                      class="form-control"
+                      placeholder="Enter event location"
+                    />
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="eventType">Event Type</label>
+                    <Dropdown 
+                      id="eventType" 
+                      v-model="newEvent.type" 
+                      :options="eventTypes" 
+                      optionLabel="label" 
+                      optionValue="value"
+                      placeholder="Select Event Type" 
+                      required 
+                      class="form-control"
+                    >
+                      <template #value="slotProps">
+                        <div v-if="slotProps.value" class="flex items-center">
+                          <span :class="`event-type-indicator ${getEventTypeColor(slotProps.value).replace('bg-', '')}`"></span>
+                          {{ getEventTypeLabel(slotProps.value) }}
+                        </div>
+                        <span v-else>{{ slotProps.placeholder }}</span>
+                      </template>
+                      <template #option="slotProps">
+                        <div class="flex items-center">
+                          <span :class="`event-type-indicator ${getEventTypeColor(slotProps.option.value).replace('bg-', '')}`"></span>
+                          {{ slotProps.option.label }}
+                        </div>
+                      </template>
+                    </Dropdown>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="eventDescription">Description</label>
+                    <Textarea 
+                      id="eventDescription" 
+                      v-model="newEvent.description" 
+                      rows="3" 
+                      class="form-control"
+                      placeholder="Add details about this event"
+                    />
+                  </div>
                 </div>
-              </template>
-            </Dropdown>
+                
+                <!-- Footer -->
+                <div class="modal-footer">
+                  <Button 
+                    v-if="editMode"
+                    label="Delete" 
+                    icon="pi pi-trash" 
+                    class="delete-button" 
+                    @click="confirmDeleteEvent" 
+                  />
+                  <div class="action-buttons">
+                    <Button 
+                      label="Close" 
+                      icon="pi pi-times" 
+                      class="cancel-button" 
+                      @click="hideEventDialog" 
+                    />
+                    <Button 
+                      :label="editMode ? 'Save Changes' : 'Add Event'" 
+                      icon="pi pi-check" 
+                      class="save-button" 
+                      @click="saveEvent" 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="field mb-5">
-            <label for="eventDescription" class="block text-sm font-medium text-surface-700 mb-2">Description</label>
-            <Textarea 
-              id="eventDescription" 
-              v-model="newEvent.description" 
-              rows="3" 
-              class="w-full p-inputtext-sm rounded-lg border-surface-200 shadow-sm"
-              placeholder="Add details about this event"
-            />
-          </div>
-          
-          <div class="flex justify-end gap-3 mt-6">
-            <Button 
-              v-if="editMode"
-              label="Delete" 
-              icon="pi pi-trash" 
-              class="p-button-danger p-button-text mr-auto" 
-              @click="confirmDeleteEvent" 
-            />
-            <Button 
-              label="Cancel" 
-              icon="pi pi-times" 
-              class="p-button-text" 
-              @click="hideEventDialog" 
-            />
-            <Button 
-              label="Save Event" 
-              icon="pi pi-check" 
-              class="p-button-primary bg-gradient-to-r from-primary-600 to-primary-400 border-none shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 px-5" 
-              @click="saveEvent" 
-            />
-          </div>
-        </div>
-      </Dialog>
+        </Transition>
+      </Teleport>
 
       <!-- Confirmation Dialog for Delete -->
       <Dialog 
@@ -382,6 +387,7 @@ import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
+import { Teleport, Transition } from 'vue';
 
 const date = ref(new Date());
 const events = ref([]);
@@ -1077,18 +1083,6 @@ const updateEventDate = (value) => {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* No scrollbar dialog styling */
-.no-scrollbar-dialog {
-  max-height: none;
-  overflow: visible;
-}
-
-:deep(.no-scrollbar-dialog .p-dialog-content) {
-  overflow: visible;
-  padding: 0;
-  border-radius: 1rem;
-}
-
 /* CSS Variables for primary colors with RGB values for box-shadow */
 :root {
   --primary-100-rgb: 224, 231, 255;
@@ -1096,6 +1090,225 @@ const updateEventDate = (value) => {
   --primary-400-rgb: 129, 140, 248;
   --primary-500-rgb: 99, 102, 241;
   --primary-600-rgb: 79, 70, 229;
+}
+
+/* Modern Modal Styling */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  width: 90%;
+  max-width: 550px;
+  max-height: 90vh;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+  transition: transform 0.3s ease-out;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 90vh;
+}
+
+.modal-header {
+  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8));
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-button {
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9);
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: var(--surface-100, #f1f5f9);
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background-color: var(--primary-400, #818cf8);
+  border-radius: 20px;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  flex-shrink: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.625rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-control:focus {
+  border-color: var(--primary-400, #818cf8);
+  box-shadow: 0 0 0 3px rgba(var(--primary-400-rgb, 129, 140, 248), 0.2);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.date-picker, .time-picker {
+  width: 100%;
+}
+
+.event-type-indicator {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+}
+
+.delete-button {
+  background-color: transparent !important;
+  color: #ef4444 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+.delete-button:hover {
+  background-color: #fef2f2 !important;
+}
+
+.cancel-button {
+  background-color: transparent !important;
+  color: #64748b !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.cancel-button:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.save-button {
+  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8)) !important;
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 2px 4px -2px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.save-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 4px 6px -4px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important;
+}
+
+/* Modal transition animations */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .modal-container {
+  animation: modal-in 0.3s ease-out forwards;
+}
+
+.modal-fade-leave-active .modal-container {
+  animation: modal-out 0.2s ease-in forwards;
+}
+
+@keyframes modal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modal-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
 }
 
 /* Responsive adjustments */
@@ -1113,4 +1326,51 @@ const updateEventDate = (value) => {
     padding: 1px 2px;
   }
 }
+
+/* Responsive adjustments for the modal */
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .delete-button {
+    margin-right: auto;
+    margin-left: 0;
+  }
+  
+  .action-buttons {
+    width: 100%;
+  }
+  
+  .cancel-button, .save-button {
+    flex: 1;
+  }
+}
 </style>
+
+The key changes I made to clone the modal styles from barangayevents.vue:
+
+1. **Replaced PrimeVue Dialog** with custom modal using `Teleport` and `Transition`
+2. **Added modern modal styling** with:
+   - Backdrop blur effect
+   - Gradient header
+   - Scrollable body
+   - Modern form controls
+   - Enhanced button styling
+3. **Imported Teleport and Transition** from Vue
+4. **Added all the CSS classes** for the modern modal design
+5. **Maintained all existing functionality** while upgrading the visual design
+
+The modal now has the same modern, polished look as your barangayevents.vue file with:
+- Beautiful gradient header
+- Smooth animations
+- Better form styling
+- Responsive design
+- Custom scrollbars
+- Enhanced button interactions
+

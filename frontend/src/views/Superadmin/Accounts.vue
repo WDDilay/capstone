@@ -122,14 +122,16 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input 
-              v-model="editForm.username" 
-              type="text" 
+                 v-model="editForm.email" 
+              type="email" 
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
               :disabled="editMode"
             />
-            <p v-if="submitted && !editForm.username" class="mt-1 text-sm text-red-600">Username is required</p>
+
+            <p v-if="submitted && !editForm.email" class="mt-1 text-sm text-red-600">Email is required</p>
+
           </div>
           
           <div v-if="!editMode">
@@ -250,10 +252,11 @@ const sortDirection = ref('asc');
 const editForm = ref({
   id: '',
   name: '',
-  username: '',
+  email: '',
   password: '',
   barangay: ''
 });
+
 
 // Fetch barangays from Firestore
 const fetchBarangays = async () => {
@@ -374,65 +377,61 @@ const confirmDeleteAccount = (account) => {
 const saveAccount = async () => {
   submitted.value = true;
 
-  // Validation for new account
-  if (!editMode.value && (!editForm.value.name || !editForm.value.username || !editForm.value.password || !editForm.value.barangay)) {
-    console.error('Missing required fields for new account');
-    return;
+  if (!editMode.value && (!editForm.value.name || !editForm.value.email || !editForm.value.password || !editForm.value.barangay)) {
+    return alert('Please complete all fields.');
   }
 
-  // Validation for edit account
   if (editMode.value && (!editForm.value.name || !editForm.value.barangay)) {
-    console.error('Missing required fields for edit');
-    return;
+    return alert('Please complete all fields.');
   }
 
   isProcessing.value = true;
 
   try {
     if (editMode.value) {
-      // Update existing account in Firestore
       await updateDoc(doc(db, 'barangay_presidents', editForm.value.id), {
         name: editForm.value.name,
         barangay: editForm.value.barangay,
         updatedAt: new Date()
       });
-      
-      console.log('Account updated successfully');
+      console.log('Account updated');
     } else {
-      // Create Firebase Auth User
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        editForm.value.username, 
-        editForm.value.password
-      );
-      
-      const user = userCredential.user;
-      
-      // Update Display Name
-      await updateProfile(user, { 
-        displayName: editForm.value.name 
-      });
-      
-      // Add to Firestore with UID as Document ID
-      await setDoc(doc(db, 'barangay_presidents', user.uid), {
+      // Store current admin credentials
+      const currentAdmin = auth.currentUser;
+      const adminEmail = currentAdmin.email;
+      const adminPassword = prompt("Re-enter your password to continue:");
+
+      if (!adminPassword) throw new Error("Password is required.");
+
+      // Create new user (this will log out the current admin)
+      const userCredential = await createUserWithEmailAndPassword(auth, editForm.value.email, editForm.value.password);
+      const newUser = userCredential.user;
+
+      // Switch back to Federation President
+      await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+      console.log('Signed back in as Federation President');
+
+      // Save user info to Firestore
+      await setDoc(doc(db, 'barangay_presidents', newUser.uid), {
         name: editForm.value.name,
-        username: editForm.value.username,
+        email: editForm.value.email,
         barangay: editForm.value.barangay,
-        role: "BarangayPresident",
+        role: 'BarangayPresident',
         createdAt: new Date()
       });
-      
-      console.log('Account added successfully with matching UID');
+
+      console.log('Barangay account created and admin restored');
     }
-    
+
     closeModal();
   } catch (error) {
-    console.error('Error saving account:', error.message);
-    alert(`Error: ${error.message}`);
+    console.error('Error:', error.message);
+    alert(error.message);
   } finally {
     isProcessing.value = false;
   }
 };
+
 
 const deleteAccount = async () => {
   if (!editForm.value.id || isProcessing.value) return;
