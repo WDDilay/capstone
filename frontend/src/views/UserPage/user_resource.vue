@@ -36,6 +36,12 @@
         >
           My Requests
         </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'adminSent' }]" 
+          @click="activeTab = 'adminSent'; loadAdminSentResources()"
+        >
+          Admin Sent Resources
+        </button>
       </div>
 
       <!-- Request Resource Tab -->
@@ -154,7 +160,6 @@
                 <option value="Critical">Critical - Immediate need</option>
               </select>
             </div>
-
             <div class="form-group">
               <label for="reason">Reason for Request <span class="required">*</span></label>
               <textarea 
@@ -166,7 +171,6 @@
                 class="form-textarea"
               ></textarea>
             </div>
-
             <div class="form-group">
               <label for="additionalInfo">Additional Information</label>
               <textarea 
@@ -194,7 +198,6 @@
                   class="form-input"
                 >
               </div>
-
               <div class="form-group">
                 <label for="alternateContact">Alternate Contact (Optional)</label>
                 <input 
@@ -205,7 +208,6 @@
                   class="form-input"
                 >
               </div>
-
               <div class="form-group">
                 <label for="preferredContactTime">Preferred Contact Time</label>
                 <select 
@@ -219,7 +221,6 @@
                   <option value="Evening">Evening (5PM - 8PM)</option>
                 </select>
               </div>
-
               <div class="form-group">
                 <label for="deliveryAddress">Delivery Address <span class="required">*</span></label>
                 <input 
@@ -354,6 +355,102 @@
         </div>
       </div>
 
+      <!-- Admin Sent Resources Tab -->
+      <div v-if="activeTab === 'adminSent'" class="tab-content">
+        <h2 class="section-title">Resources Sent by Admin</h2>
+        
+        <div class="list-controls">
+          <div class="search-box">
+            <input 
+              v-model="adminSentSearchQuery" 
+              type="text" 
+              placeholder="Search sent resources..." 
+              @input="filterAdminSentResources"
+            >
+          </div>
+          <div class="filter-box">
+            <select v-model="adminSentTypeFilter" @change="filterAdminSentResources">
+              <option value="">All Types</option>
+              <option value="Financial">Financial</option>
+              <option value="Medical">Medical</option>
+              <option value="Educational">Educational</option>
+              <option value="Legal">Legal</option>
+              <option value="Livelihood">Livelihood</option>
+              <option value="Housing">Housing</option>
+              <option value="Food">Food</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="isLoadingAdminSent" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading sent resources...</p>
+        </div>
+
+        <div v-else-if="adminSentResources.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><package class="h-12 w-12"></package></svg>
+          </div>
+          <h3>No Resources Received</h3>
+          <p>You haven't received any resources from the admin yet.</p>
+        </div>
+
+        <div v-else class="admin-sent-cards">
+          <div 
+            v-for="sentResource in filteredAdminSentResources" 
+            :key="sentResource.id" 
+            class="admin-sent-card"
+          >
+            <div class="sent-header">
+              <div class="sent-date">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><calendar class="h-4 w-4"></calendar></svg>
+                {{ formatDate(sentResource.distributionDate) }}
+              </div>
+              <div class="sent-reference">
+                <span class="reference-badge">{{ sentResource.referenceId }}</span>
+              </div>
+            </div>
+            
+            <div class="sent-resources">
+              <h4>Resources Received</h4>
+              <div class="resource-list">
+                <div 
+                  v-for="(resource, index) in sentResource.resources" 
+                  :key="index"
+                  class="resource-item"
+                  :style="`border-left-color: ${getResourceTypeColor(resource.resourceType, 1)}`"
+                >
+                  <div class="resource-name">{{ resource.resourceName }}</div>
+                  <div class="resource-details">
+                    <span class="resource-type" :style="`background-color: ${getResourceTypeColor(resource.resourceType, 0.2)}; color: ${getResourceTypeColor(resource.resourceType, 1)}`">
+                      {{ resource.resourceType }}
+                    </span>
+                    <span class="resource-quantity">{{ resource.quantity }} {{ resource.unit }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="sent-purpose" v-if="sentResource.purpose">
+              <h4>Purpose</h4>
+              <p>{{ sentResource.purpose }}</p>
+            </div>
+            
+            <div class="sent-footer">
+              <button @click="viewAdminSentDetails(sentResource)" class="view-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><eye class="h-4 w-4"></eye></svg>
+                View Details
+              </button>
+              <div class="sent-from">
+                <span class="from-label">From:</span>
+                <span class="from-value">{{ sentResource.barangay }} Admin</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Request Details Modal -->
       <div v-if="showRequestModal" class="modal">
         <div class="modal-content">
@@ -473,6 +570,84 @@
         </div>
       </div>
 
+      <!-- Admin Sent Resource Details Modal -->
+      <div v-if="showAdminSentModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Received Resource Details</h2>
+            <button @click="showAdminSentModal = false" class="close-modal">&times;</button>
+          </div>
+          <div class="modal-body" v-if="selectedAdminSent">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <h3>Distribution Date</h3>
+                <p>{{ formatDate(selectedAdminSent.distributionDate) }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Reference ID</h3>
+                <p>{{ selectedAdminSent.referenceId }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>From Barangay</h3>
+                <p>{{ selectedAdminSent.barangay }}</p>
+              </div>
+              <div class="detail-item">
+                <h3>Member Name</h3>
+                <p>{{ selectedAdminSent.memberName }}</p>
+              </div>
+              <div class="detail-item" v-if="selectedAdminSent.contactNumber">
+                <h3>Contact Number</h3>
+                <p>{{ selectedAdminSent.contactNumber }}</p>
+              </div>
+              <div class="detail-item" v-if="selectedAdminSent.address">
+                <h3>Address</h3>
+                <p>{{ selectedAdminSent.address }}</p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Resources Received</h3>
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Resource</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(resource, index) in selectedAdminSent.resources" :key="index">
+                    <td>{{ resource.resourceName }}</td>
+                    <td>
+                      <span 
+                        class="resource-type-badge"
+                        :style="`background-color: ${getResourceTypeColor(resource.resourceType, 0.2)}; color: ${getResourceTypeColor(resource.resourceType, 1)}`"
+                      >
+                        {{ resource.resourceType }}
+                      </span>
+                    </td>
+                    <td>{{ resource.quantity }} {{ resource.unit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="detail-section" v-if="selectedAdminSent.purpose">
+              <h3>Purpose</h3>
+              <p>{{ selectedAdminSent.purpose }}</p>
+            </div>
+
+            <div class="detail-section" v-if="selectedAdminSent.notes">
+              <h3>Additional Notes</h3>
+              <p>{{ selectedAdminSent.notes }}</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="showAdminSentModal = false" class="close-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Confirmation Modal -->
       <div v-if="showConfirmModal" class="modal">
         <div class="modal-content confirm-modal">
@@ -494,7 +669,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   collection,
   addDoc,
@@ -508,7 +683,8 @@ import {
   where,
   Timestamp,
   getFirestore,
-  getDoc
+  getDoc,
+  onSnapshot
 } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '@/services/firebase';
@@ -523,6 +699,7 @@ const activeTab = ref('request');
 
 // Loading states
 const isLoadingHistory = ref(true);
+const isLoadingAdminSent = ref(true);
 const isSubmitting = ref(false);
 
 // Notification
@@ -584,6 +761,14 @@ const showRequestModal = ref(false);
 const selectedRequest = ref(null);
 const showConfirmModal = ref(false);
 const requestToCancel = ref(null);
+
+// Admin Sent Resources
+const adminSentResources = ref([]);
+const filteredAdminSentResources = ref([]);
+const adminSentSearchQuery = ref('');
+const adminSentTypeFilter = ref('');
+const showAdminSentModal = ref(false);
+const selectedAdminSent = ref(null);
 
 // Resource type colors
 const resourceTypeColors = {
@@ -962,6 +1147,97 @@ const loadRequestHistory = async () => {
   }
 };
 
+// Load admin sent resources
+const loadAdminSentResources = async () => {
+  if (!currentUser.value || !userReferenceCode.value) {
+    console.log("Cannot load admin sent resources - missing user data");
+    isLoadingAdminSent.value = false;
+    return;
+  }
+  
+  isLoadingAdminSent.value = true;
+  
+  try {
+    console.log("Loading admin sent resources for reference code:", userReferenceCode.value);
+    
+    // Query the member_history collection for resources sent to this member
+    const memberHistoryCollection = collection(db, 'member_history');
+    const q = query(
+      memberHistoryCollection,
+      where('referenceId', '==', userReferenceCode.value)
+    );
+    
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const sentResources = [];
+      
+      querySnapshot.forEach(doc => {
+        sentResources.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log("Admin sent resources loaded:", sentResources.length);
+      
+      // Sort by distribution date (newest first)
+      adminSentResources.value = sentResources.sort((a, b) => {
+        const getTime = (timestamp) => {
+          if (!timestamp) return 0;
+          if (timestamp instanceof Date) return timestamp.getTime();
+          if (timestamp instanceof Timestamp) return timestamp.toDate().getTime();
+          if (timestamp.seconds) return timestamp.seconds * 1000;
+          if (typeof timestamp === 'string') return new Date(timestamp).getTime();
+          return 0;
+        };
+        
+        return getTime(b.distributionDate) - getTime(a.distributionDate);
+      });
+      
+      filterAdminSentResources();
+      isLoadingAdminSent.value = false;
+    }, (error) => {
+      console.error('Error loading admin sent resources:', error);
+      showNotification('Failed to load sent resources: ' + error.message, 'error');
+      isLoadingAdminSent.value = false;
+    });
+    
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error loading admin sent resources:', error);
+    showNotification('Failed to load sent resources: ' + error.message, 'error');
+    isLoadingAdminSent.value = false;
+  }
+};
+
+// Filter admin sent resources
+const filterAdminSentResources = () => {
+  const search = adminSentSearchQuery.value.toLowerCase();
+  
+  filteredAdminSentResources.value = adminSentResources.value.filter(sentResource => {
+    const matchesSearch = 
+      (sentResource.purpose && sentResource.purpose.toLowerCase().includes(search)) ||
+      (sentResource.notes && sentResource.notes.toLowerCase().includes(search)) ||
+      sentResource.referenceId.toLowerCase().includes(search) ||
+      sentResource.resources.some(resource => 
+        resource.resourceName.toLowerCase().includes(search) ||
+        resource.resourceType.toLowerCase().includes(search)
+      );
+    
+    // Check if any resource matches the type filter
+    const matchesType = !adminSentTypeFilter.value || 
+      sentResource.resources.some(resource => resource.resourceType === adminSentTypeFilter.value);
+    
+    return matchesSearch && matchesType;
+  });
+};
+
+// View admin sent resource details
+const viewAdminSentDetails = (sentResource) => {
+  selectedAdminSent.value = sentResource;
+  showAdminSentModal.value = true;
+};
+
 // Update stats
 const updateStats = () => {
   // Total requests
@@ -1031,6 +1307,15 @@ const confirmCancelRequest = async () => {
     showNotification('Failed to cancel request: ' + error.message, 'error');
   }
 };
+
+// Watch for tab changes
+watch(activeTab, (newTab) => {
+  if (newTab === 'history') {
+    loadRequestHistory();
+  } else if (newTab === 'adminSent') {
+    loadAdminSentResources();
+  }
+});
 
 // Initialize
 onMounted(async () => {
@@ -1185,6 +1470,12 @@ onMounted(async () => {
   background-color: #d1ecf1;
   color: #0c5460;
   border: 1px solid #bee5eb;
+}
+
+.notification.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
 }
 
 .close-btn {
@@ -1667,6 +1958,116 @@ onMounted(async () => {
   background-color: #f5c6cb;
 }
 
+/* Admin Sent Cards */
+.admin-sent-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-sent-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 4px solid #10b981;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-sent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sent-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.sent-date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.sent-reference {
+  display: flex;
+  align-items: center;
+}
+
+.reference-badge {
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sent-resources {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.sent-resources h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.sent-purpose {
+  padding: 1rem;
+  flex: 1;
+}
+
+.sent-purpose h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.sent-purpose p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sent-footer {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #eee;
+}
+
+.sent-from {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.from-label {
+  color: #64748b;
+}
+
+.from-value {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
 /* Modal Styles */
 .modal {
   position: fixed;
@@ -1834,11 +2235,11 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
   
-  .request-cards {
+  .request-cards, .admin-sent-cards {
     grid-template-columns: 1fr;
   }
   
-  .request-footer {
+  .request-footer, .sent-footer {
     flex-direction: column;
     gap: 0.5rem;
   }
