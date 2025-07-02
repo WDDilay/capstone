@@ -776,7 +776,7 @@ const loadTodayForms = async () => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD in local timezone
     
     console.log("Fetching attendance forms for date:", todayStr);
     console.log("Fetching for barangay:", currentBarangay.value);
