@@ -42,9 +42,9 @@ const menuItems = ref([
   //{ name: 'Notification', icon: 'pi pi-bell', route: '/super-admin/notification' },
   { name: 'Resources', icon: 'pi pi-envelope', route: '/super-admin/resources' },
   { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
-  /*{ name: 'Settings', icon: 'pi pi-cog', route: '/super-admin/settings' },
+  { name: 'Messages', icon: 'pi pi-cog', route: '/super-admin/Messages' },
   { name: 'Support', icon: 'pi pi-question-circle', route: '/super-admin/support' },
-  { name: 'Backup & Recovery', icon: 'pi pi-database', route: '/superadmin/backup' },*/
+  { name: 'Backup & Recovery', icon: 'pi pi-database', route: '/superadmin/backup' },
 ]);
 </script>
 

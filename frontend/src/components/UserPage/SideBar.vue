@@ -120,11 +120,11 @@ const navItems = [
     path: '/user-dashboard/Attendance', 
     icon:  ClipboardCheck 
   },
- // { 
-   // title: 'Settings', 
-    //path: '/user-dashboard/user_settings', 
-    //icon: FileText 
-  //}
+  { 
+    title: 'Message', 
+    path: '/user-dashboard/UseMessage', 
+    icon: FileText 
+  }
 ];
 
 const currentRoute = computed(() => route.path);

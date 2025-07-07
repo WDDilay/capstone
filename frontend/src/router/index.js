@@ -19,7 +19,7 @@ import UserDashboard from '@/views/UserPage/UserDashboard.vue';
 import UserPage from '@/views/UserPage/UserPage.vue';
 import events from '@/views/UserPage/Events.vue';
 import Profile from '@/views/UserPage/Profile.vue';
-import user_settings from '@/views/UserPage/user_settings.vue';
+import UseMessage from '@/views/UserPage/UseMessage.vue';
 import user_resource from '@/views/UserPage/user_resource.vue';
 import Attendance from '@/views/UserPage/Attendance.vue';
 import Feedback from '@/views/UserPage/Feedback.vue';
@@ -34,7 +34,7 @@ import Application from '../views/Superadmin/Application.vue';
 import Notification from '../views/Superadmin/Notification.vue';
 import resources from '../views/Superadmin/resources.vue';
 import support from '../views/Superadmin/support.vue';
-import settings from '../views/Superadmin/settings.vue';
+import Messages from '../views/Superadmin/Messages.vue';
 import Preregister from '@/views/Superadmin/Preregister.vue';
 import Sentiment from '@/views/Superadmin/Sentiment.vue';
 
@@ -43,11 +43,11 @@ import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
 import Data from '../views/BarangayAdmin/Data.vue';
 import Announcements from '../views/BarangayAdmin/Announcements.vue';
 import BarangayDashboard from '../views/BarangayAdmin/Dashboard.vue';
-import Messages from '../views/BarangayAdmin/Message.vue';
 import attendance_form from '../views/BarangayAdmin/attendance_form.vue';
 import BarangayInventory from '../views/BarangayAdmin/BarangayInventory.vue';
 import Applications from '../views/BarangayAdmin/Application.vue';
 import Block from '../views/BarangayAdmin/Block.vue';
+import Message from '../views/BarangayAdmin/Message.vue';
 import { Apple } from 'lucide-vue-next';
 
 
@@ -143,8 +143,8 @@ const routes = [
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       },
       {
-        path: 'settings', 
-        component: settings,
+        path: 'Messages', 
+        component: Messages,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       },
       {
@@ -187,11 +187,7 @@ const routes = [
         component: Announcements,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       },
-      { 
-        path: 'messages', 
-        component: Messages,
-        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
-      },
+    
       { 
         path: 'BarangayInventory', 
         component: BarangayInventory,
@@ -207,6 +203,12 @@ const routes = [
         component: Block,
         meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
       },
+          { 
+        path: 'Message', 
+        component: Message,
+        meta: { requiresAuth: true, allowedRoles: ['BarangayPresident'] }
+      },
+      
       
     ] 
   },
@@ -239,8 +241,8 @@ const routes = [
         meta: { requiresAuth: true, allowedRoles: ['Member'] },
       },
       { 
-        path: 'user_settings', 
-        component: user_settings,
+        path: 'UseMessage', 
+        component: UseMessage,
         meta: { requiresAuth: true, allowedRoles: ['Member'] },
       },
       { 

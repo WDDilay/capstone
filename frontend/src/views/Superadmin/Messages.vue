@@ -3,9 +3,9 @@
     <!-- Chat List Sidebar -->
     <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
       <!-- Header -->
-      <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
+      <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600">
         <h2 class="text-xl font-bold text-white">Messages</h2>
-        <p class="text-blue-100 text-sm">Barangay President - {{ currentUserBarangay }}</p>
+        <p class="text-purple-100 text-sm">Federation President</p>
       </div>
 
       <!-- Search Bar -->
@@ -15,60 +15,35 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search contacts..."
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Search barangay presidents..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
       </div>
 
-      <!-- Contact Categories -->
+      <!-- Barangay Presidents List -->
       <div class="flex-1 overflow-y-auto">
-        <!-- Federation President -->
-        <div v-if="federationPresident" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Crown class="h-4 w-4 mr-2 text-yellow-500" />
-              Federation President
-            </h3>
-          </div>
-          <div
-            @click="selectChat(federationPresident)"
-            :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
-              selectedChat?.id === federationPresident.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
-            ]"
-          >
-            <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <Crown class="h-5 w-5 text-white" />
-                </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ federationPresident.name }}
-                </p>
-                <p class="text-xs text-gray-500">Federation President</p>
-              </div>
-              <div v-if="getUnreadCount(federationPresident.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                {{ getUnreadCount(federationPresident.id) }}
-              </div>
-            </div>
-          </div>
+        <div class="p-3 bg-gray-50">
+          <h3 class="text-sm font-semibold text-gray-600 flex items-center">
+            <Users class="h-4 w-4 mr-2 text-blue-500" />
+            Barangay Presidents
+            <span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              {{ filteredBarangayPresidents.length }}
+            </span>
+          </h3>
+        </div>
+        
+        <div v-if="isLoadingContacts" class="p-8 text-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent mx-auto"></div>
+          <p class="mt-2 text-gray-500">Loading contacts...</p>
         </div>
 
-        <!-- Other Barangay Presidents -->
-        <div v-if="filteredBarangayPresidents.length > 0" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Users class="h-4 w-4 mr-2 text-blue-500" />
-              Other Barangay Presidents
-              <span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                {{ filteredBarangayPresidents.length }}
-              </span>
-            </h3>
-          </div>
+        <div v-else-if="filteredBarangayPresidents.length === 0" class="p-8 text-center">
+          <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p class="text-gray-500">No barangay presidents found</p>
+        </div>
+
+        <div v-else>
           <div
             v-for="president in filteredBarangayPresidents"
             :key="president.id"
@@ -97,58 +72,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Members in Same Barangay -->
-        <div v-if="filteredMembers.length > 0" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <UserCheck class="h-4 w-4 mr-2 text-green-500" />
-              Members in {{ currentUserBarangay }}
-              <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                {{ filteredMembers.length }}
-              </span>
-            </h3>
-          </div>
-          <div
-            v-for="member in filteredMembers"
-            :key="member.id"
-            @click="selectChat(member)"
-            :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
-              selectedChat?.id === member.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
-            ]"
-          >
-            <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                  <User class="h-5 w-5 text-white" />
-                </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ member.name }}
-                </p>
-                <p class="text-xs text-gray-500">Member</p>
-              </div>
-              <div v-if="getUnreadCount(member.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                {{ getUnreadCount(member.id) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="isLoadingContacts" class="p-8 text-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <p class="mt-2 text-gray-500">Loading contacts...</p>
-        </div>
-
-        <!-- Empty State -->
-        <div v-if="!isLoadingContacts && !federationPresident && filteredBarangayPresidents.length === 0 && filteredMembers.length === 0" class="p-8 text-center">
-          <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p class="text-gray-500">No contacts available</p>
-        </div>
       </div>
     </div>
 
@@ -158,7 +81,7 @@
         <div class="text-center">
           <MessageCircle class="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-          <p class="text-gray-500">Choose a contact from the sidebar to start messaging</p>
+          <p class="text-gray-500">Choose a barangay president to start messaging</p>
         </div>
       </div>
 
@@ -167,17 +90,14 @@
         <div class="p-4 border-b border-gray-200 bg-white">
           <div class="flex items-center space-x-3">
             <div class="relative">
-              <div :class="[
-                'w-10 h-10 rounded-full flex items-center justify-center',
-                getChatHeaderColor(selectedChat)
-              ]">
-                <component :is="getChatHeaderIcon(selectedChat)" class="h-5 w-5 text-white" />
+              <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                <User class="h-5 w-5 text-white" />
               </div>
               <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name }}</h3>
-              <p class="text-sm text-gray-500">{{ getChatSubtitle(selectedChat) }}</p>
+              <p class="text-sm text-gray-500">Barangay President - {{ selectedChat.barangay }}</p>
             </div>
           </div>
         </div>
@@ -195,13 +115,13 @@
             <div :class="[
               'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
               message.senderId === currentUser?.uid
-                ? 'bg-blue-500 text-white'
+                ? 'bg-purple-500 text-white'
                 : 'bg-white text-gray-900 border border-gray-200'
             ]">
               <p class="text-sm">{{ message.text }}</p>
               <p :class="[
                 'text-xs mt-1',
-                message.senderId === currentUser?.uid ? 'text-blue-100' : 'text-gray-500'
+                message.senderId === currentUser?.uid ? 'text-purple-100' : 'text-gray-500'
               ]">
                 {{ formatMessageTime(message.timestamp) }}
               </p>
@@ -217,13 +137,13 @@
                 v-model="newMessage"
                 type="text"
                 placeholder="Type your message..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
             <button
               type="submit"
               :disabled="!newMessage.trim()"
-              class="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="px-6 py-2 bg-purple-500 text-white rounded-full hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send class="h-5 w-5" />
             </button>
@@ -236,11 +156,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { Search, Crown, Users, User, UserCheck, MessageCircle, Send } from 'lucide-vue-next'
+import { Search, Users, User, MessageCircle, Send } from 'lucide-vue-next'
 import { auth, db } from '@/services/firebase'
 import {
   collection, query, where, orderBy, onSnapshot, addDoc,
-  serverTimestamp, getDocs, updateDoc, doc, getDoc
+  serverTimestamp, getDocs, updateDoc, doc
 } from 'firebase/firestore'
 
 // Reactive data
@@ -249,40 +169,21 @@ const selectedChat = ref(null)
 const newMessage = ref('')
 const messagesContainer = ref(null)
 const currentUser = ref(null)
-const currentUserBarangay = ref('')
 const isLoadingContacts = ref(true)
 
 // Data arrays
-const federationPresident = ref(null)
 const barangayPresidents = ref([])
-const members = ref([])
 const messages = ref([])
 const unreadCounts = ref({})
 
 // Computed properties
 const filteredBarangayPresidents = computed(() => {
-  let filtered = barangayPresidents.value.filter(president => 
-    president.id !== currentUser.value?.uid
-  )
+  let filtered = barangayPresidents.value
 
   if (searchQuery.value) {
     filtered = filtered.filter(president =>
       president.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       president.barangay.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-  }
-
-  return filtered
-})
-
-const filteredMembers = computed(() => {
-  let filtered = members.value.filter(member => 
-    member.barangay === currentUserBarangay.value
-  )
-
-  if (searchQuery.value) {
-    filtered = filtered.filter(member =>
-      member.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
 
@@ -317,34 +218,6 @@ const selectChat = (contact) => {
   })
 }
 
-const getChatHeaderColor = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return 'bg-gradient-to-br from-yellow-400 to-orange-500'
-  } else if (contact.role === 'BarangayPresident') {
-    return 'bg-gradient-to-br from-blue-400 to-blue-600'
-  } else {
-    return 'bg-gradient-to-br from-green-400 to-green-600'
-  }
-}
-
-const getChatHeaderIcon = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return Crown
-  } else {
-    return User
-  }
-}
-
-const getChatSubtitle = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return 'Federation President'
-  } else if (contact.role === 'BarangayPresident') {
-    return `Barangay President - ${contact.barangay}`
-  } else {
-    return `Member - ${contact.barangay}`
-  }
-}
-
 const sendMessage = async () => {
   if (!newMessage.value.trim() || !selectedChat.value || !currentUser.value) return
 
@@ -354,11 +227,11 @@ const sendMessage = async () => {
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
-      senderName: 'Barangay President',
-      senderRole: 'BarangayPresident',
+      senderName: 'Federation President',
+      senderRole: 'FederationPresident',
       receiverId: selectedChat.value.id,
       receiverName: selectedChat.value.name,
-      receiverRole: selectedChat.value.role,
+      receiverRole: 'BarangayPresident',
       text: newMessage.value.trim(),
       timestamp: serverTimestamp(),
       read: false
@@ -429,42 +302,9 @@ const markMessagesAsRead = async (contactId) => {
 }
 
 // Data fetching functions
-const fetchCurrentUserBarangay = async () => {
-  if (!currentUser.value) return
-
-  try {
-    const userDoc = await getDoc(doc(db, 'barangay_presidents', currentUser.value.uid))
-    if (userDoc.exists()) {
-      currentUserBarangay.value = userDoc.data().barangay
-    }
-  } catch (error) {
-    console.error('Error fetching user barangay:', error)
-  }
-}
-
-const fetchFederationPresident = async () => {
-  try {
-    const adminsQuery = query(collection(db, 'admins'))
-    const snapshot = await getDocs(adminsQuery)
-    
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      if (data.role === 'FederationPresident') {
-        federationPresident.value = {
-          id: doc.id,
-          name: data.name || 'Federation President',
-          role: 'FederationPresident',
-          ...data
-        }
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching federation president:', error)
-  }
-}
-
 const fetchBarangayPresidents = async () => {
   try {
+    isLoadingContacts.value = true
     const presidentsQuery = query(collection(db, 'barangay_presidents'))
     const snapshot = await getDocs(presidentsQuery)
     
@@ -481,34 +321,10 @@ const fetchBarangayPresidents = async () => {
     })
     
     barangayPresidents.value = presidents
+    isLoadingContacts.value = false
   } catch (error) {
     console.error('Error fetching barangay presidents:', error)
-  }
-}
-
-const fetchMembers = async () => {
-  try {
-    const membersQuery = query(
-      collection(db, 'users'),
-      where('role', '==', 'Member')
-    )
-    const snapshot = await getDocs(membersQuery)
-    
-    const membersList = []
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      membersList.push({
-        id: doc.id,
-        name: data.name || 'Member',
-        barangay: data.barangay,
-        role: 'Member',
-        ...data
-      })
-    })
-    
-    members.value = membersList
-  } catch (error) {
-    console.error('Error fetching members:', error)
+    isLoadingContacts.value = false
   }
 }
 
@@ -549,13 +365,8 @@ onMounted(async () => {
   currentUser.value = auth.currentUser
   
   if (currentUser.value) {
-    isLoadingContacts.value = true
-    await fetchCurrentUserBarangay()
-    await fetchFederationPresident()
     await fetchBarangayPresidents()
-    await fetchMembers()
     unsubscribeMessages = setupMessagesListener()
-    isLoadingContacts.value = false
   }
 })
 

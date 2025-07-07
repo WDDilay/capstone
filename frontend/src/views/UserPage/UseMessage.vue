@@ -3,9 +3,9 @@
     <!-- Chat List Sidebar -->
     <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
       <!-- Header -->
-      <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
+      <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-green-600 to-blue-600">
         <h2 class="text-xl font-bold text-white">Messages</h2>
-        <p class="text-blue-100 text-sm">Barangay President - {{ currentUserBarangay }}</p>
+        <p class="text-green-100 text-sm">Member - {{ currentUserBarangay }}</p>
       </div>
 
       <!-- Search Bar -->
@@ -16,93 +16,53 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search contacts..."
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
       </div>
 
       <!-- Contact Categories -->
       <div class="flex-1 overflow-y-auto">
-        <!-- Federation President -->
-        <div v-if="federationPresident" class="border-b border-gray-100">
+        <!-- Barangay President -->
+        <div v-if="barangayPresident" class="border-b border-gray-100">
           <div class="p-3 bg-gray-50">
             <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Crown class="h-4 w-4 mr-2 text-yellow-500" />
-              Federation President
+              <Crown class="h-4 w-4 mr-2 text-blue-500" />
+              Your Barangay President
             </h3>
           </div>
           <div
-            @click="selectChat(federationPresident)"
+            @click="selectChat(barangayPresident)"
             :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
-              selectedChat?.id === federationPresident.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
+              'p-4 hover:bg-green-50 cursor-pointer transition-colors border-l-4',
+              selectedChat?.id === barangayPresident.id ? 'bg-green-50 border-green-500' : 'border-transparent'
             ]"
           >
             <div class="flex items-center space-x-3">
               <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
                   <Crown class="h-5 w-5 text-white" />
                 </div>
                 <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ federationPresident.name }}
+                  {{ barangayPresident.name }}
                 </p>
-                <p class="text-xs text-gray-500">Federation President</p>
+                <p class="text-xs text-gray-500">Barangay President</p>
               </div>
-              <div v-if="getUnreadCount(federationPresident.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                {{ getUnreadCount(federationPresident.id) }}
+              <div v-if="getUnreadCount(barangayPresident.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                {{ getUnreadCount(barangayPresident.id) }}
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Other Barangay Presidents -->
-        <div v-if="filteredBarangayPresidents.length > 0" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Users class="h-4 w-4 mr-2 text-blue-500" />
-              Other Barangay Presidents
-              <span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                {{ filteredBarangayPresidents.length }}
-              </span>
-            </h3>
-          </div>
-          <div
-            v-for="president in filteredBarangayPresidents"
-            :key="president.id"
-            @click="selectChat(president)"
-            :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
-              selectedChat?.id === president.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
-            ]"
-          >
-            <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                  <User class="h-5 w-5 text-white" />
-                </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ president.name }}
-                </p>
-                <p class="text-xs text-gray-500">Barangay {{ president.barangay }}</p>
-              </div>
-              <div v-if="getUnreadCount(president.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                {{ getUnreadCount(president.id) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Members in Same Barangay -->
+        <!-- Other Members in Same Barangay -->
         <div v-if="filteredMembers.length > 0" class="border-b border-gray-100">
           <div class="p-3 bg-gray-50">
             <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <UserCheck class="h-4 w-4 mr-2 text-green-500" />
+              <Users class="h-4 w-4 mr-2 text-green-500" />
               Members in {{ currentUserBarangay }}
               <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                 {{ filteredMembers.length }}
@@ -114,8 +74,8 @@
             :key="member.id"
             @click="selectChat(member)"
             :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
-              selectedChat?.id === member.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
+              'p-4 hover:bg-green-50 cursor-pointer transition-colors border-l-4',
+              selectedChat?.id === member.id ? 'bg-green-50 border-green-500' : 'border-transparent'
             ]"
           >
             <div class="flex items-center space-x-3">
@@ -140,12 +100,12 @@
 
         <!-- Loading State -->
         <div v-if="isLoadingContacts" class="p-8 text-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+          <div class="animate-spin rounded-full h-8 w-8 border-4 border-green-500 border-t-transparent mx-auto"></div>
           <p class="mt-2 text-gray-500">Loading contacts...</p>
         </div>
 
         <!-- Empty State -->
-        <div v-if="!isLoadingContacts && !federationPresident && filteredBarangayPresidents.length === 0 && filteredMembers.length === 0" class="p-8 text-center">
+        <div v-if="!isLoadingContacts && !barangayPresident && filteredMembers.length === 0" class="p-8 text-center">
           <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p class="text-gray-500">No contacts available</p>
         </div>
@@ -195,13 +155,13 @@
             <div :class="[
               'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
               message.senderId === currentUser?.uid
-                ? 'bg-blue-500 text-white'
+                ? 'bg-green-500 text-white'
                 : 'bg-white text-gray-900 border border-gray-200'
             ]">
               <p class="text-sm">{{ message.text }}</p>
               <p :class="[
                 'text-xs mt-1',
-                message.senderId === currentUser?.uid ? 'text-blue-100' : 'text-gray-500'
+                message.senderId === currentUser?.uid ? 'text-green-100' : 'text-gray-500'
               ]">
                 {{ formatMessageTime(message.timestamp) }}
               </p>
@@ -217,13 +177,13 @@
                 v-model="newMessage"
                 type="text"
                 placeholder="Type your message..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
             <button
               type="submit"
               :disabled="!newMessage.trim()"
-              class="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="px-6 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send class="h-5 w-5" />
             </button>
@@ -236,7 +196,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { Search, Crown, Users, User, UserCheck, MessageCircle, Send } from 'lucide-vue-next'
+import { Search, Crown, Users, User, MessageCircle, Send } from 'lucide-vue-next'
 import { auth, db } from '@/services/firebase'
 import {
   collection, query, where, orderBy, onSnapshot, addDoc,
@@ -253,31 +213,16 @@ const currentUserBarangay = ref('')
 const isLoadingContacts = ref(true)
 
 // Data arrays
-const federationPresident = ref(null)
-const barangayPresidents = ref([])
+const barangayPresident = ref(null)
 const members = ref([])
 const messages = ref([])
 const unreadCounts = ref({})
 
 // Computed properties
-const filteredBarangayPresidents = computed(() => {
-  let filtered = barangayPresidents.value.filter(president => 
-    president.id !== currentUser.value?.uid
-  )
-
-  if (searchQuery.value) {
-    filtered = filtered.filter(president =>
-      president.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      president.barangay.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-  }
-
-  return filtered
-})
-
 const filteredMembers = computed(() => {
   let filtered = members.value.filter(member => 
-    member.barangay === currentUserBarangay.value
+    member.barangay === currentUserBarangay.value && 
+    member.id !== currentUser.value?.uid
   )
 
   if (searchQuery.value) {
@@ -318,9 +263,7 @@ const selectChat = (contact) => {
 }
 
 const getChatHeaderColor = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return 'bg-gradient-to-br from-yellow-400 to-orange-500'
-  } else if (contact.role === 'BarangayPresident') {
+  if (contact.role === 'BarangayPresident') {
     return 'bg-gradient-to-br from-blue-400 to-blue-600'
   } else {
     return 'bg-gradient-to-br from-green-400 to-green-600'
@@ -328,7 +271,7 @@ const getChatHeaderColor = (contact) => {
 }
 
 const getChatHeaderIcon = (contact) => {
-  if (contact.role === 'FederationPresident') {
+  if (contact.role === 'BarangayPresident') {
     return Crown
   } else {
     return User
@@ -336,12 +279,10 @@ const getChatHeaderIcon = (contact) => {
 }
 
 const getChatSubtitle = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return 'Federation President'
-  } else if (contact.role === 'BarangayPresident') {
-    return `Barangay President - ${contact.barangay}`
+  if (contact.role === 'BarangayPresident') {
+    return 'Barangay President'
   } else {
-    return `Member - ${contact.barangay}`
+    return 'Member'
   }
 }
 
@@ -354,8 +295,8 @@ const sendMessage = async () => {
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
-      senderName: 'Barangay President',
-      senderRole: 'BarangayPresident',
+      senderName: 'Member',
+      senderRole: 'Member',
       receiverId: selectedChat.value.id,
       receiverName: selectedChat.value.name,
       receiverRole: selectedChat.value.role,
@@ -433,64 +374,62 @@ const fetchCurrentUserBarangay = async () => {
   if (!currentUser.value) return
 
   try {
-    const userDoc = await getDoc(doc(db, 'barangay_presidents', currentUser.value.uid))
+    // First try users collection (for members)
+    const userDoc = await getDoc(doc(db, 'users', currentUser.value.uid))
     if (userDoc.exists()) {
       currentUserBarangay.value = userDoc.data().barangay
+      return
+    }
+
+    // If not found, try solo_parents collection (based on your header code)
+    const soloParentsQuery = query(
+      collection(db, 'solo_parents'),
+      where('uid', '==', currentUser.value.uid)
+    )
+    const soloParentsSnapshot = await getDocs(soloParentsQuery)
+    
+    if (!soloParentsSnapshot.empty) {
+      const userData = soloParentsSnapshot.docs[0].data()
+      currentUserBarangay.value = userData.barangay || userData.Barangay || ''
     }
   } catch (error) {
     console.error('Error fetching user barangay:', error)
   }
 }
 
-const fetchFederationPresident = async () => {
-  try {
-    const adminsQuery = query(collection(db, 'admins'))
-    const snapshot = await getDocs(adminsQuery)
-    
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      if (data.role === 'FederationPresident') {
-        federationPresident.value = {
-          id: doc.id,
-          name: data.name || 'Federation President',
-          role: 'FederationPresident',
-          ...data
-        }
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching federation president:', error)
-  }
-}
+const fetchBarangayPresident = async () => {
+  if (!currentUserBarangay.value) return
 
-const fetchBarangayPresidents = async () => {
   try {
-    const presidentsQuery = query(collection(db, 'barangay_presidents'))
+    const presidentsQuery = query(
+      collection(db, 'barangay_presidents'),
+      where('barangay', '==', currentUserBarangay.value)
+    )
     const snapshot = await getDocs(presidentsQuery)
     
-    const presidents = []
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      presidents.push({
-        id: doc.id,
+    if (!snapshot.empty) {
+      const data = snapshot.docs[0].data()
+      barangayPresident.value = {
+        id: snapshot.docs[0].id,
         name: data.name || 'Barangay President',
         barangay: data.barangay,
         role: 'BarangayPresident',
         ...data
-      })
-    })
-    
-    barangayPresidents.value = presidents
+      }
+    }
   } catch (error) {
-    console.error('Error fetching barangay presidents:', error)
+    console.error('Error fetching barangay president:', error)
   }
 }
 
 const fetchMembers = async () => {
+  if (!currentUserBarangay.value) return
+
   try {
     const membersQuery = query(
       collection(db, 'users'),
-      where('role', '==', 'Member')
+      where('role', '==', 'Member'),
+      where('barangay', '==', currentUserBarangay.value)
     )
     const snapshot = await getDocs(membersQuery)
     
@@ -551,8 +490,7 @@ onMounted(async () => {
   if (currentUser.value) {
     isLoadingContacts.value = true
     await fetchCurrentUserBarangay()
-    await fetchFederationPresident()
-    await fetchBarangayPresidents()
+    await fetchBarangayPresident()
     await fetchMembers()
     unsubscribeMessages = setupMessagesListener()
     isLoadingContacts.value = false

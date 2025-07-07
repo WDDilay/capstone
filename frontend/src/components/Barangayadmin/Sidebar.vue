@@ -94,7 +94,7 @@ const regularMenuItems = [
   { label: 'Announcement', path: '/barangay-admin/announcements', icon: 'pi pi-megaphone' },
   { label: 'Create Attendance', path: '/barangay-admin/attendance_form', icon: 'pi pi-calendar' },
   { label: 'Resource Inventory', path: '/barangay-admin/BarangayInventory', icon: 'pi pi-box' },
-  //{ label: 'Message', path: '/barangay-admin/messages', icon: 'pi pi-comments' },
+  { label: 'Message', path: '/barangay-admin/Message', icon: 'pi pi-comments' },
   { label: 'Block', path: '/barangay-admin/Block', icon: 'pi pi-ban' }
 ];
 
