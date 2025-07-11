@@ -7,7 +7,7 @@
         <h2 class="text-xl font-bold text-white">Messages</h2>
         <p class="text-green-100 text-sm">Member - {{ currentUserBarangay }}</p>
       </div>
-
+      
       <!-- Search Bar -->
       <div class="p-4 border-b border-gray-200">
         <div class="relative">
@@ -20,7 +20,7 @@
           />
         </div>
       </div>
-
+      
       <!-- Contact Categories -->
       <div class="flex-1 overflow-y-auto">
         <!-- Barangay President -->
@@ -47,7 +47,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ barangayPresident.name }}
+                  {{ barangayPresident.name || 'Barangay President' }}
                 </p>
                 <p class="text-xs text-gray-500">Barangay President</p>
               </div>
@@ -57,7 +57,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Other Members in Same Barangay -->
         <div v-if="filteredMembers.length > 0" class="border-b border-gray-100">
           <div class="p-3 bg-gray-50">
@@ -87,7 +87,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ member.name }}
+                  {{ member.name || 'Member' }}
                 </p>
                 <p class="text-xs text-gray-500">Member</p>
               </div>
@@ -97,13 +97,13 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Loading State -->
         <div v-if="isLoadingContacts" class="p-8 text-center">
           <div class="animate-spin rounded-full h-8 w-8 border-4 border-green-500 border-t-transparent mx-auto"></div>
           <p class="mt-2 text-gray-500">Loading contacts...</p>
         </div>
-
+        
         <!-- Empty State -->
         <div v-if="!isLoadingContacts && !barangayPresident && filteredMembers.length === 0" class="p-8 text-center">
           <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -111,7 +111,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Chat Area -->
     <div class="flex-1 flex flex-col">
       <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gray-50">
@@ -121,7 +121,7 @@
           <p class="text-gray-500">Choose a contact from the sidebar to start messaging</p>
         </div>
       </div>
-
+      
       <div v-else class="flex-1 flex flex-col">
         <!-- Chat Header -->
         <div class="p-4 border-b border-gray-200 bg-white">
@@ -136,12 +136,12 @@
               <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name }}</h3>
+              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name || 'Unknown' }}</h3>
               <p class="text-sm text-gray-500">{{ getChatSubtitle(selectedChat) }}</p>
             </div>
           </div>
         </div>
-
+        
         <!-- Messages Area -->
         <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           <div
@@ -168,7 +168,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Message Input -->
         <div class="p-4 border-t border-gray-200 bg-white">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
@@ -210,6 +210,7 @@ const newMessage = ref('')
 const messagesContainer = ref(null)
 const currentUser = ref(null)
 const currentUserBarangay = ref('')
+const currentUserName = ref('')
 const isLoadingContacts = ref(true)
 
 // Data arrays
@@ -224,13 +225,13 @@ const filteredMembers = computed(() => {
     member.barangay === currentUserBarangay.value && 
     member.id !== currentUser.value?.uid
   )
-
+  
   if (searchQuery.value) {
     filtered = filtered.filter(member =>
-      member.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (member.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
+  
   return filtered
 })
 
@@ -295,10 +296,10 @@ const sendMessage = async () => {
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
-      senderName: 'Member',
+      senderName: currentUserName.value || 'Member',
       senderRole: 'Member',
       receiverId: selectedChat.value.id,
-      receiverName: selectedChat.value.name,
+      receiverName: selectedChat.value.name || 'Unknown',
       receiverRole: selectedChat.value.role,
       text: newMessage.value.trim(),
       timestamp: serverTimestamp(),
@@ -370,18 +371,20 @@ const markMessagesAsRead = async (contactId) => {
 }
 
 // Data fetching functions
-const fetchCurrentUserBarangay = async () => {
+const fetchCurrentUserData = async () => {
   if (!currentUser.value) return
 
   try {
-    // First try users collection (for members)
+    // Try users collection first
     const userDoc = await getDoc(doc(db, 'users', currentUser.value.uid))
     if (userDoc.exists()) {
-      currentUserBarangay.value = userDoc.data().barangay
+      const userData = userDoc.data()
+      currentUserBarangay.value = userData.barangay || ''
+      currentUserName.value = userData.name || userData.firstName || userData.fullName || 'Member'
       return
     }
 
-    // If not found, try solo_parents collection (based on your header code)
+    // Try solo_parents collection as fallback
     const soloParentsQuery = query(
       collection(db, 'solo_parents'),
       where('uid', '==', currentUser.value.uid)
@@ -391,9 +394,10 @@ const fetchCurrentUserBarangay = async () => {
     if (!soloParentsSnapshot.empty) {
       const userData = soloParentsSnapshot.docs[0].data()
       currentUserBarangay.value = userData.barangay || userData.Barangay || ''
+      currentUserName.value = userData.name || userData.firstName || userData.fullName || 'Member'
     }
   } catch (error) {
-    console.error('Error fetching user barangay:', error)
+    console.error('Error fetching current user data:', error)
   }
 }
 
@@ -411,7 +415,7 @@ const fetchBarangayPresident = async () => {
       const data = snapshot.docs[0].data()
       barangayPresident.value = {
         id: snapshot.docs[0].id,
-        name: data.name || 'Barangay President',
+        name: data.name || data.firstName || data.fullName || 'Barangay President',
         barangay: data.barangay,
         role: 'BarangayPresident',
         ...data
@@ -428,7 +432,6 @@ const fetchMembers = async () => {
   try {
     const membersQuery = query(
       collection(db, 'users'),
-      where('role', '==', 'Member'),
       where('barangay', '==', currentUserBarangay.value)
     )
     const snapshot = await getDocs(membersQuery)
@@ -436,13 +439,15 @@ const fetchMembers = async () => {
     const membersList = []
     snapshot.forEach((doc) => {
       const data = doc.data()
-      membersList.push({
-        id: doc.id,
-        name: data.name || 'Member',
-        barangay: data.barangay,
-        role: 'Member',
-        ...data
-      })
+      if (data.role === 'Member' || !data.role) { // Include users without explicit role
+        membersList.push({
+          id: doc.id,
+          name: data.name || data.firstName || data.fullName || 'Member',
+          barangay: data.barangay,
+          role: 'Member',
+          ...data
+        })
+      }
     })
     
     members.value = membersList
@@ -489,7 +494,7 @@ onMounted(async () => {
   
   if (currentUser.value) {
     isLoadingContacts.value = true
-    await fetchCurrentUserBarangay()
+    await fetchCurrentUserData()
     await fetchBarangayPresident()
     await fetchMembers()
     unsubscribeMessages = setupMessagesListener()

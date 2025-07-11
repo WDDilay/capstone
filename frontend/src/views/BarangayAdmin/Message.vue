@@ -7,7 +7,7 @@
         <h2 class="text-xl font-bold text-white">Messages</h2>
         <p class="text-blue-100 text-sm">Barangay President - {{ currentUserBarangay }}</p>
       </div>
-
+      
       <!-- Search Bar -->
       <div class="p-4 border-b border-gray-200">
         <div class="relative">
@@ -20,7 +20,7 @@
           />
         </div>
       </div>
-
+      
       <!-- Contact Categories -->
       <div class="flex-1 overflow-y-auto">
         <!-- Federation President -->
@@ -47,7 +47,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ federationPresident.name }}
+                  {{ federationPresident.name || 'Federation President' }}
                 </p>
                 <p class="text-xs text-gray-500">Federation President</p>
               </div>
@@ -57,7 +57,9 @@
             </div>
           </div>
         </div>
-
+        
+        
+        
         <!-- Other Barangay Presidents -->
         <div v-if="filteredBarangayPresidents.length > 0" class="border-b border-gray-100">
           <div class="p-3 bg-gray-50">
@@ -87,7 +89,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ president.name }}
+                  {{ president.name || 'Barangay President' }}
                 </p>
                 <p class="text-xs text-gray-500">Barangay {{ president.barangay }}</p>
               </div>
@@ -97,7 +99,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Members in Same Barangay -->
         <div v-if="filteredMembers.length > 0" class="border-b border-gray-100">
           <div class="p-3 bg-gray-50">
@@ -127,7 +129,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ member.name }}
+                  {{ member.name || 'Member' }}
                 </p>
                 <p class="text-xs text-gray-500">Member</p>
               </div>
@@ -137,13 +139,13 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Loading State -->
         <div v-if="isLoadingContacts" class="p-8 text-center">
           <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
           <p class="mt-2 text-gray-500">Loading contacts...</p>
         </div>
-
+        
         <!-- Empty State -->
         <div v-if="!isLoadingContacts && !federationPresident && filteredBarangayPresidents.length === 0 && filteredMembers.length === 0" class="p-8 text-center">
           <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -151,7 +153,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Chat Area -->
     <div class="flex-1 flex flex-col">
       <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gray-50">
@@ -161,7 +163,7 @@
           <p class="text-gray-500">Choose a contact from the sidebar to start messaging</p>
         </div>
       </div>
-
+      
       <div v-else class="flex-1 flex flex-col">
         <!-- Chat Header -->
         <div class="p-4 border-b border-gray-200 bg-white">
@@ -176,12 +178,12 @@
               <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name }}</h3>
+              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name || 'Unknown' }}</h3>
               <p class="text-sm text-gray-500">{{ getChatSubtitle(selectedChat) }}</p>
             </div>
           </div>
         </div>
-
+        
         <!-- Messages Area -->
         <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           <div
@@ -208,7 +210,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Message Input -->
         <div class="p-4 border-t border-gray-200 bg-white">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
@@ -250,7 +252,9 @@ const newMessage = ref('')
 const messagesContainer = ref(null)
 const currentUser = ref(null)
 const currentUserBarangay = ref('')
+const currentUserName = ref('')
 const isLoadingContacts = ref(true)
+const debugInfo = ref('')
 
 // Data arrays
 const federationPresident = ref(null)
@@ -264,14 +268,14 @@ const filteredBarangayPresidents = computed(() => {
   let filtered = barangayPresidents.value.filter(president => 
     president.id !== currentUser.value?.uid
   )
-
+  
   if (searchQuery.value) {
     filtered = filtered.filter(president =>
-      president.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      president.barangay.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (president.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (president.barangay || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
+  
   return filtered
 })
 
@@ -279,13 +283,13 @@ const filteredMembers = computed(() => {
   let filtered = members.value.filter(member => 
     member.barangay === currentUserBarangay.value
   )
-
+  
   if (searchQuery.value) {
     filtered = filtered.filter(member =>
-      member.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (member.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
+  
   return filtered
 })
 
@@ -339,9 +343,9 @@ const getChatSubtitle = (contact) => {
   if (contact.role === 'FederationPresident') {
     return 'Federation President'
   } else if (contact.role === 'BarangayPresident') {
-    return `Barangay President - ${contact.barangay}`
+    return `Barangay President - ${contact.barangay || 'Unknown'}`
   } else {
-    return `Member - ${contact.barangay}`
+    return `Member - ${contact.barangay || 'Unknown'}`
   }
 }
 
@@ -354,10 +358,10 @@ const sendMessage = async () => {
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
-      senderName: 'Barangay President',
+      senderName: currentUserName.value || 'Barangay President',
       senderRole: 'BarangayPresident',
       receiverId: selectedChat.value.id,
-      receiverName: selectedChat.value.name,
+      receiverName: selectedChat.value.name || 'Unknown',
       receiverRole: selectedChat.value.role,
       text: newMessage.value.trim(),
       timestamp: serverTimestamp(),
@@ -429,37 +433,98 @@ const markMessagesAsRead = async (contactId) => {
 }
 
 // Data fetching functions
-const fetchCurrentUserBarangay = async () => {
+const fetchCurrentUserData = async () => {
   if (!currentUser.value) return
 
   try {
     const userDoc = await getDoc(doc(db, 'barangay_presidents', currentUser.value.uid))
     if (userDoc.exists()) {
-      currentUserBarangay.value = userDoc.data().barangay
+      const userData = userDoc.data()
+      currentUserBarangay.value = userData.barangay || ''
+      currentUserName.value = userData.name || userData.firstName || userData.fullName || 'Barangay President'
     }
   } catch (error) {
-    console.error('Error fetching user barangay:', error)
+    console.error('Error fetching current user data:', error)
+  }
+}
+
+// Alternative approach: Find Federation President through messages or create a placeholder
+const fetchFederationPresidentAlternative = async () => {
+  try {
+    debugInfo.value = 'Trying alternative approach...'
+    
+    // Method 1: Look for Federation President in existing messages
+    const messagesQuery = query(
+      collection(db, 'messages'),
+      where('senderRole', '==', 'FederationPresident')
+    )
+    const messagesSnapshot = await getDocs(messagesQuery)
+    
+    if (!messagesSnapshot.empty) {
+      const messageData = messagesSnapshot.docs[0].data()
+      federationPresident.value = {
+        id: messageData.senderId,
+        name: messageData.senderName || 'Federation President',
+        role: 'FederationPresident'
+      }
+      debugInfo.value = 'Found Federation President from messages'
+      return
+    }
+    
+    // Method 2: Create a placeholder Federation President
+    // This assumes you know the Federation President's UID
+    // Replace 'FEDERATION_PRESIDENT_UID' with the actual UID
+    const knownFederationPresidentUID = 'FEDERATION_PRESIDENT_UID' // You need to replace this
+    
+    if (knownFederationPresidentUID !== 'FEDERATION_PRESIDENT_UID') {
+      federationPresident.value = {
+        id: knownFederationPresidentUID,
+        name: 'Federation President',
+        role: 'FederationPresident'
+      }
+      debugInfo.value = 'Using known Federation President UID'
+      return
+    }
+    
+    debugInfo.value = 'Federation President not found - please check Firebase setup'
+    
+  } catch (error) {
+    console.error('Error in alternative Federation President fetch:', error)
+    debugInfo.value = `Alternative fetch error: ${error.message}`
   }
 }
 
 const fetchFederationPresident = async () => {
   try {
-    const adminsQuery = query(collection(db, 'admins'))
-    const snapshot = await getDocs(adminsQuery)
+    debugInfo.value = 'Fetching Federation President...'
     
-    snapshot.forEach((doc) => {
+    // Try the original approach first
+    const adminsQuery = query(collection(db, 'admins'))
+    const adminsSnapshot = await getDocs(adminsQuery)
+    
+    if (!adminsSnapshot.empty) {
+      const doc = adminsSnapshot.docs[0]
       const data = doc.data()
-      if (data.role === 'FederationPresident') {
-        federationPresident.value = {
-          id: doc.id,
-          name: data.name || 'Federation President',
-          role: 'FederationPresident',
-          ...data
-        }
+      
+      federationPresident.value = {
+        id: doc.id,
+        name: data.name || data.firstName || data.fullName || data.username || 'Federation President',
+        role: 'FederationPresident',
+        ...data
       }
-    })
+      debugInfo.value = 'Federation President found in admins collection'
+      return
+    }
+    
+    debugInfo.value = 'No documents in admins collection, trying alternative...'
+    await fetchFederationPresidentAlternative()
+    
   } catch (error) {
     console.error('Error fetching federation president:', error)
+    debugInfo.value = `Error: ${error.message}`
+    
+    // Try alternative approach if main approach fails
+    await fetchFederationPresidentAlternative()
   }
 }
 
@@ -473,8 +538,8 @@ const fetchBarangayPresidents = async () => {
       const data = doc.data()
       presidents.push({
         id: doc.id,
-        name: data.name || 'Barangay President',
-        barangay: data.barangay,
+        name: data.name || data.firstName || data.fullName || 'Barangay President',
+        barangay: data.barangay || 'Unknown',
         role: 'BarangayPresident',
         ...data
       })
@@ -490,20 +555,22 @@ const fetchMembers = async () => {
   try {
     const membersQuery = query(
       collection(db, 'users'),
-      where('role', '==', 'Member')
+      where('barangay', '==', currentUserBarangay.value)
     )
     const snapshot = await getDocs(membersQuery)
     
     const membersList = []
     snapshot.forEach((doc) => {
       const data = doc.data()
-      membersList.push({
-        id: doc.id,
-        name: data.name || 'Member',
-        barangay: data.barangay,
-        role: 'Member',
-        ...data
-      })
+      if (data.role === 'Member' || !data.role) {
+        membersList.push({
+          id: doc.id,
+          name: data.name || data.firstName || data.fullName || 'Member',
+          barangay: data.barangay || 'Unknown',
+          role: 'Member',
+          ...data
+        })
+      }
     })
     
     members.value = membersList
@@ -550,7 +617,7 @@ onMounted(async () => {
   
   if (currentUser.value) {
     isLoadingContacts.value = true
-    await fetchCurrentUserBarangay()
+    await fetchCurrentUserData()
     await fetchFederationPresident()
     await fetchBarangayPresidents()
     await fetchMembers()

@@ -7,7 +7,7 @@
         <h2 class="text-xl font-bold text-white">Messages</h2>
         <p class="text-purple-100 text-sm">Federation President</p>
       </div>
-
+      
       <!-- Search Bar -->
       <div class="p-4 border-b border-gray-200">
         <div class="relative">
@@ -20,7 +20,7 @@
           />
         </div>
       </div>
-
+      
       <!-- Barangay Presidents List -->
       <div class="flex-1 overflow-y-auto">
         <div class="p-3 bg-gray-50">
@@ -37,12 +37,12 @@
           <div class="animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent mx-auto"></div>
           <p class="mt-2 text-gray-500">Loading contacts...</p>
         </div>
-
+        
         <div v-else-if="filteredBarangayPresidents.length === 0" class="p-8 text-center">
           <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p class="text-gray-500">No barangay presidents found</p>
         </div>
-
+        
         <div v-else>
           <div
             v-for="president in filteredBarangayPresidents"
@@ -62,9 +62,9 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ president.name }}
+                  {{ president.name || 'Barangay President' }}
                 </p>
-                <p class="text-xs text-gray-500">Barangay {{ president.barangay }}</p>
+                <p class="text-xs text-gray-500">Barangay {{ president.barangay || 'Unknown' }}</p>
               </div>
               <div v-if="getUnreadCount(president.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                 {{ getUnreadCount(president.id) }}
@@ -74,7 +74,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Chat Area -->
     <div class="flex-1 flex flex-col">
       <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gray-50">
@@ -84,7 +84,7 @@
           <p class="text-gray-500">Choose a barangay president to start messaging</p>
         </div>
       </div>
-
+      
       <div v-else class="flex-1 flex flex-col">
         <!-- Chat Header -->
         <div class="p-4 border-b border-gray-200 bg-white">
@@ -96,12 +96,12 @@
               <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name }}</h3>
-              <p class="text-sm text-gray-500">Barangay President - {{ selectedChat.barangay }}</p>
+              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name || 'Barangay President' }}</h3>
+              <p class="text-sm text-gray-500">Barangay President - {{ selectedChat.barangay || 'Unknown' }}</p>
             </div>
           </div>
         </div>
-
+        
         <!-- Messages Area -->
         <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           <div
@@ -128,7 +128,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Message Input -->
         <div class="p-4 border-t border-gray-200 bg-white">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
@@ -160,7 +160,7 @@ import { Search, Users, User, MessageCircle, Send } from 'lucide-vue-next'
 import { auth, db } from '@/services/firebase'
 import {
   collection, query, where, orderBy, onSnapshot, addDoc,
-  serverTimestamp, getDocs, updateDoc, doc
+  serverTimestamp, getDocs, updateDoc, doc, getDoc
 } from 'firebase/firestore'
 
 // Reactive data
@@ -169,6 +169,7 @@ const selectedChat = ref(null)
 const newMessage = ref('')
 const messagesContainer = ref(null)
 const currentUser = ref(null)
+const currentUserName = ref('')
 const isLoadingContacts = ref(true)
 
 // Data arrays
@@ -179,14 +180,14 @@ const unreadCounts = ref({})
 // Computed properties
 const filteredBarangayPresidents = computed(() => {
   let filtered = barangayPresidents.value
-
+  
   if (searchQuery.value) {
     filtered = filtered.filter(president =>
-      president.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      president.barangay.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (president.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (president.barangay || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
+  
   return filtered
 })
 
@@ -227,10 +228,10 @@ const sendMessage = async () => {
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
-      senderName: 'Federation President',
+      senderName: currentUserName.value || 'Federation President',
       senderRole: 'FederationPresident',
       receiverId: selectedChat.value.id,
-      receiverName: selectedChat.value.name,
+      receiverName: selectedChat.value.name || 'Barangay President',
       receiverRole: 'BarangayPresident',
       text: newMessage.value.trim(),
       timestamp: serverTimestamp(),
@@ -302,6 +303,21 @@ const markMessagesAsRead = async (contactId) => {
 }
 
 // Data fetching functions
+const fetchCurrentUserData = async () => {
+  if (!currentUser.value) return
+
+  try {
+    // Try to get current user data from admins collection
+    const userDoc = await getDoc(doc(db, 'admins', currentUser.value.uid))
+    if (userDoc.exists()) {
+      const userData = userDoc.data()
+      currentUserName.value = userData.name || userData.firstName || userData.fullName || 'Federation President'
+    }
+  } catch (error) {
+    console.error('Error fetching current user data:', error)
+  }
+}
+
 const fetchBarangayPresidents = async () => {
   try {
     isLoadingContacts.value = true
@@ -313,8 +329,8 @@ const fetchBarangayPresidents = async () => {
       const data = doc.data()
       presidents.push({
         id: doc.id,
-        name: data.name || 'Barangay President',
-        barangay: data.barangay,
+        name: data.name || data.firstName || data.fullName || 'Barangay President',
+        barangay: data.barangay || 'Unknown',
         role: 'BarangayPresident',
         ...data
       })
@@ -365,6 +381,7 @@ onMounted(async () => {
   currentUser.value = auth.currentUser
   
   if (currentUser.value) {
+    await fetchCurrentUserData()
     await fetchBarangayPresidents()
     unsubscribeMessages = setupMessagesListener()
   }
