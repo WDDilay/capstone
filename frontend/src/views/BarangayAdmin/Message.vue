@@ -1,22 +1,49 @@
 <template>
-  <div class="h-screen flex bg-gray-50">
+  <div class="h-screen flex bg-gray-50 relative">
+    <!-- Mobile Overlay -->
+    <div 
+      v-if="showMobileSidebar" 
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+      @click="closeMobileSidebar"
+    ></div>
+
     <!-- Chat List Sidebar -->
-    <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+    <div 
+      class="bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-50"
+      :class="[
+        // Desktop: Always visible with fixed width
+        'md:w-1/3 md:relative md:translate-x-0',
+        // Mobile: Full width overlay that slides in/out
+        'fixed inset-y-0 left-0 w-full sm:w-80',
+        showMobileSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      ]"
+    >
       <!-- Header -->
-      <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
-        <h2 class="text-xl font-bold text-white">Messages</h2>
-        <p class="text-blue-100 text-sm">Barangay President - {{ currentUserBarangay }}</p>
+      <div class="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-white">Messages</h2>
+            <p class="text-blue-100 text-xs sm:text-sm">Barangay President - {{ currentUserBarangay }}</p>
+          </div>
+          <!-- Mobile Close Button -->
+          <button 
+            @click="closeMobileSidebar"
+            class="md:hidden p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
       </div>
       
       <!-- Search Bar -->
-      <div class="p-4 border-b border-gray-200">
+      <div class="p-3 sm:p-4 border-b border-gray-200">
         <div class="relative">
           <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search contacts..."
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
@@ -25,48 +52,46 @@
       <div class="flex-1 overflow-y-auto">
         <!-- Federation President -->
         <div v-if="federationPresident" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Crown class="h-4 w-4 mr-2 text-yellow-500" />
+          <div class="p-2 sm:p-3 bg-gray-50">
+            <h3 class="text-xs sm:text-sm font-semibold text-gray-600 flex items-center">
+              <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-yellow-500" />
               Federation President
             </h3>
           </div>
           <div
             @click="selectChat(federationPresident)"
             :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
+              'p-3 sm:p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
               selectedChat?.id === federationPresident.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
             ]"
           >
             <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <Crown class="h-5 w-5 text-white" />
+              <div class="relative flex-shrink-0">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Crown class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
+                <p class="text-xs sm:text-sm font-medium text-gray-900 truncate">
                   {{ federationPresident.name || 'Federation President' }}
                 </p>
                 <p class="text-xs text-gray-500">Federation President</p>
               </div>
-              <div v-if="getUnreadCount(federationPresident.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+              <div v-if="getUnreadCount(federationPresident.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[18px] sm:min-w-[20px] text-center flex-shrink-0">
                 {{ getUnreadCount(federationPresident.id) }}
               </div>
             </div>
           </div>
         </div>
         
-        
-        
         <!-- Other Barangay Presidents -->
         <div v-if="filteredBarangayPresidents.length > 0" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <Users class="h-4 w-4 mr-2 text-blue-500" />
-              Other Barangay Presidents
-              <span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+          <div class="p-2 sm:p-3 bg-gray-50">
+            <h3 class="text-xs sm:text-sm font-semibold text-gray-600 flex items-center flex-wrap">
+              <Users class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-500" />
+              <span class="mr-2">Other Barangay Presidents</span>
+              <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                 {{ filteredBarangayPresidents.length }}
               </span>
             </h3>
@@ -76,24 +101,24 @@
             :key="president.id"
             @click="selectChat(president)"
             :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
+              'p-3 sm:p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
               selectedChat?.id === president.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
             ]"
           >
             <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                  <User class="h-5 w-5 text-white" />
+              <div class="relative flex-shrink-0">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                  <User class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
+                <p class="text-xs sm:text-sm font-medium text-gray-900 truncate">
                   {{ president.name || 'Barangay President' }}
                 </p>
-                <p class="text-xs text-gray-500">Barangay {{ president.barangay }}</p>
+                <p class="text-xs text-gray-500 truncate">Barangay {{ president.barangay }}</p>
               </div>
-              <div v-if="getUnreadCount(president.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+              <div v-if="getUnreadCount(president.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[18px] sm:min-w-[20px] text-center flex-shrink-0">
                 {{ getUnreadCount(president.id) }}
               </div>
             </div>
@@ -102,11 +127,11 @@
         
         <!-- Members in Same Barangay -->
         <div v-if="filteredMembers.length > 0" class="border-b border-gray-100">
-          <div class="p-3 bg-gray-50">
-            <h3 class="text-sm font-semibold text-gray-600 flex items-center">
-              <UserCheck class="h-4 w-4 mr-2 text-green-500" />
-              Members in {{ currentUserBarangay }}
-              <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+          <div class="p-2 sm:p-3 bg-gray-50">
+            <h3 class="text-xs sm:text-sm font-semibold text-gray-600 flex items-center flex-wrap">
+              <UserCheck class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-green-500" />
+              <span class="mr-2">Members in {{ currentUserBarangay }}</span>
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                 {{ filteredMembers.length }}
               </span>
             </h3>
@@ -116,24 +141,24 @@
             :key="member.id"
             @click="selectChat(member)"
             :class="[
-              'p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
+              'p-3 sm:p-4 hover:bg-blue-50 cursor-pointer transition-colors border-l-4',
               selectedChat?.id === member.id ? 'bg-blue-50 border-blue-500' : 'border-transparent'
             ]"
           >
             <div class="flex items-center space-x-3">
-              <div class="relative">
-                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                  <User class="h-5 w-5 text-white" />
+              <div class="relative flex-shrink-0">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                  <User class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">
+                <p class="text-xs sm:text-sm font-medium text-gray-900 truncate">
                   {{ member.name || 'Member' }}
                 </p>
                 <p class="text-xs text-gray-500">Member</p>
               </div>
-              <div v-if="getUnreadCount(member.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+              <div v-if="getUnreadCount(member.id)" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[18px] sm:min-w-[20px] text-center flex-shrink-0">
                 {{ getUnreadCount(member.id) }}
               </div>
             </div>
@@ -141,51 +166,78 @@
         </div>
         
         <!-- Loading State -->
-        <div v-if="isLoadingContacts" class="p-8 text-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <p class="mt-2 text-gray-500">Loading contacts...</p>
+        <div v-if="isLoadingContacts" class="p-6 sm:p-8 text-center">
+          <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+          <p class="mt-2 text-gray-500 text-sm">Loading contacts...</p>
         </div>
         
         <!-- Empty State -->
-        <div v-if="!isLoadingContacts && !federationPresident && filteredBarangayPresidents.length === 0 && filteredMembers.length === 0" class="p-8 text-center">
-          <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p class="text-gray-500">No contacts available</p>
+        <div v-if="!isLoadingContacts && !federationPresident && filteredBarangayPresidents.length === 0 && filteredMembers.length === 0" class="p-6 sm:p-8 text-center">
+          <MessageCircle class="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+          <p class="text-gray-500 text-sm">No contacts available</p>
         </div>
       </div>
     </div>
     
     <!-- Chat Area -->
-    <div class="flex-1 flex flex-col">
-      <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gray-50">
-        <div class="text-center">
-          <MessageCircle class="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-          <p class="text-gray-500">Choose a contact from the sidebar to start messaging</p>
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Mobile Header with Menu Button -->
+      <div class="md:hidden bg-white border-b border-gray-200 p-3 flex items-center justify-between">
+        <button 
+          @click="openMobileSidebar"
+          class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <Menu class="h-5 w-5" />
+        </button>
+        <h1 class="text-lg font-semibold text-gray-900">Messages</h1>
+        <div class="w-9"></div> <!-- Spacer for centering -->
+      </div>
+
+      <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gray-50 p-4">
+        <div class="text-center max-w-sm">
+          <MessageCircle class="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
+          <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
+          <p class="text-gray-500 text-sm">Choose a contact from the sidebar to start messaging</p>
+          <!-- Mobile: Show button to open sidebar -->
+          <button 
+            @click="openMobileSidebar"
+            class="md:hidden mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            View Contacts
+          </button>
         </div>
       </div>
       
-      <div v-else class="flex-1 flex flex-col">
+      <div v-else class="flex-1 flex flex-col min-h-0">
         <!-- Chat Header -->
-        <div class="p-4 border-b border-gray-200 bg-white">
+        <div class="p-3 sm:p-4 border-b border-gray-200 bg-white">
           <div class="flex items-center space-x-3">
-            <div class="relative">
+            <!-- Mobile Back Button -->
+            <button 
+              @click="selectedChat = null"
+              class="md:hidden p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft class="h-5 w-5" />
+            </button>
+            
+            <div class="relative flex-shrink-0">
               <div :class="[
-                'w-10 h-10 rounded-full flex items-center justify-center',
+                'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center',
                 getChatHeaderColor(selectedChat)
               ]">
-                <component :is="getChatHeaderIcon(selectedChat)" class="h-5 w-5 text-white" />
+                <component :is="getChatHeaderIcon(selectedChat)" class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+              <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900">{{ selectedChat.name || 'Unknown' }}</h3>
-              <p class="text-sm text-gray-500">{{ getChatSubtitle(selectedChat) }}</p>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm sm:text-lg font-medium text-gray-900 truncate">{{ selectedChat.name || 'Unknown' }}</h3>
+              <p class="text-xs sm:text-sm text-gray-500 truncate">{{ getChatSubtitle(selectedChat) }}</p>
             </div>
           </div>
         </div>
         
         <!-- Messages Area -->
-        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50">
           <div
             v-for="message in currentMessages"
             :key="message.id"
@@ -195,12 +247,12 @@
             ]"
           >
             <div :class="[
-              'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
+              'max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg',
               message.senderId === currentUser?.uid
                 ? 'bg-blue-500 text-white'
                 : 'bg-white text-gray-900 border border-gray-200'
             ]">
-              <p class="text-sm">{{ message.text }}</p>
+              <p class="text-sm break-words">{{ message.text }}</p>
               <p :class="[
                 'text-xs mt-1',
                 message.senderId === currentUser?.uid ? 'text-blue-100' : 'text-gray-500'
@@ -212,22 +264,22 @@
         </div>
         
         <!-- Message Input -->
-        <div class="p-4 border-t border-gray-200 bg-white">
-          <form @submit.prevent="sendMessage" class="flex space-x-3">
+        <div class="p-3 sm:p-4 border-t border-gray-200 bg-white">
+          <form @submit.prevent="sendMessage" class="flex space-x-2 sm:space-x-3">
             <div class="flex-1">
               <input
                 v-model="newMessage"
                 type="text"
                 placeholder="Type your message..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <button
               type="submit"
               :disabled="!newMessage.trim()"
-              class="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
-              <Send class="h-5 w-5" />
+              <Send class="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </form>
         </div>
@@ -238,7 +290,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { Search, Crown, Users, User, UserCheck, MessageCircle, Send } from 'lucide-vue-next'
+import { Search, Crown, Users, User, UserCheck, MessageCircle, Send, X, Menu, ArrowLeft } from 'lucide-vue-next'
 import { auth, db } from '@/services/firebase'
 import {
   collection, query, where, orderBy, onSnapshot, addDoc,
@@ -256,12 +308,24 @@ const currentUserName = ref('')
 const isLoadingContacts = ref(true)
 const debugInfo = ref('')
 
+// Mobile sidebar state
+const showMobileSidebar = ref(false)
+
 // Data arrays
 const federationPresident = ref(null)
 const barangayPresidents = ref([])
 const members = ref([])
 const messages = ref([])
 const unreadCounts = ref({})
+
+// Mobile sidebar methods
+const openMobileSidebar = () => {
+  showMobileSidebar.value = true
+}
+
+const closeMobileSidebar = () => {
+  showMobileSidebar.value = false
+}
 
 // Computed properties
 const filteredBarangayPresidents = computed(() => {
@@ -316,6 +380,8 @@ const getChatId = (userId1, userId2) => {
 const selectChat = (contact) => {
   selectedChat.value = contact
   markMessagesAsRead(contact.id)
+  // Close mobile sidebar when chat is selected
+  closeMobileSidebar()
   nextTick(() => {
     scrollToBottom()
   })
@@ -650,5 +716,15 @@ onUnmounted(() => {
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Ensure proper touch scrolling on mobile */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent horizontal scroll on mobile */
+.min-w-0 {
+  min-width: 0;
 }
 </style>
