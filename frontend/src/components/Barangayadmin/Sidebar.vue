@@ -1,10 +1,10 @@
 <template>
   <div>
     <!-- Mobile overlay -->
-    <div v-if="isOpen" 
+    <div v-if="isOpen"
          class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
          @click="toggleSidebar"></div>
-         
+             
     <aside class="w-64 bg-white h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
            :class="{
              'translate-x-0': isOpen,
@@ -16,26 +16,32 @@
           <h1 class="text-primary-600 text-lg font-semibold">Solo Parent Federation</h1>
         </div>
       </div>
-      
+            
       <nav class="p-4 space-y-2">
-        <router-link v-for="item in regularMenuItems" 
-                     :key="item.path" 
+        <router-link v-for="item in regularMenuItems"
+                     :key="item.path"
                      :to="item.path"
-                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors relative"
                      :class="{'bg-primary-50 text-primary-600': isActive(item.path)}">
           <i :class="item.icon"></i>
           <span>{{ item.label }}</span>
+          
+          <!-- Notification badge for messages -->
+          <div v-if="item.path === '/barangay-admin/Message' && totalUnreadCount > 0" 
+               class="notification-badge">
+            {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
+          </div>
         </router-link>
-        
+                
         <!-- Logout button (separate from router-links) -->
-        <div @click="confirmLogout" 
+        <div @click="confirmLogout"
              class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors cursor-pointer">
           <i class="pi pi-sign-out"></i>
           <span>Logout</span>
         </div>
       </nav>
     </aside>
-    
+        
     <!-- PrimeVue ConfirmDialog component -->
     <ConfirmDialog></ConfirmDialog>
   </div>
@@ -46,6 +52,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useConfirm } from 'primevue/useconfirm';
+import { auth, db } from '@/services/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import ConfirmDialog from 'primevue/confirmdialog';
 import spfLogo from '@/assets/SPFLOGO.png';
 
@@ -53,7 +61,13 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const confirm = useConfirm();
+
 const isOpen = ref(window.innerWidth >= 768); // Default open on desktop, closed on mobile
+
+// Message notification state
+const currentUser = ref(null);
+const totalUnreadCount = ref(0);
+let unsubscribeMessages = null;
 
 // Watch for window resize to handle responsive behavior
 const handleResize = () => {
@@ -70,20 +84,42 @@ const wasManuallyToggled = ref(false);
 const toggleSidebar = () => {
   isOpen.value = !isOpen.value;
   wasManuallyToggled.value = true;
-  
+    
   // Reset the manual toggle flag after a delay
   setTimeout(() => {
     wasManuallyToggled.value = false;
   }, 1000);
 };
 
+// Setup message notifications
+const setupMessageNotifications = () => {
+  currentUser.value = auth.currentUser;
+  
+  if (!currentUser.value) return;
+
+  const messagesQuery = query(
+    collection(db, "messages"),
+    where("receiverId", "==", currentUser.value.uid),
+    where("read", "==", false),
+    orderBy("timestamp", "desc")
+  );
+
+  unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+    totalUnreadCount.value = snapshot.size;
+  });
+};
+
 // Set up resize listener
 onMounted(() => {
   window.addEventListener('resize', handleResize);
+  setupMessageNotifications();
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+  }
 });
 
 // Regular menu items (excluding logout)
@@ -117,10 +153,10 @@ const handleLogout = async () => {
   try {
     // Clear user data from store
     userStore.clearUser();
-    
+        
     // Remove any additional data from localStorage
     localStorage.removeItem('barangay');
-    
+        
     // Redirect to login page
     await router.push('/login');
   } catch (error) {
@@ -132,3 +168,32 @@ const isActive = (path) => route.path === path;
 
 defineExpose({ toggleSidebar, isOpen });
 </script>
+
+<style scoped>
+.notification-badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+</style>

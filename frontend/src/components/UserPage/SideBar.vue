@@ -1,11 +1,11 @@
 <template>
   <div>
     <!-- Mobile overlay -->
-    <div v-if="isSidebarCollapsed" 
+    <div v-if="isSidebarCollapsed"
          class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
          @click="toggleSidebar"></div>
-         
-    <div 
+             
+    <div
       class="sidebar-container transition-all duration-300 ease-in-out"
       :class="{ 'sidebar-collapsed': isSidebarCollapsed }"
     >
@@ -13,7 +13,7 @@
       <div class="sidebar-profile">
         <div class="profile-image">
           <img 
-            :src="userStore.user?.photoURL || '/placeholder.svg?height=50&width=50'" 
+            :src="userStore.user?.photoURL || '/placeholder.svg?height=50&width=50'"
             alt="Profile Image"
           />
         </div>
@@ -28,19 +28,28 @@
         <ul>
           <li v-for="item in navItems" :key="item.path">
             <router-link 
-              :to="item.path" 
+              :to="item.path"
               class="nav-link"
               :class="{ active: currentRoute.includes(item.path) }"
             >
-              <component :is="item.icon" class="nav-icon" />
-              <span v-if="!isSidebarCollapsed" class="nav-text">{{ item.title }}</span>
+              <div class="nav-item-content">
+                <component :is="item.icon" class="nav-icon" />
+                <span v-if="!isSidebarCollapsed" class="nav-text">{{ item.title }}</span>
+                
+                <!-- Notification badge for messages -->
+                <div v-if="item.path === '/user-dashboard/UseMessage' && totalUnreadCount > 0" 
+                     class="notification-badge"
+                     :class="{ 'badge-collapsed': isSidebarCollapsed }">
+                  {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
+                </div>
+              </div>
             </router-link>
           </li>
-          
+                    
           <!-- Logout button (separate from router-links) -->
           <li>
-            <div @click="confirmLogout" 
-                class="nav-link logout-link cursor-pointer"
+            <div @click="confirmLogout"
+                 class="nav-link logout-link cursor-pointer"
                 :class="{ 'justify-center': isSidebarCollapsed }">
               <LogOut class="nav-icon" />
               <span v-if="!isSidebarCollapsed" class="nav-text">Logout</span>
@@ -57,24 +66,26 @@
         </button>
       </div>
     </div>
-    
+        
     <!-- PrimeVue ConfirmDialog component -->
     <ConfirmDialog></ConfirmDialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
+import { auth, db } from '@/services/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import ConfirmDialog from 'primevue/confirmdialog';
-import { 
-  Home, 
-  Calendar, 
-  User, 
-  FileText, 
+import {
+  Home,
+  Calendar,
+  User,
+  FileText,
   ClipboardCheck,
   LogOut,
   ChevronLeft,
@@ -86,48 +97,71 @@ const route = useRoute();
 const userStore = useUserStore();
 const toast = useToast();
 const confirm = useConfirm();
+
 const isSidebarCollapsed = ref(false);
 
+// Message notification state
+const currentUser = ref(null);
+const totalUnreadCount = ref(0);
+let unsubscribeMessages = null;
+
 const navItems = [
-  { 
-    title: 'Dashboard', 
-    path: '/user-dashboard/UserPage', 
-    icon: Home 
+  {
+    title: 'Dashboard',
+    path: '/user-dashboard/UserPage',
+    icon: Home
   },
-  { 
-    title: 'Events', 
-    path: '/user-dashboard/Events', 
-    icon: Calendar 
+  {
+    title: 'Events',
+    path: '/user-dashboard/Events',
+    icon: Calendar
   },
-  { 
-    title: 'Feedback', 
-    path: '/user-dashboard/Feedback', 
-    icon: FileText 
+  {
+    title: 'Feedback',
+    path: '/user-dashboard/Feedback',
+    icon: FileText
   },
-  { 
-    title: 'Profile', 
-    path: '/user-dashboard/Profile', 
-    icon: User 
+  {
+    title: 'Profile',
+    path: '/user-dashboard/Profile',
+    icon: User
   },
-  { 
-    title: 'Resources', 
-    path: '/user-dashboard/user_resource', 
-    icon: FileText 
+  {
+    title: 'Resources',
+    path: '/user-dashboard/user_resource',
+    icon: FileText
   },
-  
-  { 
-    title: 'Attendance', 
-    path: '/user-dashboard/Attendance', 
-    icon:  ClipboardCheck 
+  {
+    title: 'Attendance',
+    path: '/user-dashboard/Attendance',
+    icon: ClipboardCheck
   },
-  { 
-    title: 'Message', 
-    path: '/user-dashboard/UseMessage', 
-    icon: FileText 
+  {
+    title: 'Message',
+    path: '/user-dashboard/UseMessage',
+    icon: FileText
   }
 ];
 
 const currentRoute = computed(() => route.path);
+
+// Setup message notifications
+const setupMessageNotifications = () => {
+  currentUser.value = auth.currentUser;
+  
+  if (!currentUser.value) return;
+
+  const messagesQuery = query(
+    collection(db, "messages"),
+    where("receiverId", "==", currentUser.value.uid),
+    where("read", "==", false),
+    orderBy("timestamp", "desc")
+  );
+
+  unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+    totalUnreadCount.value = snapshot.size;
+  });
+};
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
@@ -152,31 +186,41 @@ const handleLogout = async () => {
   try {
     // Clear user data from store
     userStore.clearUser();
-    
+        
     // Remove any additional data from localStorage if needed
-    // For example, you might want to remove user-specific settings
     localStorage.removeItem('user-settings');
-    
+        
     // Show success toast notification
-    toast.add({ 
-      severity: 'success', 
-      summary: 'Logged Out', 
-      detail: 'You have been successfully logged out.', 
-      life: 3000 
+    toast.add({
+      severity: 'success',
+      summary: 'Logged Out',
+      detail: 'You have been successfully logged out.',
+      life: 3000
     });
-    
+        
     // Redirect to login page
     await router.push('/login');
   } catch (error) {
     console.error('Logout error:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: 'Error', 
-      detail: 'There was a problem logging out.', 
-      life: 3000 
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'There was a problem logging out.',
+      life: 3000
     });
   }
 };
+
+// Lifecycle
+onMounted(() => {
+  setupMessageNotifications();
+});
+
+onUnmounted(() => {
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+  }
+});
 </script>
 
 <style scoped>
@@ -251,6 +295,14 @@ const handleLogout = async () => {
   gap: 12px;
 }
 
+.nav-item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  position: relative;
+}
+
 .nav-link:hover {
   background-color: rgba(133, 40, 216, 0.1);
   color: #8528d8;
@@ -273,6 +325,38 @@ const handleLogout = async () => {
 .nav-icon {
   width: 20px;
   height: 20px;
+}
+
+.notification-badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0;
+  top: -2px;
+  animation: pulse 2s infinite;
+}
+
+.badge-collapsed {
+  right: -8px;
+  top: -8px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .sidebar-footer {
@@ -303,12 +387,12 @@ const handleLogout = async () => {
   .sidebar-container {
     transform: translateX(-100%);
   }
-  
+    
   .sidebar-container.sidebar-collapsed {
     transform: translateX(0);
     width: 250px;
   }
-  
+    
   .nav-text, .profile-info {
     display: block;
   }
