@@ -6,7 +6,9 @@
       <Topbar @toggle-sidebar="toggleSidebar" :sidebar-collapsed="isSidebarCollapsed" />
       
       <div class="page-content">
-        <router-view></router-view>
+        <div class="content-wrapper">
+          <router-view></router-view>
+        </div>
       </div>
     </div>
   </div>
@@ -28,27 +30,59 @@ const toggleSidebar = () => {
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  background-color: #f0f2f5;
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+  position: relative;
 }
 
 .main-content {
   flex: 1;
   margin-left: 70px;
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-content.sidebar-open {
-  margin-left: 250px;
+  margin-left: 280px;
 }
 
 .page-content {
-  padding: 24px;
-  margin-top: 64px;
+  flex: 1;
+  padding: 32px;
+  margin-top: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 @media (max-width: 768px) {
-  .main-content, .main-content.sidebar-open {
-    margin-left: 70px;
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .main-content.sidebar-open {
+    margin-left: 0;
+  }
+  
+  .page-content {
+    padding: 20px 16px;
+    margin-top: 70px;
+  }
+  
+  .content-wrapper {
+    padding: 0;
   }
 }
 </style>
