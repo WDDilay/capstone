@@ -1,15 +1,15 @@
 <template>
   <div class="attendance-system">
     <div class="main-content">
-      <!-- Alert Messages -->
+        
       <div v-if="notification.show" :class="`notification ${notification.type}`">
         <span>{{ notification.message }}</span>
         <button @click="notification.show = false" class="close-btn">&times;</button>
       </div>
-
+      
       <h1 class="page-title">Attendance Form Creator</h1>
-
-      <!-- Stat Cards -->
+      
+       
       <div class="stat-cards">
         <div class="stat-card">
           <div class="stat-icon" style="background-color: #3B82F6">
@@ -48,36 +48,36 @@
           </div>
         </div>
       </div>
-
-      <!-- Tabs -->
+      
+        
       <div class="tabs">
         <button 
-          :class="['tab-btn', { active: activeTab === 'create' }]" 
+          :class="['tab-btn', { active: activeTab === 'create' }]"
           @click="activeTab = 'create'"
         >
-          Create Form
+          <span class="tab-text">Create Form</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'manage' }]" 
+          :class="['tab-btn', { active: activeTab === 'manage' }]"
           @click="activeTab = 'manage'; loadAttendanceForms()"
         >
-          Manage Forms
+          <span class="tab-text">Manage Forms</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'confirmations' }]" 
+          :class="['tab-btn', { active: activeTab === 'confirmations' }]"
           @click="activeTab = 'confirmations'; loadEventConfirmations()"
         >
-          Event Confirmations
+          <span class="tab-text">Event Confirmations</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'attendance' }]" 
+          :class="['tab-btn', { active: activeTab === 'attendance' }]"
           @click="activeTab = 'attendance'; loadAttendanceResponses()"
         >
-          Attendance Responses
+          <span class="tab-text">Attendance Responses</span>
         </button>
       </div>
-
-      <!-- Create Form Tab -->
+      
+       
       <div v-if="activeTab === 'create'" class="tab-content">
         <h2 class="section-title">Create New Attendance Form</h2>
         
@@ -146,15 +146,15 @@
           </div>
         </form>
       </div>
-
-      <!-- Manage Forms Tab -->
+      
+       
       <div v-if="activeTab === 'manage'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search forms..." 
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search forms..."
               @input="filterForms"
             >
           </div>
@@ -167,19 +167,19 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoading" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading attendance forms...</p>
         </div>
-
+        
         <div v-else-if="filteredForms.length === 0" class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
           <h3>No attendance forms found</h3>
           <p>Create your first attendance form to get started</p>
           <button @click="activeTab = 'create'" class="action-btn">Create Form</button>
         </div>
-
+        
         <div v-else class="forms-grid">
           <div v-for="form in filteredForms" :key="form.id" class="form-card">
             <div class="form-card-header">
@@ -214,25 +214,25 @@
             <div class="form-card-footer">
               <button @click="viewFormDetails(form)" class="view-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                View Details
+                <span class="btn-text">View Details</span>
               </button>
               <button @click="deleteForm(form)" class="delete-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                Delete
+                <span class="btn-text">Delete</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Event Confirmations Tab -->
+      
+      
       <div v-if="activeTab === 'confirmations'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="confirmationSearchQuery" 
-              type="text" 
-              placeholder="Search confirmations..." 
+              v-model="confirmationSearchQuery"
+              type="text"
+              placeholder="Search confirmations..."
               @input="filterConfirmations"
             >
           </div>
@@ -252,81 +252,103 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoadingConfirmations" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading event confirmations...</p>
         </div>
-
+        
         <div v-else-if="filteredConfirmations.length === 0" class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
           <h3>No event confirmations found</h3>
           <p>No members have confirmed attendance for upcoming events yet</p>
         </div>
-
+        
         <div v-else class="resource-table-container">
           <table class="resource-table">
             <thead>
               <tr>
                 <th @click="sortConfirmations('submittedAt')">
-                  Date Submitted
-                  <span v-if="confirmationSortField === 'submittedAt'" class="sort-icon">
-                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Date Submitted</span>
+                    <span v-if="confirmationSortField === 'submittedAt'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
                 <th @click="sortConfirmations('memberName')">
-                  Member Name
-                  <span v-if="confirmationSortField === 'memberName'" class="sort-icon">
-                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Member Name</span>
+                    <span v-if="confirmationSortField === 'memberName'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th @click="sortConfirmations('barangay')">
-                  Barangay
-                  <span v-if="confirmationSortField === 'barangay'" class="sort-icon">
-                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                <th @click="sortConfirmations('barangay')" class="hidden-mobile">
+                  <span class="th-content">
+                    <span class="th-text">Barangay</span>
+                    <span v-if="confirmationSortField === 'barangay'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th @click="sortConfirmations('formId')">
-                  Event
-                  <span v-if="confirmationSortField === 'formId'" class="sort-icon">
-                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                <th @click="sortConfirmations('formId')" class="hidden-mobile">
+                  <span class="th-content">
+                    <span class="th-text">Event</span>
+                    <span v-if="confirmationSortField === 'formId'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
                 <th @click="sortConfirmations('willAttend')">
-                  Response
-                  <span v-if="confirmationSortField === 'willAttend'" class="sort-icon">
-                    {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Response</span>
+                    <span v-if="confirmationSortField === 'willAttend'" class="sort-icon">
+                      {{ confirmationSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th>Comments</th>
+                <th class="hidden-mobile">Comments</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="confirmation in filteredConfirmations" :key="confirmation.id">
-                <td>{{ formatDateTime(confirmation.submittedAt) }}</td>
-                <td>{{ confirmation.memberName }}</td>
-                <td>{{ confirmation.barangay }}</td>
-                <td>{{ getEventName(confirmation.formId) }}</td>
                 <td>
+                  <div class="mobile-label">Date:</div>
+                  {{ formatDateTime(confirmation.submittedAt) }}
+                </td>
+                <td>
+                  <div class="mobile-label">Member:</div>
+                  {{ confirmation.memberName }}
+                  <div class="mobile-info visible-mobile">
+                    <div class="mobile-detail">{{ confirmation.barangay }}</div>
+                    <div class="mobile-detail">{{ getEventName(confirmation.formId) }}</div>
+                    <div class="mobile-detail" v-if="confirmation.comments">{{ confirmation.comments }}</div>
+                  </div>
+                </td>
+                <td class="hidden-mobile">{{ confirmation.barangay }}</td>
+                <td class="hidden-mobile">{{ getEventName(confirmation.formId) }}</td>
+                <td>
+                  <div class="mobile-label">Response:</div>
                   <span :class="['confirmation-badge', confirmation.willAttend ? 'yes' : 'no']">
                     {{ confirmation.willAttend ? 'Will Attend' : 'Won\'t Attend' }}
                   </span>
                 </td>
-                <td>{{ confirmation.comments || 'No comments' }}</td>
+                <td class="hidden-mobile">{{ confirmation.comments || 'No comments' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- Attendance Responses Tab -->
+      
+      
       <div v-if="activeTab === 'attendance'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="attendanceSearchQuery" 
-              type="text" 
-              placeholder="Search attendance..." 
+              v-model="attendanceSearchQuery"
+              type="text"
+              placeholder="Search attendance..."
               @input="filterAttendanceResponses"
             >
           </div>
@@ -346,74 +368,96 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoadingAttendance" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading attendance responses...</p>
         </div>
-
+        
         <div v-else-if="filteredAttendanceResponses.length === 0" class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           <h3>No attendance responses found</h3>
           <p>No members have submitted attendance yet</p>
         </div>
-
+        
         <div v-else class="resource-table-container">
           <table class="resource-table">
             <thead>
               <tr>
                 <th @click="sortAttendanceResponses('submittedAt')">
-                  Date Submitted
-                  <span v-if="attendanceSortField === 'submittedAt'" class="sort-icon">
-                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Date Submitted</span>
+                    <span v-if="attendanceSortField === 'submittedAt'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
                 <th @click="sortAttendanceResponses('memberName')">
-                  Member Name
-                  <span v-if="attendanceSortField === 'memberName'" class="sort-icon">
-                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Member Name</span>
+                    <span v-if="attendanceSortField === 'memberName'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th @click="sortAttendanceResponses('barangay')">
-                  Barangay
-                  <span v-if="attendanceSortField === 'barangay'" class="sort-icon">
-                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                <th @click="sortAttendanceResponses('barangay')" class="hidden-mobile">
+                  <span class="th-content">
+                    <span class="th-text">Barangay</span>
+                    <span v-if="attendanceSortField === 'barangay'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th @click="sortAttendanceResponses('formId')">
-                  Event
-                  <span v-if="attendanceSortField === 'formId'" class="sort-icon">
-                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                <th @click="sortAttendanceResponses('formId')" class="hidden-mobile">
+                  <span class="th-content">
+                    <span class="th-text">Event</span>
+                    <span v-if="attendanceSortField === 'formId'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
                 <th @click="sortAttendanceResponses('status')">
-                  Status
-                  <span v-if="attendanceSortField === 'status'" class="sort-icon">
-                    {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                  <span class="th-content">
+                    <span class="th-text">Status</span>
+                    <span v-if="attendanceSortField === 'status'" class="sort-icon">
+                      {{ attendanceSortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
                   </span>
                 </th>
-                <th>Comments</th>
+                <th class="hidden-mobile">Comments</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="attendance in filteredAttendanceResponses" :key="attendance.id">
-                <td>{{ formatDateTime(attendance.submittedAt) }}</td>
-                <td>{{ attendance.memberName }}</td>
-                <td>{{ attendance.barangay }}</td>
-                <td>{{ getEventName(attendance.formId) }}</td>
                 <td>
+                  <div class="mobile-label">Date:</div>
+                  {{ formatDateTime(attendance.submittedAt) }}
+                </td>
+                <td>
+                  <div class="mobile-label">Member:</div>
+                  {{ attendance.memberName }}
+                  <div class="mobile-info visible-mobile">
+                    <div class="mobile-detail">{{ attendance.barangay }}</div>
+                    <div class="mobile-detail">{{ getEventName(attendance.formId) }}</div>
+                    <div class="mobile-detail" v-if="attendance.comments">{{ attendance.comments }}</div>
+                  </div>
+                </td>
+                <td class="hidden-mobile">{{ attendance.barangay }}</td>
+                <td class="hidden-mobile">{{ getEventName(attendance.formId) }}</td>
+                <td>
+                  <div class="mobile-label">Status:</div>
                   <span :class="['status-badge', attendance.status === 'present' ? 'present' : 'absent']">
                     {{ attendance.status === 'present' ? 'Present' : 'Absent' }}
                   </span>
                 </td>
-                <td>{{ attendance.comments || 'No comments' }}</td>
+                <td class="hidden-mobile">{{ attendance.comments || 'No comments' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- Form Details Modal -->
+      
+       
       <div v-if="showFormModal" class="modal">
         <div class="modal-content">
           <div class="modal-header">
@@ -437,7 +481,7 @@
               <div class="detail-item">
                 <h3>Status</h3>
                 <p>
-                  <span 
+                  <span
                     class="status-badge"
                     :class="getFormStatus(selectedForm)"
                   >
@@ -477,8 +521,8 @@
           </div>
         </div>
       </div>
-
-      <!-- Delete Confirmation Modal -->
+      
+        
       <div v-if="showDeleteModal" class="modal">
         <div class="modal-content modal-sm">
           <div class="modal-header">
@@ -937,7 +981,7 @@ const filterConfirmations = () => {
     
     const matchesForm = !confirmationFormFilter.value || confirmation.formId === confirmationFormFilter.value;
     
-    const matchesStatus = !confirmationStatusFilter.value || 
+    const matchesStatus = !confirmationStatusFilter.value ||
       (confirmationStatusFilter.value === 'yes' && confirmation.willAttend) ||
       (confirmationStatusFilter.value === 'no' && !confirmation.willAttend);
     
@@ -1162,7 +1206,7 @@ onMounted(async () => {
 .main-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .page-title {
@@ -1170,29 +1214,31 @@ onMounted(async () => {
   font-weight: 700;
   color: #2c3e50;
   margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 /* Stat Cards */
 .stat-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
 .stat-card {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .stat-icon {
@@ -1204,10 +1250,12 @@ onMounted(async () => {
   justify-content: center;
   margin-right: 1rem;
   color: white;
+  flex-shrink: 0;
 }
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
@@ -1222,16 +1270,20 @@ onMounted(async () => {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Notification */
 .notification {
   padding: 0.75rem 1rem;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 0.875rem;
 }
 
 .notification.success {
@@ -1258,41 +1310,60 @@ onMounted(async () => {
   font-size: 1.25rem;
   cursor: pointer;
   color: inherit;
+  padding: 0;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 2px solid #e2e8f0;
   margin-bottom: 1.5rem;
+  gap: 0.5rem;
 }
 
 .tab-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   cursor: pointer;
   font-weight: 500;
-  color: #666;
-  transition: all 0.2s;
+  color: #64748b;
+  transition: all 0.3s ease;
+  border-radius: 8px 8px 0 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-btn:hover {
-  color: #333;
+  color: #2c3e50;
+  background-color: #f8fafc;
 }
 
 .tab-btn.active {
   color: #2c3e50;
   border-bottom-color: #2c3e50;
+  background-color: white;
+}
+
+.tab-text {
+  white-space: nowrap;
 }
 
 .tab-content {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 /* Section Titles */
@@ -1314,7 +1385,7 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
   padding: 1.5rem;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid #e9ecef;
 }
 
@@ -1326,6 +1397,7 @@ onMounted(async () => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  color: #374151;
 }
 
 .required {
@@ -1335,16 +1407,18 @@ onMounted(async () => {
 .form-input, .form-textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
   font-family: inherit;
   background-color: white;
+  transition: all 0.3s ease;
+  font-size: 1rem;
 }
 
 .form-input:focus, .form-textarea:focus {
   border-color: #2c3e50;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
 }
 
 .form-textarea {
@@ -1354,7 +1428,7 @@ onMounted(async () => {
 
 .form-help {
   font-size: 0.75rem;
-  color: #666;
+  color: #6b7280;
   margin-top: 0.25rem;
 }
 
@@ -1362,41 +1436,52 @@ onMounted(async () => {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .submit-btn, .cancel-btn, .action-btn {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: all 0.3s ease;
+  min-height: 44px;
+  font-size: 0.875rem;
 }
 
 .submit-btn {
   background-color: #2c3e50;
   color: white;
+  flex: 1;
+  min-width: 200px;
 }
 
 .submit-btn:hover {
   background-color: #1a2530;
+  transform: translateY(-2px);
 }
 
 .submit-btn:disabled {
   background-color: #95a5a6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .cancel-btn {
   background-color: #e9ecef;
-  color: #333;
+  color: #495057;
+  flex: 1;
+  min-width: 120px;
 }
 
 .cancel-btn:hover {
   background-color: #dee2e6;
+  transform: translateY(-2px);
 }
 
 .action-btn {
@@ -1407,6 +1492,7 @@ onMounted(async () => {
 
 .action-btn:hover {
   background-color: #1a2530;
+  transform: translateY(-2px);
 }
 
 /* List Controls */
@@ -1418,11 +1504,25 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.search-box input, .filter-box select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.search-box, .filter-box {
+  flex: 1;
   min-width: 200px;
+}
+
+.search-box input, .filter-box select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus, .filter-box select:focus {
+  border-color: #2c3e50;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
 }
 
 /* Loading */
@@ -1431,14 +1531,14 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: #666;
+  padding: 3rem 1rem;
+  color: #6b7280;
 }
 
 .loading-spinner {
   display: inline-block;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border: 3px solid rgba(0,0,0,0.1);
   border-radius: 50%;
   border-top-color: #2c3e50;
@@ -1456,73 +1556,78 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: #666;
+  padding: 3rem 1rem;
+  color: #6b7280;
   text-align: center;
 }
 
 .empty-state svg {
-  color: #95a5a6;
+  color: #9ca3af;
   margin-bottom: 1rem;
 }
 
 .empty-state h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
-  color: #333;
+  color: #374151;
 }
 
 .empty-state p {
   margin: 0 0 1.5rem 0;
+  max-width: 400px;
 }
 
 /* Forms Grid */
 .forms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
 
 .form-card {
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  border: 1px solid #eee;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .form-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .form-card-header {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
 .status-indicator {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .status-indicator.active {
   background-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 .status-indicator.upcoming {
   background-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .status-indicator.closed {
   background-color: #6B7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
 }
 
 .form-card-title {
@@ -1530,10 +1635,11 @@ onMounted(async () => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #2c3e50;
+  line-height: 1.4;
 }
 
 .form-card-content {
-  padding: 1rem;
+  padding: 1.25rem;
   flex: 1;
 }
 
@@ -1541,83 +1647,101 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 0.875rem;
   color: #4b5563;
 }
 
 .form-card-detail svg {
-  color: #6B7280;
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .form-card-description {
-  margin: 0.75rem 0 0 0;
+  margin: 1rem 0 0 0;
   font-size: 0.875rem;
-  color: #4b5563;
+  color: #6b7280;
   line-height: 1.5;
 }
 
 .form-card-footer {
-  padding: 1rem;
-  border-top: 1px solid #eee;
+  padding: 1.25rem;
+  border-top: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .view-btn, .delete-btn {
   padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+  min-height: 36px;
 }
 
 .view-btn {
-  background-color: #e9ecef;
+  background-color: #f1f5f9;
   color: #2c3e50;
 }
 
 .view-btn:hover {
-  background-color: #dee2e6;
+  background-color: #e2e8f0;
+  transform: translateY(-1px);
 }
 
 .delete-btn {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 
 .delete-btn:hover {
-  background-color: #f5c6cb;
+  background-color: #fee2e2;
+  transform: translateY(-1px);
+}
+
+.btn-text {
+  white-space: nowrap;
 }
 
 .delete-btn-large {
   padding: 0.75rem 1.5rem;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: none;
-  border-radius: 4px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 2px solid #fecaca;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: all 0.3s ease;
+  min-height: 44px;
 }
 
 .delete-btn-large:hover {
-  background-color: #f5c6cb;
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-2px);
 }
 
 /* Status Badge */
 .status-badge {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .status-badge.active {
@@ -1648,10 +1772,12 @@ onMounted(async () => {
 /* Confirmation Badge */
 .confirmation-badge {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .confirmation-badge.yes {
@@ -1667,36 +1793,71 @@ onMounted(async () => {
 /* Resource Table */
 .resource-table-container {
   overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
 .resource-table {
   width: 100%;
   border-collapse: collapse;
+  background-color: white;
 }
 
 .resource-table th, .resource-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
 }
 
 .resource-table th {
-  background-color: #f8f9fa;
+  background-color: #f9fafb;
   font-weight: 600;
   cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .resource-table th:hover {
-  background-color: #e9ecef;
+  background-color: #f3f4f6;
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.th-text {
+  white-space: nowrap;
 }
 
 .sort-icon {
-  margin-left: 0.25rem;
   font-size: 0.75rem;
+  color: #6b7280;
 }
 
 .resource-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: #f9fafb;
+}
+
+.mobile-label {
+  display: none;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.mobile-info {
+  margin-top: 0.5rem;
+}
+
+.mobile-detail {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
 }
 
 /* Modal Styles */
@@ -1706,21 +1867,22 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 8px;
-  width: 90%;
+  border-radius: 12px;
+  width: 100%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .modal-content.modal-sm {
@@ -1728,8 +1890,8 @@ onMounted(async () => {
 }
 
 .modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1738,6 +1900,8 @@ onMounted(async () => {
 .modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
 }
 
 .close-modal {
@@ -1745,7 +1909,20 @@ onMounted(async () => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
+  color: #6b7280;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-modal:hover {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .modal-body {
@@ -1753,29 +1930,32 @@ onMounted(async () => {
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #eee;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .detail-item h3 {
   font-size: 0.875rem;
-  color: #666;
-  margin: 0 0 0.25rem 0;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
 }
 
 .detail-item p {
   margin: 0;
   font-weight: 500;
+  color: #111827;
 }
 
 .detail-section {
@@ -1784,18 +1964,22 @@ onMounted(async () => {
 
 .detail-section h3 {
   font-size: 1rem;
-  margin: 0 0 0.5rem 0;
-  color: #333;
+  margin: 0 0 0.75rem 0;
+  color: #111827;
+  font-weight: 600;
 }
 
 .detail-section p {
   margin: 0;
   white-space: pre-line;
+  line-height: 1.6;
+  color: #374151;
 }
 
 .warning-text {
-  color: #721c24;
+  color: #dc2626;
   font-size: 0.875rem;
+  margin-top: 0.5rem;
 }
 
 /* Response Summary */
@@ -1804,16 +1988,18 @@ onMounted(async () => {
   justify-content: center;
   gap: 2rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .response-count {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: #f9fafb;
+  border-radius: 12px;
   padding: 1.5rem;
   min-width: 150px;
+  border: 1px solid #e5e7eb;
 }
 
 .response-count .count {
@@ -1824,32 +2010,342 @@ onMounted(async () => {
 
 .response-count .label {
   font-size: 0.875rem;
-  color: #666;
-  margin-top: 0.25rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
   text-align: center;
+  font-weight: 500;
 }
 
-/* Responsive Adjustments */
+/* Responsive Utilities */
+.hidden-mobile {
+  display: table-cell;
+}
+
+.visible-mobile {
+  display: none;
+}
+
+/* Mobile Responsive Styles */
 @media (max-width: 768px) {
+  .main-content {
+    padding: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-cards {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+  }
+
+  .tabs {
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 40px;
+  }
+
+  .tab-text {
+    font-size: 0.8rem;
+  }
+
+  .tab-content {
+    padding: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
   .form-actions {
+    flex-direction: column;
+  }
+
+  .submit-btn, .cancel-btn {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .list-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .search-box, .filter-box {
+    min-width: auto;
+  }
+
+  .forms-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .form-card-header {
+    padding: 1rem;
+  }
+
+  .form-card-content {
+    padding: 1rem;
+  }
+
+  .form-card-footer {
+    padding: 1rem;
+    flex-direction: column;
+  }
+
+  .view-btn, .delete-btn {
+    width: 100%;
+  }
+
+  .hidden-mobile {
+    display: none;
+  }
+
+  .visible-mobile {
+    display: block;
+  }
+
+  .mobile-label {
+    display: block;
+  }
+
+  .resource-table th, .resource-table td {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    padding: 0.5rem;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    padding: 1rem;
     flex-direction: column;
   }
 
   .detail-grid {
     grid-template-columns: 1fr;
-  }
-  
-  .forms-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .list-controls {
-    flex-direction: column;
+    gap: 1rem;
   }
 
   .response-summary {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .response-count {
+    min-width: auto;
+    padding: 1rem;
+  }
+}
+
+/* Small Mobile Styles */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.5rem;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .stat-cards {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .tab-btn {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .tab-text {
+    font-size: 0.75rem;
+  }
+
+  .tab-content {
+    padding: 0.75rem;
+  }
+
+  .form-section {
+    padding: 0.75rem;
+  }
+
+  .form-input, .form-textarea {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .submit-btn, .cancel-btn, .action-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .search-box input, .filter-box select {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .form-card-header, .form-card-content, .form-card-footer {
+    padding: 0.75rem;
+  }
+
+  .form-card-title {
+    font-size: 1rem;
+  }
+
+  .form-card-detail {
+    font-size: 0.8rem;
+  }
+
+  .view-btn, .delete-btn {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .resource-table th, .resource-table td {
+    padding: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .response-count .count {
+    font-size: 1.5rem;
+  }
+
+  .response-count .label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Landscape Mobile Styles */
+@media (max-width: 768px) and (orientation: landscape) {
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tabs {
+    justify-content: center;
+  }
+
+  .response-summary {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .stat-card, .form-card, .tab-content {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  }
+
+  .stat-card:hover, .form-card:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  }
+}
+
+/* Focus Styles for Accessibility */
+.tab-btn:focus,
+.form-input:focus,
+.form-textarea:focus,
+.search-box input:focus,
+.filter-box select:focus,
+.submit-btn:focus,
+.cancel-btn:focus,
+.action-btn:focus,
+.view-btn:focus,
+.delete-btn:focus,
+.close-modal:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Print Styles */
+@media print {
+  .tabs, .form-actions, .list-controls, .form-card-footer, .modal {
+    display: none;
+  }
+
+  .main-content {
+    max-width: none;
+    padding: 0;
+  }
+
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .forms-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

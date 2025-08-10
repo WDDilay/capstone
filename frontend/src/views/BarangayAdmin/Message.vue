@@ -554,7 +554,7 @@ const fetchFederationPresidentAlternative = async () => {
         name: messageData.senderName || 'Federation President',
         role: 'FederationPresident'
       }
-      debugInfo.value = 'Found Federation President from messages'
+      
       return
     }
 
@@ -570,7 +570,7 @@ const fetchFederationPresidentAlternative = async () => {
       return
     }
 
-    debugInfo.value = 'Federation President not found - please check Firebase setup'
+    
   } catch (error) {
     console.error('Error in alternative Federation President fetch:', error)
     debugInfo.value = `Alternative fetch error: ${error.message}`
@@ -594,7 +594,7 @@ const fetchFederationPresident = async () => {
         role: 'FederationPresident',
         ...data
       }
-      debugInfo.value = 'Federation President found in admins collection'
+    
       return
     }
 

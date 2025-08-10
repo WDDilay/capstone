@@ -1,27 +1,27 @@
 <template>
   <div class="inventory-system">
     <div class="main-content">
-      <!-- Alert Messages -->
+        
       <div v-if="notification.show" :class="`notification ${notification.type}`">
         <span>{{ notification.message }}</span>
         <button @click="notification.show = false" class="close-btn">&times;</button>
       </div>
-
-      <!-- Error Alert -->
+      
+        
       <div v-if="authError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex justify-between items-center">
         <span>{{ authError }}</span>
         <button @click="authError = null" class="text-red-700">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-
-      <!-- Barangay Indicator -->
+      
+        
       <div v-if="currentBarangay" class="mb-4">
         <h1 class="page-title">{{ currentBarangay }} Resource Inventory</h1>
         <p class="text-sm text-gray-600">Managing resources for {{ currentBarangay }}</p>
       </div>
-
-      <!-- Stat Cards -->
+      
+      
       <div class="stat-cards">
         <div class="stat-card" v-for="(stat, index) in stats" :key="index">
           <div class="stat-icon" :style="`background-color: ${stat.bgColor}`">
@@ -33,43 +33,47 @@
           </div>
         </div>
       </div>
-
-      <!-- Tabs -->
+      
+        
       <div class="tabs">
         <button 
-          :class="['tab-btn', { active: activeTab === 'available' }]" 
+          :class="['tab-btn', { active: activeTab === 'available' }]"
           @click="activeTab = 'available'"
         >
-          Available Resources
+          <span class="tab-text">Available Resources</span>
+          <span class="tab-text-short">Available</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'memberRequest' }]" 
+          :class="['tab-btn', { active: activeTab === 'memberRequest' }]"
           @click="activeTab = 'memberRequest'; loadMemberRequests()"
         >
-          Member Request
+          <span class="tab-text">Member Request</span>
+          <span class="tab-text-short">Requests</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'member' }]" 
+          :class="['tab-btn', { active: activeTab === 'member' }]"
           @click="activeTab = 'member'"
         >
-          Member Resource
+          <span class="tab-text">Member Resource</span>
+          <span class="tab-text-short">Send</span>
         </button>
         <button 
-          :class="['tab-btn', { active: activeTab === 'history' }]" 
+          :class="['tab-btn', { active: activeTab === 'history' }]"
           @click="activeTab = 'history'; loadMemberHistory()"
         >
-          History
+          <span class="tab-text">History</span>
+          <span class="tab-text-short">History</span>
         </button>
       </div>
-
-      <!-- Available Resources Tab -->
+      
+       
       <div v-if="activeTab === 'available'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search resources..." 
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search resources..."
               @input="filterAvailableResources"
             >
           </div>
@@ -87,12 +91,12 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoading" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading resources...</p>
         </div>
-
+        
         <div v-else-if="fetchError" class="error-container">
           <div class="error-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -100,8 +104,50 @@
           <p>{{ fetchError }}</p>
           <button @click="fetchAvailableResources" class="retry-btn">Retry</button>
         </div>
-
+        
         <div v-else class="resource-table-container">
+           
+          <div class="mobile-cards">
+            <div v-if="filteredAvailableResources.length === 0" class="no-data-mobile">
+              No resources available for this barangay.
+            </div>
+            <div v-for="(resource, index) in filteredAvailableResources" :key="index" class="mobile-card">
+              <div class="mobile-card-header">
+                <h3 class="mobile-card-title">{{ resource.resourceName }}</h3>
+                <span 
+                  class="resource-type-badge"
+                  :style="`background-color: ${getResourceTypeColor(resource.resourceType, 0.2)}; color: ${getResourceTypeColor(resource.resourceType, 1)}`"
+                >
+                  {{ resource.resourceType }}
+                </span>
+              </div>
+              <div class="mobile-card-content">
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Available:</span>
+                  <span class="mobile-value">{{ resource.remainingQuantity }} {{ resource.unit }}</span>
+                </div>
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Date Received:</span>
+                  <span class="mobile-value">{{ formatDate(resource.requestDate) }}</span>
+                </div>
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Status:</span>
+                  <span 
+                    class="status-badge"
+                    :class="{
+                      'approved': resource.status === 'Approved',
+                      'pending': resource.status === 'Pending',
+                      'rejected': resource.status === 'Rejected'
+                    }"
+                  >
+                    {{ resource.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+           
           <table class="resource-table">
             <thead>
               <tr>
@@ -165,15 +211,15 @@
           </table>
         </div>
       </div>
-
-      <!-- Member Request Tab -->
+      
+       
       <div v-if="activeTab === 'memberRequest'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="memberRequestSearchQuery" 
-              type="text" 
-              placeholder="Search member requests..." 
+              v-model="memberRequestSearchQuery"
+              type="text"
+              placeholder="Search member requests..."
               @input="filterMemberRequests"
             >
           </div>
@@ -186,13 +232,89 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoadingMemberRequests" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading member requests...</p>
         </div>
-
+        
         <div v-else class="resource-table-container">
+           
+          <div class="mobile-cards">
+            <div v-if="filteredMemberRequests.length === 0" class="no-data-mobile">
+              No member requests found.
+            </div>
+            <div v-for="request in filteredMemberRequests" :key="request.id" class="mobile-card">
+              <div class="mobile-card-header">
+                <h3 class="mobile-card-title">{{ request.userName }}</h3>
+                <span 
+                  class="status-badge"
+                  :class="{
+                    'approved': request.status === 'Approved',
+                    'pending': request.status === 'Pending',
+                    'rejected': request.status === 'Rejected'
+                  }"
+                >
+                  {{ request.status }}
+                </span>
+              </div>
+              <div class="mobile-card-content">
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Date:</span>
+                  <span class="mobile-value">{{ formatDate(request.requestDate) }}</span>
+                </div>
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Reference:</span>
+                  <span class="mobile-value">{{ request.referenceCode }}</span>
+                </div>
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Items:</span>
+                  <div class="mobile-resource-list">
+                    <div 
+                      v-for="(item, index) in request.requestedItems"
+                      :key="index"
+                      class="mobile-resource-item"
+                      :style="`border-left-color: ${getResourceTypeColor(item.resourceType, 1)}`"
+                    >
+                      {{ item.resourceName }}: {{ item.quantity }} {{ item.unit }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-card-actions">
+                <button @click="viewMemberRequestDetails(request)" class="mobile-action-btn view">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  View
+                </button>
+                <button 
+                  v-if="request.status === 'Pending'"
+                  @click="updateRequestStatus(request, 'Approved')"
+                  class="mobile-action-btn approve"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Approve
+                </button>
+                <button 
+                  v-if="request.status === 'Pending'"
+                  @click="openRejectModal(request)"
+                  class="mobile-action-btn reject"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  Reject
+                </button>
+                <button 
+                  v-if="request.status === 'Approved'"
+                  @click="prefillMemberResourceForm(request)"
+                  class="mobile-action-btn send"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m3 3 3 9-3 9 19-9Z"></path></svg>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          
           <table class="resource-table">
             <thead>
               <tr>
@@ -235,7 +357,7 @@
                 <td>
                   <div class="resource-list">
                     <div 
-                      v-for="(item, index) in request.requestedItems" 
+                      v-for="(item, index) in request.requestedItems"
                       :key="index"
                       class="resource-item"
                       :style="`border-left-color: ${getResourceTypeColor(item.resourceType, 1)}`"
@@ -262,25 +384,25 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </button>
                     <button 
-                      v-if="request.status === 'Pending'" 
-                      @click="updateRequestStatus(request, 'Approved')" 
-                      class="approve-btn" 
+                      v-if="request.status === 'Pending'"
+                      @click="updateRequestStatus(request, 'Approved')"
+                      class="approve-btn"
                       title="Approve Request"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </button>
                     <button 
-                      v-if="request.status === 'Pending'" 
-                      @click="openRejectModal(request)" 
-                      class="reject-btn" 
+                      v-if="request.status === 'Pending'"
+                      @click="openRejectModal(request)"
+                      class="reject-btn"
                       title="Reject Request"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                     <button 
-                      v-if="request.status === 'Approved'" 
-                      @click="prefillMemberResourceForm(request)" 
-                      class="send-btn" 
+                      v-if="request.status === 'Approved'"
+                      @click="prefillMemberResourceForm(request)"
+                      class="send-btn"
                       title="Send Resources"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m3 3 3 9-3 9 19-9Z"></path></svg>
@@ -292,13 +414,13 @@
           </table>
         </div>
       </div>
-
-      <!-- Member Resource Tab -->
+      
+       
       <div v-if="activeTab === 'member'" class="tab-content">
         <h2 class="section-title">Send Resources to Member</h2>
         
         <form @submit.prevent="submitMemberResourceForm" class="member-resource-form">
-          <!-- Member Information Section -->
+           
           <div class="form-section">
             <h3 class="subsection-title">Member Information</h3>
             <div class="form-grid">
@@ -306,8 +428,8 @@
                 <label for="memberName">Member Name <span class="required">*</span></label>
                 <input 
                   id="memberName"
-                  v-model="memberResourceForm.memberName" 
-                  type="text" 
+                  v-model="memberResourceForm.memberName"
+                  type="text"
                   required
                   placeholder="Enter member name"
                   class="form-input"
@@ -318,8 +440,8 @@
                 <div class="reference-input-container">
                   <input 
                     id="referenceId"
-                    v-model="memberResourceForm.referenceId" 
-                    type="text" 
+                    v-model="memberResourceForm.referenceId"
+                    type="text"
                     required
                     placeholder="Enter reference ID or select from approved requests"
                     class="form-input"
@@ -327,7 +449,7 @@
                   >
                   <div v-if="memberRequestSuggestions.length > 0" class="suggestions-dropdown">
                     <div 
-                      v-for="suggestion in memberRequestSuggestions" 
+                      v-for="suggestion in memberRequestSuggestions"
                       :key="suggestion.id"
                       @click="selectMemberRequest(suggestion)"
                       class="suggestion-item"
@@ -346,8 +468,8 @@
                 <label for="contactNumber">Contact Number</label>
                 <input 
                   id="contactNumber"
-                  v-model="memberResourceForm.contactNumber" 
-                  type="text" 
+                  v-model="memberResourceForm.contactNumber"
+                  type="text"
                   placeholder="Enter contact number"
                   class="form-input"
                 >
@@ -356,16 +478,16 @@
                 <label for="address">Address</label>
                 <input 
                   id="address"
-                  v-model="memberResourceForm.address" 
-                  type="text" 
+                  v-model="memberResourceForm.address"
+                  type="text"
                   placeholder="Enter address"
                   class="form-input"
                 >
               </div>
             </div>
           </div>
-
-          <!-- Resources Section -->
+          
+           
           <div class="form-section">
             <h3 class="subsection-title">Resources to Send</h3>
             <div class="requested-resources">
@@ -375,15 +497,15 @@
                     <label :for="`resource-${index}`">Resource <span class="required">*</span></label>
                     <select 
                       :id="`resource-${index}`"
-                      v-model="item.resourceId" 
+                      v-model="item.resourceId"
                       required
                       @change="updateResourceDetails(index)"
                       class="form-select"
                     >
                       <option value="" disabled>Select resource</option>
                       <option 
-                        v-for="res in availableResources" 
-                        :key="res.id" 
+                        v-for="res in availableResources"
+                        :key="res.id"
                         :value="res.id"
                         :disabled="res.remainingQuantity <= 0"
                       >
@@ -396,9 +518,9 @@
                     <label :for="`quantity-${index}`">Quantity <span class="required">*</span></label>
                     <input 
                       :id="`quantity-${index}`"
-                      v-model.number="item.quantity" 
-                      type="number" 
-                      min="1" 
+                      v-model.number="item.quantity"
+                      type="number"
+                      min="1"
                       :max="getMaxQuantity(item.resourceId)"
                       required
                       placeholder="Qty"
@@ -412,8 +534,8 @@
                   </div>
                   
                   <button 
-                    type="button" 
-                    @click="removeResourceItem(index)" 
+                    type="button"
+                    @click="removeResourceItem(index)"
                     class="remove-btn"
                     :disabled="memberResourceForm.resources.length <= 1"
                   >
@@ -434,15 +556,15 @@
               </button>
             </div>
           </div>
-
-          <!-- Additional Information Section -->
+          
+          
           <div class="form-section">
             <h3 class="subsection-title">Additional Information</h3>
             <div class="form-group">
               <label for="purpose">Purpose <span class="required">*</span></label>
               <textarea 
                 id="purpose"
-                v-model="memberResourceForm.purpose" 
+                v-model="memberResourceForm.purpose"
                 placeholder="Enter the purpose of this distribution"
                 rows="3"
                 required
@@ -453,14 +575,14 @@
               <label for="notes">Additional Notes</label>
               <textarea 
                 id="notes"
-                v-model="memberResourceForm.notes" 
+                v-model="memberResourceForm.notes"
                 placeholder="Enter any additional notes"
                 rows="3"
                 class="form-textarea"
               ></textarea>
             </div>
           </div>
-
+          
           <div class="form-actions">
             <button type="submit" class="submit-btn" :disabled="isSubmitting || !isValidMemberForm">
               {{ isSubmitting ? 'Processing...' : 'Send Resources' }}
@@ -471,15 +593,15 @@
           </div>
         </form>
       </div>
-
-      <!-- History Tab -->
+      
+       
       <div v-if="activeTab === 'history'" class="tab-content">
         <div class="list-controls">
           <div class="search-box">
             <input 
-              v-model="historySearchQuery" 
-              type="text" 
-              placeholder="Search history..." 
+              v-model="historySearchQuery"
+              type="text"
+              placeholder="Search history..."
               @input="filterHistory"
             >
           </div>
@@ -497,13 +619,52 @@
             </select>
           </div>
         </div>
-
+        
         <div v-if="isLoadingHistory" class="loading-container">
           <div class="loading-spinner"></div>
           <p>Loading history...</p>
         </div>
-
+        
         <div v-else class="resource-table-container">
+            
+          <div class="mobile-cards">
+            <div v-if="filteredHistory.length === 0" class="no-data-mobile">
+              No distribution history found.
+            </div>
+            <div v-for="history in filteredHistory" :key="history.id" class="mobile-card">
+              <div class="mobile-card-header">
+                <h3 class="mobile-card-title">{{ history.memberName }}</h3>
+                <span class="mobile-date">{{ formatDate(history.distributionDate) }}</span>
+              </div>
+              <div class="mobile-card-content">
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Reference ID:</span>
+                  <span class="mobile-value">{{ history.referenceId }}</span>
+                </div>
+                <div class="mobile-card-row">
+                  <span class="mobile-label">Resources:</span>
+                  <div class="mobile-resource-list">
+                    <div 
+                      v-for="(resource, index) in history.resources"
+                      :key="index"
+                      class="mobile-resource-item"
+                      :style="`border-left-color: ${getResourceTypeColor(resource.resourceType, 1)}`"
+                    >
+                      {{ resource.resourceName }}: {{ resource.quantity }} {{ resource.unit }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-card-actions">
+                <button @click="viewHistoryDetails(history)" class="mobile-action-btn view">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+          
+           
           <table class="resource-table">
             <thead>
               <tr>
@@ -540,7 +701,7 @@
                 <td>
                   <div class="resource-list">
                     <div 
-                      v-for="(resource, index) in history.resources" 
+                      v-for="(resource, index) in history.resources"
                       :key="index"
                       class="resource-item"
                       :style="`border-left-color: ${getResourceTypeColor(resource.resourceType, 1)}`"
@@ -559,8 +720,8 @@
           </table>
         </div>
       </div>
-
-      <!-- History Details Modal -->
+      
+        
       <div v-if="showHistoryModal" class="modal">
         <div class="modal-content">
           <div class="modal-header">
@@ -590,7 +751,6 @@
                 <p>{{ formatDate(selectedHistory.distributionDate) }}</p>
               </div>
             </div>
-
             <div class="detail-section">
               <h3>Distributed Resources</h3>
               <table class="detail-table">
@@ -617,12 +777,10 @@
                 </tbody>
               </table>
             </div>
-
             <div class="detail-section" v-if="selectedHistory.purpose">
               <h3>Purpose</h3>
               <p>{{ selectedHistory.purpose }}</p>
             </div>
-
             <div class="detail-section" v-if="selectedHistory.notes">
               <h3>Notes</h3>
               <p>{{ selectedHistory.notes }}</p>
@@ -633,8 +791,8 @@
           </div>
         </div>
       </div>
-
-      <!-- Member Request Details Modal -->
+      
+      
       <div v-if="showMemberRequestModal" class="modal">
         <div class="modal-content">
           <div class="modal-header">
@@ -679,7 +837,6 @@
                 </p>
               </div>
             </div>
-
             <div class="detail-section">
               <h3>Requested Resources</h3>
               <table class="detail-table">
@@ -706,22 +863,18 @@
                 </tbody>
               </table>
             </div>
-
             <div class="detail-section">
               <h3>Urgency</h3>
               <p>{{ selectedMemberRequest.urgency }}</p>
             </div>
-
             <div class="detail-section">
               <h3>Reason</h3>
               <p>{{ selectedMemberRequest.reason }}</p>
             </div>
-
             <div class="detail-section" v-if="selectedMemberRequest.additionalInfo">
               <h3>Additional Information</h3>
               <p>{{ selectedMemberRequest.additionalInfo }}</p>
             </div>
-
             <div class="detail-section">
               <h3>Contact Information</h3>
               <div class="detail-grid">
@@ -759,8 +912,8 @@
           </div>
         </div>
       </div>
-
-      <!-- Rejection Reason Modal - ADD THIS SECTION -->
+      
+        
       <div v-if="showRejectModal" class="modal">
         <div class="modal-content">
           <div class="modal-header">
@@ -799,7 +952,7 @@
                 </ul>
               </div>
             </div>
-
+            
             <div class="rejection-form">
               <h3>Rejection Reason <span class="required">*</span></h3>
               <p class="form-description">
@@ -810,7 +963,7 @@
                 <label for="rejectionCategory">Rejection Category</label>
                 <select 
                   id="rejectionCategory"
-                  v-model="rejectionForm.category" 
+                  v-model="rejectionForm.category"
                   class="form-select"
                   @change="updateRejectionReason"
                 >
@@ -824,34 +977,34 @@
                   <option value="other">Other</option>
                 </select>
               </div>
-
+              
               <div class="form-group">
                 <label for="rejectionReason">Detailed Reason <span class="required">*</span></label>
                 <textarea 
                   id="rejectionReason"
-                  v-model="rejectionForm.reason" 
+                  v-model="rejectionForm.reason"
                   placeholder="Please provide a detailed explanation for the rejection..."
                   rows="4"
                   class="form-textarea"
                   required
                 ></textarea>
               </div>
-
+              
               <div class="form-group">
                 <label for="suggestions">Suggestions for Resubmission (Optional)</label>
                 <textarea 
                   id="suggestions"
-                  v-model="rejectionForm.suggestions" 
+                  v-model="rejectionForm.suggestions"
                   placeholder="Provide suggestions on how the member can improve their request for future submissions..."
                   rows="3"
                   class="form-textarea"
                 ></textarea>
               </div>
-
+              
               <div class="form-group">
                 <label class="checkbox-label">
                   <input 
-                    type="checkbox" 
+                    type="checkbox"
                     v-model="rejectionForm.allowResubmission"
                     class="form-checkbox"
                   >
@@ -863,7 +1016,7 @@
           
           <div class="modal-footer">
             <button 
-              @click="confirmRejectRequest" 
+              @click="confirmRejectRequest"
               class="confirm-reject-btn"
               :disabled="!rejectionForm.reason.trim() || isProcessingRejection"
             >
@@ -1828,7 +1981,7 @@ onMounted(async () => {
 .main-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .page-title {
@@ -1883,7 +2036,7 @@ onMounted(async () => {
 /* Stat Cards */
 .stat-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -1891,7 +2044,7 @@ onMounted(async () => {
 .stat-card {
   background-color: white;
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
@@ -1904,26 +2057,28 @@ onMounted(async () => {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 1rem;
+  margin-right: 0.75rem;
   color: white;
+  flex-shrink: 0;
 }
 
 .stat-icon i {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
   line-height: 1.2;
@@ -1931,7 +2086,7 @@ onMounted(async () => {
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #64748b;
   margin: 0;
 }
@@ -1942,10 +2097,11 @@ onMounted(async () => {
   flex-wrap: wrap;
   border-bottom: 1px solid #ddd;
   margin-bottom: 1.5rem;
+  gap: 0.25rem;
 }
 
 .tab-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1953,6 +2109,10 @@ onMounted(async () => {
   font-weight: 500;
   color: #666;
   transition: all 0.2s;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-btn:hover {
@@ -1964,25 +2124,40 @@ onMounted(async () => {
   border-bottom-color: #2c3e50;
 }
 
+.tab-text {
+  display: block;
+}
+
+.tab-text-short {
+  display: none;
+}
+
 .tab-content {
   background-color: white;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* List Controls */
 .list-controls {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
+.search-box, .filter-box {
+  flex: 1;
+  min-width: 200px;
+}
+
 .search-box input, .filter-box select {
+  width: 100%;
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  min-width: 200px;
+  font-size: 0.875rem;
 }
 
 /* Loading */
@@ -1991,7 +2166,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
+  padding: 3rem 1rem;
   color: #666;
 }
 
@@ -2016,7 +2191,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
+  padding: 3rem 1rem;
   text-align: center;
   color: #666;
 }
@@ -2040,7 +2215,137 @@ onMounted(async () => {
   background-color: #1a2530;
 }
 
-/* Tables */
+/* Mobile Cards */
+.mobile-cards {
+  display: none;
+}
+
+.mobile-card {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.mobile-card-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.mobile-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+  flex: 1;
+}
+
+.mobile-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.mobile-card-content {
+  padding: 1rem;
+}
+
+.mobile-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.mobile-card-row:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.mobile-value {
+  font-size: 0.875rem;
+  color: #1f2937;
+  text-align: right;
+  flex: 1;
+}
+
+.mobile-resource-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.mobile-resource-item {
+  padding: 0.25rem 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 4px;
+  border-left: 3px solid;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+.mobile-card-actions {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mobile-action-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 36px;
+}
+
+.mobile-action-btn.view {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.mobile-action-btn.approve {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.mobile-action-btn.reject {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.mobile-action-btn.send {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.no-data-mobile {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 2rem 1rem;
+}
+
+/* Desktop Tables */
 .resource-table-container {
   overflow-x: auto;
 }
@@ -2062,6 +2367,7 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
 }
 
 .resource-table th:hover {
@@ -2145,6 +2451,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .view-btn {
@@ -2206,8 +2514,8 @@ onMounted(async () => {
 }
 
 .form-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
   background-color: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
@@ -2227,6 +2535,7 @@ onMounted(async () => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .required {
@@ -2240,6 +2549,7 @@ onMounted(async () => {
   border-radius: 4px;
   font-family: inherit;
   background-color: white;
+  font-size: 0.875rem;
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -2250,7 +2560,7 @@ onMounted(async () => {
 
 .form-textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
 }
 
 /* Reference Input with Suggestions */
@@ -2289,10 +2599,11 @@ onMounted(async () => {
 .suggestion-main {
   font-weight: 500;
   margin-bottom: 0.25rem;
+  font-size: 0.875rem;
 }
 
 .suggestion-sub {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #666;
 }
 
@@ -2339,6 +2650,7 @@ onMounted(async () => {
 .unit-value {
   font-weight: 500;
   color: #2c3e50;
+  font-size: 0.875rem;
 }
 
 .remove-btn {
@@ -2390,6 +2702,7 @@ onMounted(async () => {
   gap: 0.5rem;
   font-weight: 500;
   margin-top: 0.5rem;
+  min-height: 44px;
 }
 
 .add-item-btn:hover {
@@ -2412,6 +2725,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 44px;
 }
 
 .submit-btn {
@@ -2449,12 +2763,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal-content {
   background-color: white;
   border-radius: 8px;
-  width: 90%;
+  width: 100%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
@@ -2480,6 +2795,11 @@ onMounted(async () => {
   font-size: 1.5rem;
   cursor: pointer;
   color: #666;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-body {
@@ -2492,6 +2812,7 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .detail-grid {
@@ -2559,6 +2880,7 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  min-height: 40px;
 }
 
 .approve-btn-large {
@@ -2579,8 +2901,7 @@ onMounted(async () => {
   background-color: #f5c6cb;
 }
 
-/* ADD THESE STYLES FOR REJECTION MODAL */
-/* Request summary styles */
+/* Rejection Modal Styles */
 .request-summary {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -2631,7 +2952,6 @@ onMounted(async () => {
   color: #4b5563;
 }
 
-/* Form styles */
 .rejection-form h3 {
   margin: 0 0 0.5rem 0;
   color: #1f2937;
@@ -2656,7 +2976,6 @@ onMounted(async () => {
   margin-top: 0.125rem;
 }
 
-/* Button styles */
 .confirm-reject-btn {
   background-color: #ef4444;
   color: white;
@@ -2666,6 +2985,7 @@ onMounted(async () => {
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
+  min-height: 44px;
 }
 
 .confirm-reject-btn:hover:not(:disabled) {
@@ -2677,21 +2997,111 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* Responsive Adjustments */
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 0.75rem;
+  }
+  
+  .stat-cards {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  
+  .tab-content {
+    padding: 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
-  .resource-selection {
-    grid-template-columns: 1fr;
+  .main-content {
+    padding: 0.5rem;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .stat-cards {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .stat-card {
+    padding: 0.75rem;
+  }
+  
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .tabs {
+    gap: 0;
+  }
+  
+  .tab-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .tab-text {
+    display: none;
+  }
+  
+  .tab-text-short {
+    display: block;
+  }
+  
+  .tab-content {
+    padding: 0.5rem;
+  }
+  
+  .list-controls {
+    flex-direction: column;
     gap: 0.5rem;
   }
-
+  
+  .search-box, .filter-box {
+    min-width: auto;
+  }
+  
+  /* Show mobile cards, hide desktop table */
+  .mobile-cards {
+    display: block;
+  }
+  
+  .resource-table {
+    display: none;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .resource-selection {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
   .remove-btn {
     align-self: flex-start;
+    width: 100%;
+    height: 40px;
   }
-
+  
   .form-actions {
     flex-direction: column;
   }
-
+  
   .detail-grid {
     grid-template-columns: 1fr;
   }
@@ -2709,6 +3119,109 @@ onMounted(async () => {
   .approve-btn-large, .reject-btn-large {
     width: 100%;
     justify-content: center;
+  }
+  
+  .modal {
+    padding: 0.5rem;
+  }
+  
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .modal-header, .modal-body, .modal-footer {
+    padding: 1rem;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .summary-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.25rem;
+  }
+  
+  .stat-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  
+  .stat-card {
+    padding: 0.5rem;
+  }
+  
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .tab-btn {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .mobile-card-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .mobile-card-content {
+    padding: 0.75rem;
+  }
+  
+  .mobile-card-actions {
+    padding: 0.75rem;
+    flex-direction: column;
+  }
+  
+  .mobile-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .form-section {
+    padding: 0.75rem;
+  }
+  
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .tabs, .list-controls, .form-actions, .modal-footer, .mobile-card-actions {
+    display: none !important;
+  }
+  
+  .main-content {
+    max-width: none;
+    padding: 0;
+  }
+  
+  .tab-content {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  
+  .mobile-cards {
+    display: none !important;
+  }
+  
+  .resource-table {
+    display: table !important;
   }
 }
 </style>
