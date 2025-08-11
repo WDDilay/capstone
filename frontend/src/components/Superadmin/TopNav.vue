@@ -1,3 +1,93 @@
+<template>
+  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between h-20 px-8 bg-purple-700 border-b border-purple-700 shadow-lg">
+    <div class="flex items-center">
+      <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-purple-100 hover:bg-purple-500 transition md:hidden">
+        <i class="pi pi-bars text-xl"></i>
+      </button>
+    
+    </div>
+        
+    <div class="flex items-center gap-6">
+      <div class="relative">
+        <button @click="toggleNotifications" class="p-3 rounded-full text-purple-100 hover:bg-purple-500 focus:outline-none transition-colors">
+          <i class="pi pi-bell text-xl"></i>
+          <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full">
+            {{ unreadCount > 9 ? '9+' : unreadCount }}
+          </span>
+        </button>
+        <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50">
+          <div class="p-3 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
+            <button 
+              v-if="unreadCount > 0"
+              @click="markAllAsRead"
+              class="text-xs text-purple-600 hover:text-purple-800"
+            >
+              Mark all as read
+            </button>
+          </div>
+          <div class="max-h-64 overflow-y-auto">
+            <template v-if="notifications.length > 0">
+              <a 
+                v-for="notification in notifications"
+                :key="notification.id"
+                href="#"
+                @click.prevent="handleNotificationClick(notification)"
+                class="block px-4 py-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                :class="{ 'bg-purple-50': !notification.read }"
+              >
+                <div class="flex items-start">
+                  <div class="flex-shrink-0">
+                    <i :class="['pi', getNotificationIcon(notification), 'text-lg', getNotificationColor(notification.type)]"></i>
+                  </div>
+                  <div class="ml-3 flex-1">
+                    <div class="flex justify-between">
+                      <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-purple-500 rounded-full"></span>
+                    </div>
+                    <p v-if="notification.message" class="text-xs text-gray-700 mt-1 line-clamp-2">{{ notification.message }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ formatRelativeTime(notification.timestamp) }}</p>
+                  </div>
+                </div>
+              </a>
+            </template>
+            <div v-else class="py-8 text-center text-gray-500">
+              <i class="pi pi-inbox text-3xl mb-2"></i>
+              <p>No notifications</p>
+            </div>
+          </div>
+          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-purple-600 bg-gray-50 p-2 hover:bg-gray-100">
+            View all notifications
+          </a>
+        </div>
+      </div>
+      
+      <div class="relative">
+        <button @click="toggleUserMenu" class="flex items-center text-lg font-medium text-white hover:bg-purple-500 px-4 py-3 rounded-lg transition-colors">
+          <span>{{ userName }}</span>
+          <i class="pi pi-chevron-down ml-2 text-lg"></i>
+        </button>
+        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
+          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
+            <i class="pi pi-user mr-2 text-purple-600"></i> Profile
+          </a>
+          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
+            <i class="pi pi-cog mr-2 text-purple-600"></i> Settings
+          </a>
+          <div class="border-t border-gray-100"></div>
+          <button @click="handleSignOut" class="relative block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition group">
+            <i class="pi pi-sign-out mr-2"></i> Sign out
+            <span class="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <i class="pi pi-arrow-right text-red-500"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ConfirmDialog />
+</template>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -186,38 +276,37 @@ const setupNotificationListeners = () => {
 
   // 4. Listen for pre-registration notifications (new preregistration data)
   const preregistrationQuery = query(
-  collection(db, 'preregistration'),
-  orderBy('timestamp', 'desc'),
-  limit(5)
-);
+    collection(db, 'preregistration'),
+    orderBy('timestamp', 'desc'),
+    limit(5)
+  );
 
-const preregistrationUnsubscribe = onSnapshot(preregistrationQuery, (snapshot) => {
-  const newPreregistration = snapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      type: 'preregistration',
-      title: 'New Pre-registration Request',
-      message: `${data.firstName} ${data.lastName} (${data.role || 'Visitor'}) has submitted a pre-registration request. Email: ${data.email}`,
-      timestamp: data.timestamp,
-      read: false,
-      applicantName: `${data.firstName} ${data.lastName}`,
-      role: data.role,
-      address: data.address,
-      contactNumber: data.contactNumber,
-      facebookAccount: data.facebookAccount,
-      icon: 'pi-id-card'
-    };
+  const preregistrationUnsubscribe = onSnapshot(preregistrationQuery, (snapshot) => {
+    const newPreregistration = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        type: 'preregistration',
+        title: 'New Pre-registration Request',
+        message: `${data.firstName} ${data.lastName} (${data.role || 'Visitor'}) has submitted a pre-registration request. Email: ${data.email}`,
+        timestamp: data.timestamp,
+        read: false,
+        applicantName: `${data.firstName} ${data.lastName}`,
+        role: data.role,
+        address: data.address,
+        contactNumber: data.contactNumber,
+        facebookAccount: data.facebookAccount,
+        icon: 'pi-id-card'
+      };
+    });
+    
+    mergeNotifications(newPreregistration);
+  }, (error) => {
+    console.error('Error fetching preregistration data:', error);
   });
-  
-  mergeNotifications(newPreregistration);
-}, (error) => {
-  console.error('Error fetching preregistration data:', error);
-});
 
-unsubscribers.value.push(preregistrationUnsubscribe);
+  unsubscribers.value.push(preregistrationUnsubscribe);
 };
-
 
 // Merge new notifications with existing ones, avoiding duplicates
 const mergeNotifications = (newItems) => {
@@ -379,95 +468,6 @@ watch(user, (newUser) => {
 });
 </script>
 
-<template>
-  <div class="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b shadow-md">
-    <div class="flex items-center">
-      <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition md:hidden">
-        <i class="pi pi-bars text-xl"></i>
-      </button>
-      <h1 class="ml-4 text-xl font-semibold text-gray-800">{{ currentPage }}</h1>
-    </div>
-    
-    <div class="flex items-center gap-6">
-      <div class="relative">
-        <button @click="toggleNotifications" class="p-2 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none">
-          <i class="pi pi-bell text-xl"></i>
-          <span v-if="unreadCount > 0" class="absolute top-0 right-0 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
-            {{ unreadCount > 9 ? '9+' : unreadCount }}
-          </span>
-        </button>
-        <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50">
-          <div class="p-3 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
-            <button 
-              v-if="unreadCount > 0" 
-              @click="markAllAsRead" 
-              class="text-xs text-blue-600 hover:text-blue-800"
-            >
-              Mark all as read
-            </button>
-          </div>
-          <div class="max-h-64 overflow-y-auto">
-            <template v-if="notifications.length > 0">
-              <a 
-                v-for="notification in notifications" 
-                :key="notification.id"
-                href="#" 
-                @click.prevent="handleNotificationClick(notification)"
-                class="block px-4 py-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                :class="{ 'bg-blue-50': !notification.read }"
-              >
-                <div class="flex items-start">
-                  <div class="flex-shrink-0">
-                    <i :class="['pi', getNotificationIcon(notification), 'text-xl', getNotificationColor(notification.type)]"></i>
-                  </div>
-                  <div class="ml-3 flex-1">
-                    <div class="flex justify-between">
-                      <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
-                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
-                    </div>
-                    <p v-if="notification.message" class="text-xs text-gray-700 mt-1 line-clamp-2">{{ notification.message }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ formatRelativeTime(notification.timestamp) }}</p>
-                  </div>
-                </div>
-              </a>
-            </template>
-            <div v-else class="py-8 text-center text-gray-500">
-              <i class="pi pi-inbox text-3xl mb-2"></i>
-              <p>No notifications</p>
-            </div>
-          </div>
-          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-blue-600 bg-gray-50 p-2 hover:bg-gray-100">
-            View all notifications
-          </a>
-        </div>
-      </div>
-      <div class="relative">
-        <button @click="toggleUserMenu" class="flex items-center text-sm font-medium text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg transition">
-          <span>{{ userName }}</span>
-          <i class="pi pi-chevron-down ml-2 text-sm"></i>
-        </button>
-        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
-            <i class="pi pi-user mr-2"></i> Profile
-          </a>
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
-            <i class="pi pi-cog mr-2"></i> Settings
-          </a>
-          <div class="border-t border-gray-100"></div>
-          <button @click="handleSignOut" class="relative block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition group">
-            <i class="pi pi-sign-out mr-2"></i> Sign out
-            <span class="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <i class="pi pi-arrow-right text-red-500"></i>
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <ConfirmDialog />
-</template>
-
 <style>
 /* Enhanced Styling for PrimeVue ConfirmDialog */
 .p-dialog {
@@ -572,5 +572,15 @@ watch(user, (newUser) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Ensure main content doesn't overlap with fixed topbar */
+body {
+  padding-top: 5rem; /* 80px (h-20) */
+}
+
+/* Alternative: Add this class to your main content wrapper */
+.main-content {
+  margin-top: 5rem; /* 80px (h-20) */
 }
 </style>

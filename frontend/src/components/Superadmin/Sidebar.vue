@@ -1,34 +1,45 @@
 <template>
   <div class="fixed top-0 left-0 z-40 h-screen transition-all duration-300"
        :class="{ 'w-72': !sidebarStore.collapsed, 'w-16': sidebarStore.collapsed }">
-    <div class="h-full px-3 py-4 overflow-y-auto bg-primary text-white">
-      <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-3" v-if="!sidebarStore.collapsed">
-          <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
-          <span class="text-xl font-semibold whitespace-nowrap">Solo Parent</span>
+    <div class="h-full flex flex-col overflow-y-auto">
+      <!-- Header section with darker purple -->
+      <div class="bg-purple-700 px-3 py-4 flex-shrink-0">
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
+            <span class="text-xl font-semibold whitespace-nowrap text-white">Solo Parent</span>
+          </div>
+          <div class="flex items-center justify-center w-full" v-if="sidebarStore.collapsed">
+            <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
+          </div>
+          <button @click="sidebarStore.toggle" 
+                  class="p-1 rounded-lg hover:bg-purple-600 focus:outline-none text-white flex-shrink-0"
+                  :class="{ 'absolute top-4 right-2': sidebarStore.collapsed }">
+            <i :class="sidebarStore.collapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'" class="text-xl"></i>
+          </button>
         </div>
-        <button @click="sidebarStore.toggle" class="p-1 rounded-lg hover:bg-primary-600 focus:outline-none">
-          <i :class="sidebarStore.collapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'" class="text-xl"></i>
-        </button>
       </div>
-            
-      <ul class="space-y-2 font-medium">
-        <li v-for="(item, index) in menuItems" :key="index">
-          <router-link :to="item.route" 
-                       class="flex items-center p-2 rounded-lg hover:bg-primary-600 group relative"
-                       :class="{ 'justify-center': sidebarStore.collapsed }">
-            <i :class="item.icon" class="text-xl"></i>
-            <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
-            
-            <!-- Notification badge for messages -->
-            <div v-if="item.route === '/super-admin/Messages' && totalUnreadCount > 0" 
-                 class="notification-badge"
-                 :class="{ 'badge-collapsed': sidebarStore.collapsed }">
-              {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
-            </div>
-          </router-link>
-        </li>
-      </ul>
+      
+      <!-- Menu section with light purple - takes remaining height -->
+      <div class="bg-purple-200 px-3 py-4 flex-1 h-full">
+        <ul class="space-y-2 font-medium">
+          <li v-for="(item, index) in menuItems" :key="index">
+            <router-link :to="item.route"
+                         class="flex items-center p-2 rounded-lg hover:bg-purple-300 hover:text-black group relative transition-colors duration-200 text-purple-800"
+                         :class="{ 'justify-center': sidebarStore.collapsed }">
+              <i :class="item.icon" class="text-xl"></i>
+              <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
+              
+              <!-- Notification badge for messages -->
+              <div v-if="item.route === '/super-admin/Messages' && totalUnreadCount > 0"
+                   class="notification-badge"
+                   :class="{ 'badge-collapsed': sidebarStore.collapsed }">
+                {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
+              </div>
+            </router-link>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
