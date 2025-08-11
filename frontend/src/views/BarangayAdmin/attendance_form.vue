@@ -11,43 +11,62 @@
       
        
       <div class="stat-cards">
-        <div class="stat-card">
-          <div class="stat-icon" style="background-color: #3B82F6">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-value">{{ totalForms }}</h3>
-            <p class="stat-label">Total Forms</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background-color: #10B981">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-value">{{ totalConfirmations }}</h3>
-            <p class="stat-label">Event Confirmations</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background-color: #F59E0B">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-value">{{ totalAttendance }}</h3>
-            <p class="stat-label">Attendance Responses</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background-color: #8B5CF6">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-value">{{ activeFormsToday }}</h3>
-            <p class="stat-label">Active Today</p>
-          </div>
-        </div>
+    <div class="stat-card" style="background-color: #8dddfff2;">
+      <div class="stat-icon" style="background-color: #1E40AF">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        </svg>
       </div>
+      <div class="stat-content">
+        <h3 class="stat-value text-black">{{ totalForms }}</h3>
+        <p class="stat-label text-black-150">Total Forms</p>
+      </div>
+    </div>
+    
+    <div class="stat-card" style="background-color: #9bf6b8ff;">
+      <div class="stat-icon" style="background-color: #00a832ff">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value text-white">{{ totalConfirmations }}</h3>
+        <p class="stat-label text-black-150">Event Confirmations</p>
+      </div>
+    </div>
+    
+    <div class="stat-card" style="background-color: #ffcf9eff;">
+      <div class="stat-icon" style="background-color: #f37e00ff">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value text-white">{{ totalAttendance }}</h3>
+        <p class="stat-label text-blue-100">Attendance Responses</p>
+      </div>
+    </div>
+    
+    <div class="stat-card" style="background-color: #dba9ffff;">
+      <div class="stat-icon" style="background-color: #55039dff">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value text-white">{{ activeFormsToday }}</h3>
+        <p class="stat-label text-blue-100">Active Today</p>
+      </div>
+    </div>
+  </div>
       
         
       <div class="tabs">
