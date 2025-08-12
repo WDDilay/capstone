@@ -72,6 +72,7 @@ const menuItems = ref([
   { name: 'Events', icon: 'pi pi-calendar', route: '/super-admin/events' },
   { name: 'Applications', icon: 'pi pi-file', route: '/super-admin/application' },
   { name: 'Pre-Register', icon: 'pi pi-file', route: '/super-admin/pre-register' },
+   { name: 'AdminPosting', icon: 'pi pi-file', route: '/super-admin/admin-posting' },
   { name: 'Resources', icon: 'pi pi-envelope', route: '/super-admin/resources' },
   { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
   { name: 'Messages', icon: 'pi pi-comments', route: '/super-admin/Messages' },

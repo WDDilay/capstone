@@ -37,6 +37,7 @@ import support from '../views/Superadmin/support.vue';
 import Messages from '../views/Superadmin/Messages.vue';
 import Preregister from '@/views/Superadmin/Preregister.vue';
 import Sentiment from '@/views/Superadmin/Sentiment.vue';
+import AdminPosting from '@/views/Superadmin/AdminPosting.vue';
 
 // Barangay Admin
 import BarangayAdmin from '../views/BarangayAdmin/Barangay.vue';
@@ -49,6 +50,7 @@ import Applications from '../views/BarangayAdmin/Application.vue';
 import Block from '../views/BarangayAdmin/Block.vue';
 import Message from '../views/BarangayAdmin/Message.vue';
 import { Apple } from 'lucide-vue-next';
+
 
 
 
@@ -155,6 +157,11 @@ const routes = [
       {
         path: 'sentiment', 
         component: Sentiment,
+        meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
+      },
+      {
+        path: 'admin-posting', 
+        component: AdminPosting,
         meta: { requiresAuth: true, allowedRoles: ['FederationPresident'] }
       }
     ] 
