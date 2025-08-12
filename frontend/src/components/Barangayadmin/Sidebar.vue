@@ -4,44 +4,44 @@
     <div v-if="isOpen"
          class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
          @click="toggleSidebar"></div>
-             
-    <aside class="w-64 bg-white h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
+                 
+    <aside class="w-64 bg-purple-100 h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
            :class="{
              'translate-x-0': isOpen,
              '-translate-x-full md:translate-x-0': !isOpen
            }">
-      <div class="p-4 border-b">
+      <div class="p-4 border-b bg-purple-800">
         <div class="flex items-center gap-2">
           <img :src="spfLogo" alt="Logo" class="w-8 h-8 rounded-full" />
-          <h1 class="text-primary-600 text-lg font-semibold">Solo Parent Federation</h1>
+          <h1 class="text-white text-lg font-semibold">Solo Parent Federation</h1>
         </div>
       </div>
-            
+                  
       <nav class="p-4 space-y-2">
         <router-link v-for="item in regularMenuItems"
                      :key="item.path"
                      :to="item.path"
-                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors relative"
-                     :class="{'bg-primary-50 text-primary-600': isActive(item.path)}">
+                     class="flex items-center gap-3 p-3 rounded-lg text-black-700 hover:bg-purple-500 hover:text-white transition-colors relative"
+                     :class="{'bg-purple-500 text-black': isActive(item.path)}">
           <i :class="item.icon"></i>
           <span>{{ item.label }}</span>
-          
+                    
           <!-- Notification badge for messages -->
-          <div v-if="item.path === '/barangay-admin/Message' && totalUnreadCount > 0" 
-               class="notification-badge">
+          <div v-if="item.path === '/barangay-admin/Message' && totalUnreadCount > 0"
+                class="notification-badge">
             {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
           </div>
         </router-link>
-                
+                        
         <!-- Logout button (separate from router-links) -->
         <div @click="confirmLogout"
-             class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors cursor-pointer">
+             class="flex items-center gap-3 p-3 rounded-lg text-red-700 hover:bg-red-200 hover:text-black transition-colors cursor-pointer">
           <i class="pi pi-sign-out"></i>
           <span>Logout</span>
         </div>
       </nav>
     </aside>
-        
+            
     <!-- PrimeVue ConfirmDialog component -->
     <ConfirmDialog></ConfirmDialog>
   </div>
@@ -84,7 +84,7 @@ const wasManuallyToggled = ref(false);
 const toggleSidebar = () => {
   isOpen.value = !isOpen.value;
   wasManuallyToggled.value = true;
-    
+      
   // Reset the manual toggle flag after a delay
   setTimeout(() => {
     wasManuallyToggled.value = false;
@@ -94,7 +94,7 @@ const toggleSidebar = () => {
 // Setup message notifications
 const setupMessageNotifications = () => {
   currentUser.value = auth.currentUser;
-  
+    
   if (!currentUser.value) return;
 
   const messagesQuery = query(
@@ -108,19 +108,6 @@ const setupMessageNotifications = () => {
     totalUnreadCount.value = snapshot.size;
   });
 };
-
-// Set up resize listener
-onMounted(() => {
-  window.addEventListener('resize', handleResize);
-  setupMessageNotifications();
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  if (unsubscribeMessages) {
-    unsubscribeMessages();
-  }
-});
 
 // Regular menu items (excluding logout)
 const regularMenuItems = [
@@ -153,10 +140,10 @@ const handleLogout = async () => {
   try {
     // Clear user data from store
     userStore.clearUser();
-        
+            
     // Remove any additional data from localStorage
     localStorage.removeItem('barangay');
-        
+            
     // Redirect to login page
     await router.push('/login');
   } catch (error) {
@@ -167,6 +154,19 @@ const handleLogout = async () => {
 const isActive = (path) => route.path === path;
 
 defineExpose({ toggleSidebar, isOpen });
+
+// Set up resize listener
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  setupMessageNotifications();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+  }
+});
 </script>
 
 <style scoped>

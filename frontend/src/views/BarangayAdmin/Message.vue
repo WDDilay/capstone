@@ -19,15 +19,14 @@
         ]"
       >
         <!-- Header -->
-        <div class="p-4 border-b border-slate-200/60 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20"></div>
+        <div class="p-4 border-b border-slate-200/60 bg-purple-600 relative overflow-hidden">
           <div class="flex items-center justify-between relative z-10">
             <div>
               <h2 class="text-xl font-bold text-white flex items-center">
                 <MessageCircle class="h-6 w-6 mr-2" />
                 Messages
               </h2>
-              <p class="text-blue-100 text-sm font-medium">Barangay President - {{ currentUserBarangay }}</p>
+              <p class="text-gray-100 text-sm font-medium">Barangay President - {{ currentUserBarangay }}</p>
             </div>
             <button 
               @click="closeMobileSidebar"
@@ -66,13 +65,13 @@
               :class="[
                 'p-4 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-yellow-50/50 cursor-pointer transition-all duration-200 border-l-4 group',
                 selectedChat?.id === federationPresident.id 
-                  ? 'bg-gradient-to-r from-amber-50/80 to-yellow-50/80 border-amber-500 shadow-sm' 
+                  ? 'bg-gray-200 border-amber-500 shadow-sm'
                   : 'border-transparent hover:border-amber-300/50'
               ]"
             >
               <div class="flex items-center space-x-3">
                 <div class="relative flex-shrink-0">
-                  <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                  <div class="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
                     <Crown class="h-6 w-6 text-white" />
                   </div>
                   <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
@@ -108,13 +107,13 @@
               :class="[
                 'p-4 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 cursor-pointer transition-all duration-200 border-l-4 group',
                 selectedChat?.id === president.id 
-                  ? 'bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border-blue-500 shadow-sm' 
+                  ? 'bg-gray-200 border-blue-500 shadow-sm'
                   : 'border-transparent hover:border-blue-300/50'
               ]"
             >
               <div class="flex items-center space-x-3">
                 <div class="relative flex-shrink-0">
-                  <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                  <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
                     <User class="h-6 w-6 text-white" />
                   </div>
                   <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
@@ -150,13 +149,13 @@
               :class="[
                 'p-4 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-green-50/50 cursor-pointer transition-all duration-200 border-l-4 group',
                 selectedChat?.id === member.id 
-                  ? 'bg-gradient-to-r from-emerald-50/80 to-green-50/80 border-emerald-500 shadow-sm' 
+                  ? 'bg-gray-250 border-emerald-500 shadow-sm'
                   : 'border-transparent hover:border-emerald-300/50'
               ]"
             >
               <div class="flex items-center space-x-3">
                 <div class="relative flex-shrink-0">
-                  <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                  <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
                     <User class="h-6 w-6 text-white" />
                   </div>
                   <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
@@ -176,7 +175,7 @@
 
           <!-- Loading State -->
           <div v-if="isLoadingContacts" class="p-8 text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+            <div class="animate-spin rounded-full h-8 w-8 border-4 border-black-500 border-t-transparent mx-auto"></div>
             <p class="mt-3 text-slate-500 text-sm font-medium">Loading contacts...</p>
           </div>
 
@@ -212,7 +211,7 @@
         <!-- No Chat Selected -->
         <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-6">
           <div class="text-center max-w-sm">
-            <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <MessageCircle class="h-10 w-10 text-blue-500" />
             </div>
             <h3 class="text-xl font-bold text-slate-900 mb-3">Start a conversation</h3>
@@ -229,7 +228,7 @@
         <!-- Chat Interface -->
         <div v-else class="flex-1 flex flex-col min-h-0">
           <!-- Chat Header -->
-          <div class="p-4 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl shadow-sm">
+          <div class="p-4 border-b border-slate-200/60 bg-gray-200 backdrop-blur-xl shadow-sm">
             <div class="flex items-center space-x-4">
               <button 
                 @click="selectedChat = null"
@@ -237,12 +236,8 @@
               >
                 <ArrowLeft class="h-5 w-5" />
               </button>
-
               <div class="relative flex-shrink-0">
-                <div :class="[
-                  'w-12 h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white',
-                  getChatHeaderColor(selectedChat)
-                ]">
+                <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
                   <component :is="getChatHeaderIcon(selectedChat)" class="h-6 w-6 text-white" />
                 </div>
                 <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
@@ -255,7 +250,7 @@
           </div>
 
           <!-- Messages Area -->
-          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-slate-50/50 to-slate-100/50">
+          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 bg-purple-100">
             <div
               v-for="message in currentMessages"
               :key="message.id"
@@ -267,7 +262,7 @@
               <div :class="[
                 'max-w-[85%] sm:max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm relative',
                 message.senderId === currentUser?.uid
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-600 text-white rounded-br-md'
                   : 'bg-white text-slate-900 border border-slate-200/60 rounded-bl-md'
               ]">
                 <p class="text-sm leading-relaxed break-words">{{ message.text }}</p>
@@ -297,8 +292,8 @@
                 :disabled="!newMessage.trim()"
                 :class="[
                   'px-4 py-3 rounded-2xl transition-all duration-200 flex-shrink-0 shadow-lg active:scale-95',
-                  newMessage.trim() 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700' 
+                  newMessage.trim()
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 ]"
               >
@@ -356,14 +351,12 @@ const filteredBarangayPresidents = computed(() => {
   let filtered = barangayPresidents.value.filter(president =>
     president.id !== currentUser.value?.uid
   )
-
   if (searchQuery.value) {
     filtered = filtered.filter(president =>
       (president.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       (president.barangay || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
   return filtered
 })
 
@@ -371,19 +364,16 @@ const filteredMembers = computed(() => {
   let filtered = members.value.filter(member =>
     member.barangay === currentUserBarangay.value
   )
-
   if (searchQuery.value) {
     filtered = filtered.filter(member =>
       (member.name || '').toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
-
   return filtered
 })
 
 const currentMessages = computed(() => {
   if (!selectedChat.value || !currentUser.value) return []
-
   return messages.value
     .filter(message => {
       const chatId = getChatId(currentUser.value.uid, selectedChat.value.id)
@@ -410,16 +400,6 @@ const selectChat = (contact) => {
   })
 }
 
-const getChatHeaderColor = (contact) => {
-  if (contact.role === 'FederationPresident') {
-    return 'bg-gradient-to-br from-amber-500 to-orange-600'
-  } else if (contact.role === 'BarangayPresident') {
-    return 'bg-gradient-to-br from-blue-500 to-indigo-600'
-  } else {
-    return 'bg-gradient-to-br from-emerald-500 to-green-600'
-  }
-}
-
 const getChatHeaderIcon = (contact) => {
   if (contact.role === 'FederationPresident') {
     return Crown
@@ -443,7 +423,6 @@ const sendMessage = async () => {
 
   try {
     const chatId = getChatId(currentUser.value.uid, selectedChat.value.id)
-
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId: currentUser.value.uid,
@@ -466,7 +445,6 @@ const sendMessage = async () => {
 
 const formatMessageTime = (timestamp) => {
   if (!timestamp) return ''
-
   const date = timestamp.toDate()
   const now = new Date()
   const diff = now - date
@@ -498,7 +476,6 @@ const markMessagesAsRead = async (contactId) => {
   if (!currentUser.value) return
 
   const chatId = getChatId(currentUser.value.uid, contactId)
-
   try {
     const messagesQuery = query(
       collection(db, 'messages'),
@@ -508,7 +485,6 @@ const markMessagesAsRead = async (contactId) => {
     )
 
     const snapshot = await getDocs(messagesQuery)
-
     snapshot.forEach(async (messageDoc) => {
       await updateDoc(doc(db, 'messages', messageDoc.id), {
         read: true
@@ -540,7 +516,6 @@ const fetchCurrentUserData = async () => {
 const fetchFederationPresidentAlternative = async () => {
   try {
     debugInfo.value = 'Trying alternative approach...'
-
     const messagesQuery = query(
       collection(db, 'messages'),
       where('senderRole', '==', 'FederationPresident')
@@ -559,7 +534,6 @@ const fetchFederationPresidentAlternative = async () => {
     }
 
     const knownFederationPresidentUID = 'FEDERATION_PRESIDENT_UID'
-
     if (knownFederationPresidentUID !== 'FEDERATION_PRESIDENT_UID') {
       federationPresident.value = {
         id: knownFederationPresidentUID,
@@ -569,7 +543,6 @@ const fetchFederationPresidentAlternative = async () => {
       debugInfo.value = 'Using known Federation President UID'
       return
     }
-
     
   } catch (error) {
     console.error('Error in alternative Federation President fetch:', error)
@@ -580,21 +553,19 @@ const fetchFederationPresidentAlternative = async () => {
 const fetchFederationPresident = async () => {
   try {
     debugInfo.value = 'Fetching Federation President...'
-
     const adminsQuery = query(collection(db, 'admins'))
     const adminsSnapshot = await getDocs(adminsQuery)
 
     if (!adminsSnapshot.empty) {
       const doc = adminsSnapshot.docs[0]
       const data = doc.data()
-
       federationPresident.value = {
         id: doc.id,
         name: data.name || data.firstName || data.fullName || data.username || 'Federation President',
         role: 'FederationPresident',
         ...data
       }
-    
+      
       return
     }
 
@@ -611,8 +582,8 @@ const fetchBarangayPresidents = async () => {
   try {
     const presidentsQuery = query(collection(db, 'barangay_presidents'))
     const snapshot = await getDocs(presidentsQuery)
-
     const presidents = []
+
     snapshot.forEach((doc) => {
       const data = doc.data()
       presidents.push({
@@ -637,8 +608,8 @@ const fetchMembers = async () => {
       where('barangay', '==', currentUserBarangay.value)
     )
     const snapshot = await getDocs(membersQuery)
-
     const membersList = []
+
     snapshot.forEach((doc) => {
       const data = doc.data()
       if (data.role === 'Member' || !data.role) {
@@ -692,7 +663,6 @@ let unsubscribeMessages = null
 
 onMounted(async () => {
   currentUser.value = auth.currentUser
-
   if (currentUser.value) {
     isLoadingContacts.value = true
     await fetchCurrentUserData()

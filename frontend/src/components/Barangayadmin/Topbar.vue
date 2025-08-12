@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full bg-primary-600 text-white px-4 py-3 flex justify-between items-center">
+  <div class="w-full bg-purple-800 text-white px-10 py-8 flex justify-between items-center h-25">
     <div class="flex items-center gap-2">
       <!-- Menu button slot -->
       <slot name="menu-button"></slot>
@@ -8,58 +8,58 @@
     <div class="flex items-center gap-4">
       <!-- Notification System -->
       <div class="relative">
-        <Button icon="pi pi-bell" 
-                text 
-                severity="secondary" 
-                aria-label="Notification" 
+        <Button icon="pi pi-bell"
+                text
+                severity="secondary"
+                aria-label="Notification"
                 class="p-button-rounded text-white hover:bg-primary-700"
                 @click="toggleNotifications" />
-                
+                        
         <!-- Notification Badge -->
-        <span v-if="unreadCount > 0" 
+        <span v-if="unreadCount > 0"
               class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
           {{ unreadCount > 9 ? '9+' : unreadCount }}
         </span>
-        
+                
         <!-- Notification Panel -->
-        <div v-if="showNotifications" 
+        <div v-if="showNotifications"
              class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden">
           <div class="p-3 border-b flex justify-between items-center">
             <h3 class="font-medium text-gray-800">Notifications</h3>
             <div class="flex gap-2">
               <Button v-if="unreadCount > 0"
-                      label="Mark all as read" 
-                      link 
+                      label="Mark all as read"
+                      link
                       size="small"
                       class="text-primary-600 p-0"
                       @click="markAllAsRead" />
             </div>
           </div>
-          
+                    
           <div class="max-h-80 overflow-y-auto">
             <!-- Loading State -->
             <div v-if="isLoadingNotifications" class="p-4 text-center text-gray-500">
               <i class="pi pi-spin pi-spinner mr-2"></i>
               Loading notifications...
             </div>
-            
+                        
             <!-- No Barangay Found -->
             <div v-else-if="!currentUserBarangay" class="p-4 text-center text-red-500">
               <i class="pi pi-exclamation-triangle text-2xl mb-2 block"></i>
               <p class="font-medium">No barangay detected</p>
               <p class="text-xs mt-1">Please check if currentbarangayuser is set</p>
             </div>
-            
+                        
             <!-- No Notifications -->
             <div v-else-if="notifications.length === 0" class="p-4 text-center text-gray-500">
               <i class="pi pi-bell-slash text-2xl mb-2 block"></i>
               No notifications for {{ currentUserBarangay }}
               <p class="text-xs mt-2">Waiting for resources sent to your barangay...</p>
             </div>
-            
+                        
             <!-- Notifications List -->
             <div v-else>
-              <div v-for="(notification, index) in notifications" 
+              <div v-for="(notification, index) in notifications"
                    :key="notification.id"
                    class="p-3 border-b hover:bg-gray-50 cursor-pointer transition-colors"
                    :class="{'bg-primary-50 border-l-4 border-l-primary-500': !notification.read}"
@@ -73,7 +73,7 @@
                     <p class="text-xs text-gray-600 mt-1">{{ notification.message }}</p>
                     <div class="flex justify-between items-center mt-2">
                       <p class="text-xs text-gray-400">{{ notification.time }}</p>
-                      <span v-if="notification.status" 
+                      <span v-if="notification.status"
                             :class="getStatusClass(notification.status)"
                             class="text-xs px-2 py-1 rounded-full">
                         {{ notification.status }}
@@ -85,16 +85,16 @@
               </div>
             </div>
           </div>
-          
+                    
           <div class="p-2 border-t text-center">
-            <Button label="View all notifications" 
+            <Button label="View all notifications"
                     link
                     class="text-primary-600 w-full"
                     @click="handleViewAll" />
           </div>
         </div>
       </div>
-      
+            
       <div class="flex items-center gap-2">
         <span class="hidden sm:inline">{{ userName }}</span>
         <div class="flex items-center gap-1">
@@ -106,10 +106,10 @@
       </div>
     </div>
   </div>
-  
+    
   <!-- Overlay to close notifications when clicking outside -->
-  <div v-if="showNotifications" 
-       class="fixed inset-0 z-40" 
+  <div v-if="showNotifications"
+       class="fixed inset-0 z-40"
        @click="showNotifications = false"></div>
 
   <!-- Notification Details Modal -->
@@ -123,51 +123,51 @@
           </button>
         </div>
       </div>
-      
+            
       <div class="p-4" v-if="selectedNotification">
         <div class="space-y-3">
           <div>
             <label class="text-sm font-medium text-gray-600">From:</label>
             <p class="text-gray-800">Federation President</p>
           </div>
-          
+                    
           <div>
             <label class="text-sm font-medium text-gray-600">Barangay:</label>
             <p class="text-gray-800">{{ selectedNotification.barangay }}</p>
           </div>
-          
+                    
           <div>
             <label class="text-sm font-medium text-gray-600">Admin Name:</label>
             <p class="text-gray-800">{{ selectedNotification.adminName }}</p>
           </div>
-          
+                    
           <div>
             <label class="text-sm font-medium text-gray-600">Resources:</label>
             <p class="text-gray-800">{{ selectedNotification.resourceCount }} items</p>
           </div>
-          
+                    
           <div v-if="selectedNotification.purpose">
             <label class="text-sm font-medium text-gray-600">Purpose:</label>
             <p class="text-gray-800">{{ selectedNotification.purpose }}</p>
           </div>
-          
+                    
           <div>
             <label class="text-sm font-medium text-gray-600">Status:</label>
-            <span :class="getStatusClass(selectedNotification.status)" 
+            <span :class="getStatusClass(selectedNotification.status)"
                   class="inline-block px-2 py-1 rounded-full text-xs">
               {{ selectedNotification.status }}
             </span>
           </div>
-          
+                    
           <div>
             <label class="text-sm font-medium text-gray-600">Time:</label>
             <p class="text-gray-800">{{ selectedNotification.time }}</p>
           </div>
         </div>
       </div>
-      
+            
       <div class="p-4 border-t flex justify-end">
-        <Button label="Close" 
+        <Button label="Close"
                 class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                 @click="showNotificationModal = false" />
       </div>
@@ -181,9 +181,11 @@ import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import Button from 'primevue/button';
+import { query, collection, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const userName = ref('User');
 const currentUserBarangay = ref('');
+const unsubscribers = ref([]);
 
 // Notification state
 const showNotifications = ref(false);
@@ -196,12 +198,10 @@ const notificationListener = ref(null);
 // Fetch the current user's barangay from Firestore
 const fetchUserBarangay = async () => {
   const user = auth.currentUser; // Get the current logged-in user
-
   if (user) {
     try {
       const userRef = doc(db, 'users', user.uid); // Reference to the user document
       const userSnap = await getDoc(userRef); // Fetch the user document
-
       if (userSnap.exists()) {
         const userData = userSnap.data();
         const barangay = userData.barangay; // Get the barangay from the user document
@@ -218,7 +218,6 @@ const fetchUserBarangay = async () => {
   }
 };
 
-
 // Calculate unread notifications count
 const unreadCount = computed(() => {
   return notifications.value.filter(notification => !notification.read).length;
@@ -230,14 +229,11 @@ const setupNotificationListener = () => {
     isLoadingNotifications.value = false;
     return;
   }
-
   isLoadingNotifications.value = true;
-
   try {
     if (notificationListener.value) {
       notificationListener.value();
     }
-
     // Fetch announcements made by FederationPresident for the current barangay
     const announcementsQuery = query(
       collection(db, 'announcements'),
@@ -246,7 +242,6 @@ const setupNotificationListener = () => {
       orderBy('createdAt', 'desc'),
       limit(5)
     );
-
     const announcementsUnsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
       const newAnnouncements = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -262,12 +257,9 @@ const setupNotificationListener = () => {
           icon: 'pi pi-megaphone'
         };
       });
-
       mergeNotifications(newAnnouncements);
     });
-
     unsubscribers.value.push(announcementsUnsubscribe);
-
     // Fetch applications specific to the current barangay
     const applicationsQuery = query(
       collection(db, 'applications'),
@@ -275,7 +267,6 @@ const setupNotificationListener = () => {
       orderBy('createdAt', 'desc'),
       limit(5)
     );
-
     const applicationsUnsubscribe = onSnapshot(applicationsQuery, (snapshot) => {
       const newApplications = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -291,10 +282,8 @@ const setupNotificationListener = () => {
           icon: 'pi pi-file'
         };
       });
-
       mergeNotifications(newApplications);
     });
-
     unsubscribers.value.push(applicationsUnsubscribe);
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -348,15 +337,12 @@ onMounted(() => {
       currentUserBarangay.value = ''; // Reset barangay if user logs out
     }
   });
-
   onUnmounted(() => {
     unsubscribe();
+    unsubscribers.value.forEach(unsubscribe => unsubscribe());
   });
 });
-
-
 </script>
-
 
 <style scoped>
 .animate-pulse {
