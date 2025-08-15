@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between h-20 px-8 bg-purple-700 border-b border-purple-700 shadow-lg">
+  <div class="fixed top-0 left-0 right-0 z-33 flex items-center justify-between h-20 px-8 bg-purple-700 border-b border-purple-700 shadow-lg">
     <div class="flex items-center">
       <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-purple-100 hover:bg-purple-500 transition md:hidden">
         <i class="pi pi-bars text-xl"></i>

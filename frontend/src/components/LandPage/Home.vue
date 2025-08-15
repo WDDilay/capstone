@@ -1,17 +1,19 @@
 <template>
   <div class="min-h-screen">
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white py-20 overflow-hidden">
-      <div class="absolute inset-0 bg-black/20"></div>
+    <section class="relative bg-white text-black py-20 overflow-hidden">
+      <div class="absolute inset-0"></div>
       <div class="relative container mx-auto px-6">
         <div class="flex flex-wrap items-center justify-between">
           <div class="w-full lg:w-1/2 mb-8 lg:mb-0">
-            <h1 class="text-5xl lg:text-6xl font-bold mb-6 leading-tight">Empowering Solo Parents</h1>
-            <p class="text-xl mb-8 text-white/90 leading-relaxed">
+            <h1 class="text-5xl lg:text-6xl font-bold mb-6 leading-tight text-black">
+              Empowering Solo Parents
+            </h1>
+            <p class="text-xl mb-8 text-black/90 leading-relaxed">
               Join our thriving community and access the support, resources, and connections you need to flourish as a
               solo parent.
             </p>
-            <button class="bg-white text-purple-700 hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-lg transition-colors">
+            <button class="bg-purple-700 text-white hover:bg-purple-800 font-semibold px-8 py-4 text-lg rounded-lg transition-colors">
               Get Started Today
             </button>
           </div>
@@ -23,7 +25,7 @@
                 class="rounded-2xl shadow-2xl w-full"
               />
               <div class="absolute -bottom-4 -right-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <div class="flex items-center gap-2 text-white">
+                <div class="flex items-center gap-2 text-black">
                   <Heart class="w-5 h-5 fill-current" />
                   <span class="font-semibold">Join 2,500+ Parents</span>
                 </div>
@@ -166,14 +168,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getDocs, collection } from 'firebase/firestore'
-import { db } from '@/services/firebase' // Adjust the import path to where your firebaseConfig is located
+import { db } from '@/services/firebase'
 
 const currentSlide = ref(0)
 let slideInterval = null
 
 const federationPosts = ref([])
 
-// Fetch posts data from Firestore
 const fetchPosts = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "posts"))
@@ -187,7 +188,6 @@ const fetchPosts = async () => {
   }
 }
 
-// Fetch data when component is mounted
 onMounted(() => {
   fetchPosts()
   slideInterval = setInterval(nextSlide, 5000)
