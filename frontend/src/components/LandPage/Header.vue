@@ -43,7 +43,6 @@
         <div class="flex flex-col items-center py-4 space-y-3">
           <router-link to="/" class="hover:text-purple-200 transition">Home</router-link>
           <router-link to="/about" class="hover:text-purple-200 transition">About</router-link>
-          <router-link to="/resources" class="hover:text-purple-200 transition">Resources</router-link>
           <router-link to="/register" class="hover:text-purple-200 transition">Register</router-link>
           <router-link to="/login" class="hover:text-purple-200 transition">Login</router-link>
         </div>

@@ -9,7 +9,7 @@
       <div class="register-form-container">
         <h1 class="welcome-container">
           <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
-          Register
+          Pre-register Now!
         </h1>
         <p class="subtitle">Join our community and access the support you need</p>
         
@@ -216,14 +216,17 @@ const goToLogin = () => {
 <style scoped>
 /* Layout */
 .register-container {
-  min-height: 100vh;
-  background: #f5f0ff;
+  height: 100vh;               /* Full viewport height */
+  width: 100vw;                /* Full viewport width */
+  background-color: #f5f0ff;   /* Your purple background */
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  position: relative;
-  padding: 2rem 1rem;
+  align-items: center;
+  justify-content: center;     /* Centers form vertically */
+  position: fixed;             /* Fixed in place, won't scroll */
+  top: 0;
+  left: 0;
+  overflow: hidden;            /* Prevent page scroll */
 }
 
 /* Back Button */
@@ -252,6 +255,8 @@ const goToLogin = () => {
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   /* Remove max-height and overflow-y */
+   max-height: calc(100vh - 2rem);
+  overflow-y: auto;
 }
 
 /* Heading */

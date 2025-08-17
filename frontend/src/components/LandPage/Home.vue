@@ -152,14 +152,17 @@
     <!-- CTA Section -->
     <section class="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-20">
       <div class="container mx-auto px-6 text-center">
-        <h2 class="text-4xl font-bold mb-6">Ready to Join Our Community?</h2>
+        <h2 class="text-4xl font-bold mb-6">Ready to Join Our Solo Parent Federation?</h2>
         <p class="text-xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
           Take the first step towards a supportive network of solo parents who understand your journey and celebrate
-          your strength.
+          your strength. Pre-register here now!
         </p>
-        <button class="bg-white text-purple-700 hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-lg transition-colors">
+       <button
+    @click="$router.push('/pre-member')"
+        class="bg-white text-purple-700 hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-lg transition-colors"
+          >
           Sign Up Now
-        </button>
+            </button>
       </div>
     </section>
   </div>
