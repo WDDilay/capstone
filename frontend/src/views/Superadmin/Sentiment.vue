@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-content">
-    <!-- Header Section - Simplified for layout compatibility -->
+    <!-- Header Section -->
     <div class="dashboard-header">
       <div class="header-content">
         <div class="header-left">
@@ -15,7 +15,7 @@
         <div class="header-right">
           <button class="refresh-btn" @click="refreshData" :disabled="loading">
             <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-            {{ loading ? 'Loading...' : 'Refresh' }}
+            <span class="btn-text">{{ loading ? 'Loading...' : 'Refresh' }}</span>
           </button>
         </div>
       </div>
@@ -91,6 +91,7 @@
               class="chart-type-btn" 
               :class="{ active: chartType === 'pie' }"
               @click="changeChartType('pie')"
+              :title="'Pie Chart'"
             >
               <i class="fas fa-chart-pie"></i>
             </button>
@@ -98,13 +99,14 @@
               class="chart-type-btn" 
               :class="{ active: chartType === 'doughnut' }"
               @click="changeChartType('doughnut')"
+              :title="'Doughnut Chart'"
             >
               <i class="fas fa-circle-notch"></i>
             </button>
           </div>
         </div>
         <div class="chart-container">
-          <canvas ref="sentimentChart" width="400" height="400"></canvas>
+          <canvas ref="sentimentChart" :width="canvasSize" :height="canvasSize"></canvas>
         </div>
       </div>
     </section>
@@ -136,7 +138,7 @@
               <div class="feedback-header">
                 <span class="sentiment-badge" :class="item.sentiment">
                   <i :class="getSentimentIcon(item.sentiment)"></i>
-                  {{ item.sentiment }}
+                  <span class="sentiment-text">{{ item.sentiment }}</span>
                 </span>
                 <span class="anonymous-badge">
                   {{ item.anonymous ? 'Anonymous' : 'Identified' }}
@@ -169,11 +171,11 @@
 <script setup>
 import { db } from '@/services/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
-
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 
 // Reactive data
 const loading = ref(false)
+const canvasSize = ref(400)
 const stats = ref({
   total: 0,
   positive: 0,
@@ -192,9 +194,6 @@ const feedbackData = ref([])
 const selectedFilter = ref('all')
 const chartType = ref('pie')
 const sentimentChart = ref(null)
-
-// Sample data
-
 
 // Filter options
 const filters = [
@@ -227,6 +226,21 @@ const filteredFeedback = computed(() => {
   return feedbackData.value.filter(item => item.sentiment === selectedFilter.value)
 })
 
+// Responsive canvas size
+const updateCanvasSize = () => {
+  const screenWidth = window.innerWidth
+  if (screenWidth < 480) {
+    canvasSize.value = 280
+  } else if (screenWidth < 768) {
+    canvasSize.value = 320
+  } else if (screenWidth < 1024) {
+    canvasSize.value = 360
+  } else {
+    canvasSize.value = 400
+  }
+  updateChart()
+}
+
 // Methods
 const loadData = async () => {
   loading.value = true
@@ -257,7 +271,6 @@ const loadData = async () => {
     loading.value = false
   }
 }
-
 
 const animateNumbers = () => {
   const duration = 1000
@@ -290,7 +303,7 @@ const createChart = () => {
   const ctx = canvas.getContext('2d')
   const centerX = canvas.width / 2
   const centerY = canvas.height / 2
-  const radius = Math.min(centerX, centerY) - 60
+  const radius = Math.min(centerX, centerY) - 40
 
   const data = [
     { label: 'Positive', value: stats.value.positive, color: '#10b981' },
@@ -312,7 +325,7 @@ const createChart = () => {
     ctx.lineWidth = 2
     ctx.stroke()
     ctx.fillStyle = '#64748b'
-    ctx.font = 'bold 16px Inter'
+    ctx.font = `bold ${Math.max(12, canvas.width / 25)}px Inter`
     ctx.textAlign = 'center'
     ctx.fillText('No Data', centerX, centerY)
     return
@@ -328,7 +341,7 @@ const createChart = () => {
       ctx.fillStyle = item.color
       ctx.fill()
       ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 3
+      ctx.lineWidth = 2
       ctx.stroke()
 
       const labelAngle = currentAngle + sliceAngle / 2
@@ -338,7 +351,7 @@ const createChart = () => {
       
       const percentage = ((item.value / total) * 100).toFixed(1)
       ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 14px Inter'
+      ctx.font = `bold ${Math.max(10, canvas.width / 30)}px Inter`
       ctx.textAlign = 'center'
       ctx.fillText(`${percentage}%`, labelX, labelY)
       currentAngle += sliceAngle
@@ -355,10 +368,10 @@ const createChart = () => {
     ctx.stroke()
     
     ctx.fillStyle = '#374151'
-    ctx.font = 'bold 24px Inter'
+    ctx.font = `bold ${Math.max(16, canvas.width / 20)}px Inter`
     ctx.textAlign = 'center'
     ctx.fillText(total.toString(), centerX, centerY - 5)
-    ctx.font = '12px Inter'
+    ctx.font = `${Math.max(10, canvas.width / 35)}px Inter`
     ctx.fillStyle = '#6b7280'
     ctx.fillText('Total', centerX, centerY + 15)
   }
@@ -404,6 +417,8 @@ const formatTimestamp = (timestamp) => {
 }
 
 const animateCard = (event) => {
+  if (window.innerWidth < 768) return // Disable on mobile for performance
+  
   const card = event.currentTarget
   const rect = card.getBoundingClientRect()
   const x = event.clientX - rect.left
@@ -418,12 +433,21 @@ const animateCard = (event) => {
 }
 
 const resetCard = (event) => {
+  if (window.innerWidth < 768) return
+  
   const card = event.currentTarget
   card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)'
 }
 
+// Lifecycle hooks
 onMounted(() => {
   loadData()
+  updateCanvasSize()
+  window.addEventListener('resize', updateCanvasSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateCanvasSize)
 })
 </script>
 
@@ -431,54 +455,62 @@ onMounted(() => {
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* FIXED: Container that works within router-view */
+/* Base Container */
 .dashboard-content {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, rgba(133, 40, 216, 0.05) 0%, #f8fafc 100%);
   color: #0f172a;
   line-height: 1.6;
-  /* REMOVED: min-height, positioning that conflicts with layout */
   width: 100%;
+  padding: 1rem;
 }
 
-/* FIXED: Header that doesn't conflict with layout */
+/* Header Section */
 .dashboard-header {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 1rem;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   backdrop-filter: blur(20px);
-  margin-bottom: 2rem;
-  /* REMOVED: sticky positioning, z-index conflicts */
+  margin-bottom: 1.5rem;
 }
 
 .header-content {
-  padding: 1.5rem 2rem;
+  padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .logo {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 3rem;
+  height: 3rem;
   background: linear-gradient(135deg, #8528d8, #6d28d9);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  flex-shrink: 0;
+}
+
+.header-text {
+  min-width: 0;
+  flex: 1;
 }
 
 .header-text h1 {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #0f172a;
   margin-bottom: 0.25rem;
@@ -486,19 +518,25 @@ onMounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.2;
 }
 
 .header-text p {
   color: #475569;
   font-size: 0.875rem;
   font-weight: 500;
+  margin: 0;
+}
+
+.header-right {
+  flex-shrink: 0;
 }
 
 .refresh-btn {
   background: linear-gradient(135deg, #8528d8, #6d28d9);
   color: white;
   border: none;
-  padding: 0.875rem 1.75rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -509,6 +547,7 @@ onMounted(() => {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .refresh-btn::before {
@@ -539,19 +578,19 @@ onMounted(() => {
 
 /* Stats Section */
 .stats-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
 }
 
 .stat-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 1.25rem;
-  padding: 2rem;
+  border-radius: 1rem;
+  padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
@@ -561,7 +600,7 @@ onMounted(() => {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .stat-card::before {
@@ -593,18 +632,18 @@ onMounted(() => {
 }
 
 .stat-card:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translateY(-4px) scale(1.02);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 .stat-icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 1.25rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -632,19 +671,20 @@ onMounted(() => {
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-content h3 {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .stat-number {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #0f172a;
   margin-bottom: 0.5rem;
@@ -654,7 +694,7 @@ onMounted(() => {
 .stat-percentage {
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.375rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -677,16 +717,16 @@ onMounted(() => {
 
 .stat-progress {
   width: 100%;
-  height: 6px;
+  height: 4px;
   background: #e2e8f0;
-  border-radius: 3px;
-  margin-top: 1rem;
+  border-radius: 2px;
+  margin-top: 0.75rem;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -706,12 +746,12 @@ onMounted(() => {
 
 /* Chart Section */
 .chart-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .chart-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
@@ -719,42 +759,45 @@ onMounted(() => {
 }
 
 .card-header {
-  padding: 2rem;
+  padding: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+  gap: 1rem;
 }
 
 .card-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #0f172a;
   background: linear-gradient(135deg, #0f172a, #8528d8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  margin: 0;
 }
 
 .chart-controls {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .chart-type-btn {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 2px solid #cbd5e1;
   background: #ffffff;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   color: #475569;
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 .chart-type-btn:hover {
@@ -771,21 +814,21 @@ onMounted(() => {
 }
 
 .chart-container {
-  padding: 2rem;
+  padding: 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  min-height: 300px;
 }
 
 /* Feedback Section */
 .feedback-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .feedback-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
@@ -799,10 +842,10 @@ onMounted(() => {
 }
 
 .filter-btn {
-  padding: 0.75rem 1.25rem;
+  padding: 0.5rem 1rem;
   border: 2px solid #cbd5e1;
   background: #ffffff;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -826,12 +869,12 @@ onMounted(() => {
 }
 
 .feedback-list {
-  max-height: 600px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
 .feedback-item {
-  padding: 2rem;
+  padding: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
   transition: all 0.3s ease;
   position: relative;
@@ -865,7 +908,7 @@ onMounted(() => {
 .feedback-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
@@ -874,12 +917,16 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.sentiment-text {
+  display: inline;
 }
 
 .sentiment-badge.positive {
@@ -914,9 +961,9 @@ onMounted(() => {
 
 .feedback-text {
   color: #334155;
-  line-height: 1.7;
+  line-height: 1.6;
   margin-bottom: 1rem;
-  font-size: 1rem;
+  font-size: 0.975rem;
 }
 
 .feedback-meta {
@@ -929,22 +976,22 @@ onMounted(() => {
 
 .empty-state {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 3rem 1.5rem;
   color: #64748b;
 }
 
 .empty-state i {
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
   opacity: 0.5;
 }
 
 .empty-state p {
   font-weight: 500;
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
-/* FIXED: Loading overlay with proper z-index */
+/* Loading overlay */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -956,7 +1003,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 40; /* Lower than sidebar/topnav */
+  z-index: 40;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -973,7 +1020,7 @@ onMounted(() => {
 }
 
 .loading-spinner i {
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
 }
 
@@ -1002,31 +1049,253 @@ onMounted(() => {
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Custom Scrollbar */
+.feedback-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.feedback-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.feedback-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+  border-radius: 3px;
+}
+
+.feedback-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+}
+
+/* ===== RESPONSIVE DESIGN BREAKPOINTS ===== */
+
+/* Extra Small Devices (Phones) - 320px to 479px */
+@media (max-width: 479px) {
+  .dashboard-content {
+    padding: 0.5rem;
+  }
+
   .header-content {
     padding: 1rem;
     flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .header-text h1 {
+    font-size: 1.125rem;
+  }
+
+  .header-text p {
+    font-size: 0.8rem;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem;
+  }
+
+  .btn-text {
+    display: none;
   }
 
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .stat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-content h3 {
+    font-size: 0.7rem;
   }
 
   .card-header {
+    padding: 1rem;
     flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
-    align-items: flex-start;
   }
 
-  .filter-buttons {
-    width: 100%;
+  .card-header h2 {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .chart-controls {
+    justify-content: center;
+  }
+
+  .chart-type-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.875rem;
   }
 
   .chart-container {
     padding: 1rem;
-    min-height: 300px;
+    min-height: 250px;
+  }
+
+  .filter-buttons {
+    justify-content: center;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .feedback-item {
+    padding: 1rem;
+  }
+
+  .feedback-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .sentiment-badge {
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .sentiment-text {
+    display: none;
+  }
+
+  .anonymous-badge {
+    text-align: center;
+  }
+
+  .feedback-text {
+    font-size: 0.875rem;
+  }
+
+  .feedback-meta {
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+}
+
+/* Small Devices (Phones) - 480px to 767px */
+@media (min-width: 480px) and (max-width: 767px) {
+  .dashboard-content {
+    padding: 0.75rem;
+  }
+
+  .header-content {
+    padding: 1.25rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .header-left {
+    justify-content: center;
+  }
+
+  .header-text h1 {
+    font-size: 1.25rem;
+  }
+
+  .refresh-btn {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .stat-number {
+    font-size: 1.75rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .chart-controls {
+    justify-content: center;
+  }
+
+  .filter-buttons {
+    justify-content: center;
+  }
+
+  .filter-btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .feedback-header {
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Medium Devices (Tablets) - 768px to 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dashboard-content {
+    padding: 1rem;
+  }
+
+  .header-content {
+    padding: 1.5rem;
+  }
+
+  .header-text h1 {
+    font-size: 1.375rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
   }
 
   .stat-card {
@@ -1034,26 +1303,62 @@ onMounted(() => {
   }
 
   .stat-number {
-    font-size: 2rem;
+    font-size: 2.25rem;
+  }
+
+  .chart-container {
+    min-height: 350px;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .filter-buttons {
+    flex-wrap: wrap;
   }
 }
 
-/* Custom Scrollbar */
-.feedback-list::-webkit-scrollbar {
-  width: 8px;
+/* Large Devices (Desktops) - 1024px to 1279px */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .dashboard-content {
+    padding: 1.25rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .chart-container {
+    min-height: 380px;
+  }
 }
 
-.feedback-list::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
+/* Extra Large Devices (Large Desktops) - 1280px+ */
+@media (min-width: 1280px) {
+  .dashboard-content {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 
-.feedback-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-  border-radius: 4px;
-}
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
 
-.feedback-list::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #94a3b8, #64748b);
+  .stat-card {
+    padding: 2rem;
+  }
+
+  .chart-container {
+    min-height: 400px;
+  }
+
+  .feedback-list {
+    max-height: 600px;
+  }
 }
 </style>

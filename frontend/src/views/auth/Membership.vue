@@ -1,378 +1,384 @@
 <template>
   <div class="login-container">
-    <button class="back-button" @click="goToHome">
-      <i class="pi pi-arrow-left"></i>
-    </button>
+    <!-- Fixed background -->
+    <div class="fixed-background"></div>
+    
+    <!-- Content wrapper -->
+    <div class="content-wrapper">
+      <button class="back-button" @click="goToHome">
+        <i class="pi pi-arrow-left"></i>
+      </button>
 
-    <div class="login-form-container">
-      <h1 class="welcome-container">
-        <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
-        Application Form
-      </h1>
-      <p class="subtitle">Please complete all required information to register as a solo parent</p>
-      
-      <form @submit.prevent="handleRegistration" class="login-form">
-        <!-- Name Information Group -->
-        <div class="form-section">
-          <div class="name-fields-container">
-            <div class="name-field">
-              <label for="lastName" class="form-label">Last Name</label>
-              <input 
-                type="text" 
-                id="lastName" 
-                v-model="formData.lastName" 
-                placeholder="Enter your last name"
-                required
-              >
-            </div>
-
-            <div class="name-field">
-              <label for="firstName" class="form-label">First Name</label>
-              <input 
-                type="text" 
-                id="firstName" 
-                v-model="formData.firstName" 
-                placeholder="Enter your first name"
-                required
-              >
-            </div>
-            
-            <div class="name-field">
-              <label for="middleName" class="form-label">Middle Name</label>
-              <input 
-                type="text" 
-                id="middleName" 
-                v-model="formData.middleName" 
-                placeholder="Enter your middle name"
-              >
-            </div>
-            
-            <div class="name-field name-ext">
-              <label for="nameExt" class="form-label">Name Ext</label>
-              <select id="nameExt" v-model="formData.nameExt">
-                <option value="">None</option>
-                <option value="Jr.">Jr.</option>
-                <option value="Sr.">Sr.</option>
-                <option value="I">I</option>
-                <option value="II">II</option>
-                <option value="III">III</option>
-                <option value="IV">IV</option>
-                <option value="V">V</option>
-              </select>
-            </div>
-          </div>
-        </div>
+      <div class="login-form-container">
+        <h1 class="welcome-container">
+          <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
+          Application Form
+        </h1>
+        <p class="subtitle">Please complete all required information to register as a solo parent</p>
         
-        <!-- Personal Information Group -->
-        <div class="form-section">
-          <div class="form-group-row">
-            <div class="form-group">
-              <label class="form-label">Gender</label>
-              <div class="gender-options">
-                <div class="gender-option">
-                  <input 
-                    type="radio" 
-                    id="male" 
-                    value="Male" 
-                    v-model="formData.gender"
-                    required
-                  >
-                  <label for="male">Male</label>
-                </div>
-                <div class="gender-option">
-                  <input 
-                    type="radio" 
-                    id="female" 
-                    value="Female" 
-                    v-model="formData.gender"
-                    required
-                  >
-                  <label for="female">Female</label>
-                </div>
+        <form @submit.prevent="handleRegistration" class="login-form">
+          <!-- Name Information Group -->
+          <div class="form-section">
+            <div class="name-fields-container">
+              <div class="name-field">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input 
+                  type="text" 
+                  id="lastName" 
+                  v-model="formData.lastName" 
+                  placeholder="Enter your last name"
+                  required
+                >
+              </div>
+
+              <div class="name-field">
+                <label for="firstName" class="form-label">First Name</label>
+                <input 
+                  type="text" 
+                  id="firstName" 
+                  v-model="formData.firstName" 
+                  placeholder="Enter your first name"
+                  required
+                >
+              </div>
+              
+              <div class="name-field">
+                <label for="middleName" class="form-label">Middle Name</label>
+                <input 
+                  type="text" 
+                  id="middleName" 
+                  v-model="formData.middleName" 
+                  placeholder="Enter your middle name"
+                >
+              </div>
+              
+              <div class="name-field name-ext">
+                <label for="nameExt" class="form-label">Name Ext</label>
+                <select id="nameExt" v-model="formData.nameExt">
+                  <option value="">None</option>
+                  <option value="Jr.">Jr.</option>
+                  <option value="Sr.">Sr.</option>
+                  <option value="I">I</option>
+                  <option value="II">II</option>
+                  <option value="III">III</option>
+                  <option value="IV">IV</option>
+                  <option value="V">V</option>
+                </select>
               </div>
             </div>
-            
-            <div class="form-group">
-              <label for="dateOfBirth" class="form-label">Date of Birth</label>
-              <input 
-                type="date" 
-                id="dateOfBirth" 
-                v-model="formData.dateOfBirth"
-                @change="calculateAge"
-                required
-              >
-            </div>
-            
-            <div class="form-group">
-              <label for="age" class="form-label">Age</label>
-              <input 
-                type="number" 
-                id="age" 
-                v-model="formData.age" 
-                readonly
-                placeholder="Auto-calculated"
-              >
-            </div>
-            
-            <div class="form-group">
-              <label for="birthplace" class="form-label">Birthplace</label>
-              <input 
-                type="text" 
-                id="birthplace" 
-                v-model="formData.birthplace" 
-                placeholder="City/Municipality of birth"
-                required
-              >
+          </div>
+          
+          <!-- Personal Information Group -->
+          <div class="form-section">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <div class="gender-options">
+                  <div class="gender-option">
+                    <input 
+                      type="radio" 
+                      id="male" 
+                      value="Male" 
+                      v-model="formData.gender"
+                      required
+                    >
+                    <label for="male">Male</label>
+                  </div>
+                  <div class="gender-option">
+                    <input 
+                      type="radio" 
+                      id="female" 
+                      value="Female" 
+                      v-model="formData.gender"
+                      required
+                    >
+                    <label for="female">Female</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                <input 
+                  type="date" 
+                  id="dateOfBirth" 
+                  v-model="formData.dateOfBirth"
+                  @change="calculateAge"
+                  required
+                >
+              </div>
+              
+              <div class="form-group">
+                <label for="age" class="form-label">Age</label>
+                <input 
+                  type="number" 
+                  id="age" 
+                  v-model="formData.age" 
+                  readonly
+                  placeholder="Auto-calculated"
+                >
+              </div>
+              
+              <div class="form-group">
+                <label for="birthplace" class="form-label">Birthplace</label>
+                <input 
+                  type="text" 
+                  id="birthplace" 
+                  v-model="formData.birthplace" 
+                  placeholder="City/Municipality of birth"
+                  required
+                >
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Address Information Group -->
-        <div class="form-section">
-          <div class="form-group-row">
+          
+          <!-- Address Information Group -->
+          <div class="form-section">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="address" class="form-label">Address</label>
+                <input 
+                  type="text" 
+                  id="address" 
+                  v-model="formData.address" 
+                  placeholder="House/Lot/Blk No., Street, Subdivision"
+                  required
+                >
+              </div>
+              
+              <div class="form-group">
+                <label for="barangay" class="form-label">Barangay</label>
+                <div v-if="loadingBarangays" class="loading-indicator">
+                  <i class="pi pi-spin pi-spinner"></i> Loading barangays...
+                </div>
+                <select 
+                  v-else
+                  id="barangay" 
+                  v-model="formData.barangay"
+                  required
+                >
+                  <option value="" disabled selected>Select barangay</option>
+                  <option v-for="brgy in barangays" :key="brgy.id" :value="brgy.name">
+                    {{ brgy.name }}
+                  </option>
+                </select>
+                <p v-if="barangayError" class="error-message">{{ barangayError }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Contact Information Group -->
+          <div class="form-section">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  v-model="formData.email" 
+                  placeholder="Enter your email address"
+                  required
+                >
+              </div>
+              
+              <div class="form-group">
+                <label for="contactNumber" class="form-label">Contact Number</label>
+                <input 
+                  type="text" 
+                  id="contactNumber" 
+                  v-model="formData.contactNumber" 
+                  placeholder="Enter your contact number"
+                  required
+                >
+              </div>
+              
+              <div class="form-group">
+                <label for="fbName" class="form-label">Facebook Name</label>
+                <input 
+                  type="text" 
+                  id="fbName" 
+                  v-model="formData.fbName" 
+                  placeholder="Enter your Facebook name"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Solo Parent ID Information Group - For Current Solo Parent Members -->
+          <div class="form-section">
             <div class="form-group">
-              <label for="address" class="form-label">Address</label>
+              <label for="soloParentId" class="form-label">Solo Parent ID Number</label>
               <input 
                 type="text" 
-                id="address" 
-                v-model="formData.address" 
-                placeholder="House/Lot/Blk No., Street, Subdivision"
+                id="soloParentId" 
+                v-model="formData.soloParentId" 
+                placeholder="Enter your Solo Parent ID number"
                 required
               >
+              <p class="id-note">Please enter your existing Solo Parent ID number as a current member</p>
             </div>
-            
+          </div>
+          
+          <!-- Solo Parent Reason Group -->
+          <div class="form-section">
             <div class="form-group">
-              <label for="barangay" class="form-label">Barangay</label>
-              <div v-if="loadingBarangays" class="loading-indicator">
-                <i class="pi pi-spin pi-spinner"></i> Loading barangays...
-              </div>
+              <label for="soloParentReason" class="form-label">Solo Parent Due To</label>
               <select 
-                v-else
-                id="barangay" 
-                v-model="formData.barangay"
+                id="soloParentReason" 
+                v-model="formData.soloParentReason"
                 required
               >
-                <option value="" disabled selected>Select barangay</option>
-                <option v-for="brgy in barangays" :key="brgy.id" :value="brgy.name">
-                  {{ brgy.name }}
-                </option>
+                <option value="" disabled selected>Select reason</option>
+                <option value="separated">Separated</option>
+                <option value="widow">Widow/Widower</option>
+                <option value="annulled">Annulled</option>
+                <option value="ofw">OFW Partner</option>
+                <option value="custody">Child Custody (CSWD Approved)</option>
+                <option value="imprisoned">Imprisoned Spouse</option>
               </select>
-              <p v-if="barangayError" class="error-message">{{ barangayError }}</p>
             </div>
           </div>
-        </div>
-        
-        <!-- Contact Information Group -->
-        <div class="form-section">
-          <div class="form-group-row">
+          
+          <!-- Children Information Group -->
+          <div class="form-section">
             <div class="form-group">
-              <label for="email" class="form-label">Email Address</label>
-              <input 
-                type="email" 
-                id="email" 
-                v-model="formData.email" 
-                placeholder="Enter your email address"
-                required
-              >
+              <label class="form-label">Child's Name</label>
+              <div v-for="(child, index) in children" :key="index" class="child-info">
+                <div class="child-row">
+                  <div class="child-name-input">
+                    <input 
+                      type="text" 
+                      :id="`childName${index}`" 
+                      v-model="child.name" 
+                      placeholder="Child's name"
+                      required
+                    >
+                  </div>
+                  <div class="child-age-select">
+                    <select 
+                      :id="`childAge${index}`" 
+                      v-model="child.age"
+                      required
+                    >
+                      <option value="" disabled selected>Age</option>
+                      <option v-for="age in 18" :key="age" :value="age">{{ age }}</option>
+                    </select>
+                  </div>
+                  <button 
+                    type="button" 
+                    class="remove-child-btn" 
+                    @click="removeChild(index)"
+                    v-if="children.length > 1"
+                  >
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="add-child-btn" @click="addChild">
+                <i class="pi pi-plus"></i> Add Another Child
+              </button>
             </div>
-            
+          </div>
+          
+          <!-- Solo Parent ID Attachment Group -->
+          <div class="form-section">
             <div class="form-group">
-              <label for="contactNumber" class="form-label">Contact Number</label>
-              <input 
-                type="text" 
-                id="contactNumber" 
-                v-model="formData.contactNumber" 
-                placeholder="Enter your contact number"
-                required
-              >
+              <label class="form-label">Solo Parent ID Attachment</label>
+              <p class="document-note">Please upload a clear photo of your Solo Parent ID</p>
+              <p class="development-note">Note: File uploads are temporarily disabled in development mode. This feature will be available in production.</p>
+              
+              <div class="attachment-item">
+                <div class="attachment-row">
+                  <div class="attachment-name">
+                    <input 
+                      type="text" 
+                      id="soloParentIdName" 
+                      v-model="soloParentIdAttachment.name" 
+                      placeholder="Solo Parent ID"
+                      readonly
+                    >
+                  </div>
+                  <div class="attachment-file">
+                    <input 
+                      type="file" 
+                      id="soloParentIdFile" 
+                      @change="handleSoloParentIdChange"
+                      accept="image/*"
+                      required
+                    >
+                  </div>
+                </div>
+                <div v-if="soloParentIdAttachment.preview" class="attachment-preview">
+                  <img :src="soloParentIdAttachment.preview" alt="Solo Parent ID Preview" class="preview-image" />
+                </div>
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="fbName" class="form-label">Facebook Name</label>
-              <input 
-                type="text" 
-                id="fbName" 
-                v-model="formData.fbName" 
-                placeholder="Enter your Facebook name"
-              >
-            </div>
           </div>
-        </div>
-
-        <!-- Solo Parent ID Information Group - For Current Solo Parent Members -->
-        <div class="form-section">
-          <div class="form-group">
-            <label for="soloParentId" class="form-label">Solo Parent ID Number</label>
-            <input 
-              type="text" 
-              id="soloParentId" 
-              v-model="formData.soloParentId" 
-              placeholder="Enter your Solo Parent ID number"
-              required
-            >
-            <p class="id-note">Please enter your existing Solo Parent ID number as a current member</p>
-          </div>
-        </div>
-        
-        <!-- Solo Parent Reason Group -->
-        <div class="form-section">
-          <div class="form-group">
-            <label for="soloParentReason" class="form-label">Solo Parent Due To</label>
-            <select 
-              id="soloParentReason" 
-              v-model="formData.soloParentReason"
-              required
-            >
-              <option value="" disabled selected>Select reason</option>
-              <option value="separated">Separated</option>
-              <option value="widow">Widow/Widower</option>
-              <option value="annulled">Annulled</option>
-              <option value="ofw">OFW Partner</option>
-              <option value="custody">Child Custody (CSWD Approved)</option>
-              <option value="imprisoned">Imprisoned Spouse</option>
-            </select>
-          </div>
-        </div>
-        
-        <!-- Children Information Group -->
-        <div class="form-section">
-          <div class="form-group">
-            <label class="form-label">Child's Name</label>
-            <div v-for="(child, index) in children" :key="index" class="child-info">
-              <div class="child-row">
-                <div class="child-name-input">
+          
+          <!-- Password Group -->
+          <div class="form-section">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <div class="password-input-container">
                   <input 
-                    type="text" 
-                    :id="`childName${index}`" 
-                    v-model="child.name" 
-                    placeholder="Child's name"
+                    :type="showPassword ? 'text' : 'password'"
+                    id="password" 
+                    v-model="password" 
+                    placeholder="Enter your password"
                     required
                   >
+                  <button 
+                    type="button" 
+                    class="toggle-password"
+                    @click="togglePassword"
+                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <i v-if="!showPassword" class="pi pi-eye"></i>
+                    <i v-else class="pi pi-eye-slash"></i>
+                  </button>
                 </div>
-                <div class="child-age-select">
-                  <select 
-                    :id="`childAge${index}`" 
-                    v-model="child.age"
+              </div>
+              
+              <div class="form-group">
+                <label for="verifyPassword" class="form-label">Verify Password</label>
+                <div class="password-input-container">
+                  <input 
+                    :type="showVerifyPassword ? 'text' : 'password'"
+                    id="verifyPassword" 
+                    v-model="verifyPassword" 
+                    placeholder="Confirm your password"
                     required
                   >
-                    <option value="" disabled selected>Age</option>
-                    <option v-for="age in 18" :key="age" :value="age">{{ age }}</option>
-                  </select>
-                </div>
-                <button 
-                  type="button" 
-                  class="remove-child-btn" 
-                  @click="removeChild(index)"
-                  v-if="children.length > 1"
-                >
-                  <i class="pi pi-times"></i>
-                </button>
-              </div>
-            </div>
-            <button type="button" class="add-child-btn" @click="addChild">
-              <i class="pi pi-plus"></i> Add Another Child
-            </button>
-          </div>
-        </div>
-        
-        <!-- Solo Parent ID Attachment Group -->
-        <div class="form-section">
-          <div class="form-group">
-            <label class="form-label">Solo Parent ID Attachment</label>
-            <p class="document-note">Please upload a clear photo of your Solo Parent ID</p>
-            <p class="development-note">Note: File uploads are temporarily disabled in development mode. This feature will be available in production.</p>
-            
-            <div class="attachment-item">
-              <div class="attachment-row">
-                <div class="attachment-name">
-                  <input 
-                    type="text" 
-                    id="soloParentIdName" 
-                    v-model="soloParentIdAttachment.name" 
-                    placeholder="Solo Parent ID"
-                    readonly
+                  <button 
+                    type="button" 
+                    class="toggle-password"
+                    @click="toggleVerifyPassword"
+                    :aria-label="showVerifyPassword ? 'Hide password' : 'Show password'"
                   >
+                    <i v-if="!showVerifyPassword" class="pi pi-eye"></i>
+                    <i v-else class="pi pi-eye-slash"></i>
+                  </button>
                 </div>
-                <div class="attachment-file">
-                  <input 
-                    type="file" 
-                    id="soloParentIdFile" 
-                    @change="handleSoloParentIdChange"
-                    accept="image/*"
-                    required
-                  >
-                </div>
-              </div>
-              <div v-if="soloParentIdAttachment.preview" class="attachment-preview">
-                <img :src="soloParentIdAttachment.preview" alt="Solo Parent ID Preview" class="preview-image" />
+                <p v-if="passwordMismatch" class="error-message">Passwords do not match</p>
               </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Password Group -->
-        <div class="form-section">
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="password" class="form-label">Password</label>
-              <div class="password-input-container">
-                <input 
-                  :type="showPassword ? 'text' : 'password'"
-                  id="password" 
-                  v-model="password" 
-                  placeholder="Enter your password"
-                  required
-                >
-                <button 
-                  type="button" 
-                  class="toggle-password"
-                  @click="togglePassword"
-                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                >
-                  <i v-if="!showPassword" class="pi pi-eye"></i>
-                  <i v-else class="pi pi-eye-slash"></i>
-                </button>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="verifyPassword" class="form-label">Verify Password</label>
-              <div class="password-input-container">
-                <input 
-                  :type="showVerifyPassword ? 'text' : 'password'"
-                  id="verifyPassword" 
-                  v-model="verifyPassword" 
-                  placeholder="Confirm your password"
-                  required
-                >
-                <button 
-                  type="button" 
-                  class="toggle-password"
-                  @click="toggleVerifyPassword"
-                  :aria-label="showVerifyPassword ? 'Hide password' : 'Show password'"
-                >
-                  <i v-if="!showVerifyPassword" class="pi pi-eye"></i>
-                  <i v-else class="pi pi-eye-slash"></i>
-                </button>
-              </div>
-              <p v-if="passwordMismatch" class="error-message">Passwords do not match</p>
-            </div>
+          
+          <Button type="submit" label="Submit Application" class="login-button" :disabled="passwordMismatch || isSubmitting" />
+          
+          <div v-if="isSubmitting" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Processing your application...</p>
           </div>
-        </div>
-        
-        <Button type="submit" label="Submit Application" class="login-button" :disabled="passwordMismatch || isSubmitting" />
-        
-        <div v-if="isSubmitting" class="loading-overlay">
-          <div class="spinner"></div>
-          <p>Processing your application...</p>
-        </div>
-        
-        <div class="form-footer">
-          <p class="signup-prompt">
-            Already have an account? <a href="#" class="signup-link" @click="goToLogin">Log In</a>
-          </p>
-        </div>
-      </form>
+          
+          <div class="form-footer">
+            <p class="signup-prompt">
+              Already have an account? <a href="#" class="signup-link" @click="goToLogin">Log In</a>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
     
     <!-- Email Verification Dialog -->
@@ -695,14 +701,32 @@ const goToLogin = () => {
 
 <style scoped>
 .login-container {
+  position: relative;
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Fixed background that cannot move */
+.fixed-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background: #f0e6ff;
+  z-index: -1; /* Behind all content */
+}
+
+/* Content wrapper - allows vertical scrolling for content */
+.content-wrapper {
+  position: relative;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  position: relative;
   padding: 2rem 1rem;
+  z-index: 1;
 }
 
 .back-button {
@@ -714,6 +738,7 @@ const goToLogin = () => {
   font-size: 1.5rem;
   cursor: pointer;
   color: #333;
+  z-index: 10;
 }
 
 .back-button:hover {
@@ -728,6 +753,7 @@ const goToLogin = () => {
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
+  z-index: 5;
 }
 
 .welcome-container {
@@ -1140,8 +1166,12 @@ select {
 }
 
 @media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+
   .login-form-container {
-    margin: 1rem;
+    margin: 1rem 0;
     padding: 1rem;
     max-width: 100%;
   }
@@ -1270,6 +1300,10 @@ select {
 
 /* Add a smaller screen breakpoint for very small devices */
 @media (max-width: 480px) {
+  .content-wrapper {
+    padding: 0.5rem;
+  }
+
   .login-form-container {
     padding: 0.75rem;
   }

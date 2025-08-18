@@ -7,7 +7,7 @@
         <div class="flex flex-wrap items-center justify-between">
           <div class="w-full lg:w-1/2 mb-8 lg:mb-0">
             <h1 class="text-5xl lg:text-6xl font-bold mb-6 leading-tight text-black">
-              Empowering Solo Parents
+              Empowered Solo Parents
             </h1>
             <p class="text-xl mb-8 text-black/90 leading-relaxed">
               Join our thriving community and access the support, resources, and connections you need to flourish as a
