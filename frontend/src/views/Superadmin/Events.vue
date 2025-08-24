@@ -1,103 +1,82 @@
 <template>
-  <div class="bg-gradient-to-br from-surface-50 to-surface-100 min-h-screen overflow-hidden">
-    <div class="max-w-7xl mx-auto p-6 md:p-8">
-      <header class="mb-8 animate-fade-in">
-        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-500 mb-2">
-          Events Calendar
-        </h1>
-        <p class="text-surface-600 text-lg">Organize your schedule and never miss an important date</p>
+  <div class="calendar-container">
+    <div class="calendar-wrapper">
+      <header class="calendar-header">
+        <h1 class="calendar-title">Events Calendar</h1>
+        <p class="calendar-subtitle">Organize your schedule and never miss an important date</p>
       </header>
 
-      <div class="mb-6 flex flex-wrap justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.2s;">
-        <!-- Enhanced Add Event Button -->
+      <div class="calendar-controls">
         <Button 
           @click="openNewEventDialog" 
           icon="pi pi-plus" 
           label="Add Event" 
-          class="p-button-rounded bg-gradient-to-r from-primary-600 to-primary-400 border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 px-6 py-3 text-white font-medium"
-          :style="{
-            boxShadow: '0 10px 15px -3px rgba(var(--primary-600-rgb), 0.3), 0 4px 6px -4px rgba(var(--primary-600-rgb), 0.4)'
-          }"
-        >
-          <template #icon>
-            <i class="pi pi-plus mr-2 text-lg"></i>
-          </template>
-        </Button>
+          class="add-event-btn"
+        />
         
-        <div class="flex flex-wrap gap-4 text-sm font-medium">
-          <span v-for="type in eventTypes" :key="type.value" class="flex items-center bg-white rounded-full px-3 py-1 shadow-sm transition-all duration-300 ease-in-out hover:shadow-md">
-            <span :class="`w-3 h-3 ${getEventTypeColor(type.value)} rounded-full mr-2`"></span> 
+        <div class="event-types">
+          <span 
+            v-for="type in eventTypes" 
+            :key="type.value" 
+            class="event-type-badge"
+          >
+            <span :class="getEventTypeColor(type.value) + ' event-type-dot'"></span> 
             {{ type.label }}
           </span>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl overflow-hidden border border-surface-200 animate-fade-in" style="animation-delay: 0.4s;">
-          <div class="p-4 bg-gradient-to-r from-primary-600 to-primary-400 text-white">
-            <div class="flex justify-between items-center">
-              <h2 class="text-xl font-semibold">
-                {{ formatMonthYear(date) }}
-              </h2>
-              <div class="flex gap-2">
+      <div class="calendar-layout">
+        <div class="calendar-main">
+          <div class="calendar-nav">
+            <div class="calendar-nav-content">
+              <h2 class="calendar-month">{{ formatMonthYear(date) }}</h2>
+              <div class="nav-buttons">
                 <Button 
                   @click="previousMonth" 
                   icon="pi pi-chevron-left" 
-                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300"
+                  class="nav-btn"
                 />
                 <Button 
                   @click="nextMonth" 
                   icon="pi pi-chevron-right" 
-                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300"
+                  class="nav-btn"
                 />
                 <Button 
                   @click="setToday" 
                   label="Today" 
-                  class="p-button-sm p-button-outlined text-white border-white hover:bg-white/20 transition-colors duration-300 ml-2"
+                  class="nav-btn today-btn"
                 />
               </div>
             </div>
           </div>
           
-          <div class="p-4 relative">
-            <!-- Custom Calendar View -->
+          <div class="calendar-grid-container">
             <div class="custom-calendar">
-              <!-- Calendar Header -->
-              <div class="calendar-header">
+              <div class="calendar-header-days">
                 <div v-for="day in weekDays" :key="day" class="weekday">{{ day }}</div>
               </div>
               
-              <!-- Calendar Days -->
               <div class="calendar-days">
                 <div 
                   v-for="(day, index) in calendarDays" 
                   :key="index" 
-                  :class="[
-                    'calendar-day',
-                    { 'current-month': day.currentMonth },
-                    { 'today': isToday(day.date) },
-                    { 'selected': isSameDay(day.date, date) }
-                  ]"
+                  :class="getCalendarDayClasses(day)"
                   @click="selectDate(day.date)"
                 >
                   <div class="day-number">{{ day.dayNumber }}</div>
                   
-                  <!-- Events for this day -->
                   <div class="day-events">
                     <div 
                       v-for="(event, eventIndex) in getDayEvents(day.date).slice(0, 3)" 
                       :key="eventIndex" 
-                      :class="[
-                        'day-event',
-                        getEventTypeColor(event.type).replace('bg-', '')
-                      ]"
+                      :class="getDayEventClasses(event)"
                       @click.stop="openEditEventDialog(event)"
                     >
                       <div class="event-title">{{ event.title }}</div>
                       <div class="event-time">{{ formatTime(event.date) }}</div>
                     </div>
                     
-                    <!-- Show +X more if there are more than 3 events -->
                     <div 
                       v-if="getDayEvents(day.date).length > 3" 
                       class="more-events"
@@ -112,64 +91,62 @@
           </div>
         </div>
 
-        <div class="space-y-6">
-          <div class="bg-white rounded-2xl shadow-xl p-6 border border-surface-200 animate-fade-in" style="animation-delay: 0.6s;">
-            <h2 class="text-xl font-semibold mb-4 text-surface-800 flex items-center">
-              <i class="pi pi-calendar mr-2 text-primary-600"></i>
+        <div class="calendar-sidebar">
+          <div class="upcoming-events-card">
+            <h2 class="sidebar-title">
+              <i class="pi pi-calendar"></i>
               Upcoming Events
             </h2>
             
-            <div v-if="upcomingEvents.length > 0" class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+            <div v-if="upcomingEvents.length > 0" class="events-list">
               <div 
                 v-for="event in upcomingEvents" 
                 :key="event.id" 
-                class="p-3 rounded-lg hover:bg-surface-50 transition-all duration-300 ease-in-out border border-surface-100 cursor-pointer transform hover:-translate-y-1 hover:shadow-md"
+                class="event-card"
                 @click="openEditEventDialog(event)"
               >
-                <div class="flex items-start gap-3">
-                  <span :class="`${getEventTypeColor(event.type)} w-3 h-3 rounded-full mt-1.5`"></span>
-                  <div class="flex-1">
-                    <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
-                    <div class="flex items-center text-sm text-surface-500 mt-1">
-                      <i class="pi pi-clock mr-1 text-xs"></i>
+                <div class="event-card-content">
+                  <span :class="getEventTypeColor(event.type) + ' event-dot'"></span>
+                  <div class="event-details">
+                    <h3 class="event-name">{{ event.title }}</h3>
+                    <div class="event-datetime">
+                      <i class="pi pi-clock"></i>
                       {{ formatDateTime(event.date) }}
                     </div>
-                    <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
-                      <i class="pi pi-map-marker mr-1 text-xs"></i>
+                    <div v-if="event.location" class="event-location">
+                      <i class="pi pi-map-marker"></i>
                       {{ event.location }}
                     </div>
-                    <p v-if="event.description" class="text-xs text-surface-500 mt-1 line-clamp-2">{{ event.description }}</p>
+                    <p v-if="event.description" class="event-description">{{ event.description }}</p>
                   </div>
                 </div>
               </div>
             </div>
-            <p v-else class="text-surface-500 text-center py-4">No upcoming events</p>
+            <p v-else class="no-events">No upcoming events</p>
           </div>
 
-          <div v-if="selectedDateEvents.length > 0" class="bg-white rounded-2xl shadow-xl p-6 border border-surface-200 animate-fade-in" style="animation-delay: 0.8s;">
-            <h2 class="text-xl font-semibold mb-4 text-surface-800">
-              Events on {{ formatFullDate(date) }}
-            </h2>
-            <div class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+          <div v-if="selectedDateEvents.length > 0" class="selected-date-card">
+            <h2 class="sidebar-title">Events on {{ formatFullDate(date) }}</h2>
+            <div class="events-list">
               <div 
                 v-for="event in selectedDateEvents" 
                 :key="event.id" 
-                class="p-3 rounded-lg hover:bg-surface-50 transition-all duration-300 ease-in-out border border-surface-100 cursor-pointer transform hover:-translate-y-1 hover:shadow-md"
+                class="event-card"
                 @click="openEditEventDialog(event)"
               >
-                <div class="flex items-start gap-3">
-                  <span :class="`${getEventTypeColor(event.type)} w-3 h-3 rounded-full mt-1.5`"></span>
-                  <div>
-                    <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
-                    <div class="flex items-center text-sm text-surface-500 mt-1">
-                      <i class="pi pi-clock mr-1 text-xs"></i>
+                <div class="event-card-content">
+                  <span :class="getEventTypeColor(event.type) + ' event-dot'"></span>
+                  <div class="event-details">
+                    <h3 class="event-name">{{ event.title }}</h3>
+                    <div class="event-datetime">
+                      <i class="pi pi-clock"></i>
                       {{ formatTime(event.date) }}
                     </div>
-                    <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
-                      <i class="pi pi-map-marker mr-1 text-xs"></i>
+                    <div v-if="event.location" class="event-location">
+                      <i class="pi pi-map-marker"></i>
                       {{ event.location }}
                     </div>
-                    <p v-if="event.description" class="text-sm text-surface-500 mt-1">{{ event.description }}</p>
+                    <p v-if="event.description" class="event-description">{{ event.description }}</p>
                   </div>
                 </div>
               </div>
@@ -178,13 +155,11 @@
         </div>
       </div>
 
-      <!-- Enhanced Modal Event Dialog -->
       <Teleport to="body">
         <Transition name="modal-fade">
           <div v-if="eventDialog" class="modal-backdrop" @click="hideEventDialog">
             <div class="modal-container" @click.stop>
               <div class="modal-content">
-                <!-- Header -->
                 <div class="modal-header">
                   <h2 class="modal-title">
                     {{ editMode ? 'Edit Event' : 'Create New Event' }}
@@ -192,12 +167,11 @@
                   <Button 
                     icon="pi pi-times" 
                     @click="hideEventDialog" 
-                    class="p-button-rounded p-button-text close-button"
+                    class="close-button"
                     aria-label="Close"
                   />
                 </div>
                 
-                <!-- Body -->
                 <div class="modal-body">
                   <div class="form-group">
                     <label for="eventTitle">Event Title</label>
@@ -258,21 +232,7 @@
                       placeholder="Select Event Type" 
                       required 
                       class="form-control"
-                    >
-                      <template #value="slotProps">
-                        <div v-if="slotProps.value" class="flex items-center">
-                          <span :class="`event-type-indicator ${getEventTypeColor(slotProps.value).replace('bg-', '')}`"></span>
-                          {{ getEventTypeLabel(slotProps.value) }}
-                        </div>
-                        <span v-else>{{ slotProps.placeholder }}</span>
-                      </template>
-                      <template #option="slotProps">
-                        <div class="flex items-center">
-                          <span :class="`event-type-indicator ${getEventTypeColor(slotProps.option.value).replace('bg-', '')}`"></span>
-                          {{ slotProps.option.label }}
-                        </div>
-                      </template>
-                    </Dropdown>
+                    />
                   </div>
                   
                   <div class="form-group">
@@ -287,7 +247,6 @@
                   </div>
                 </div>
                 
-                <!-- Footer -->
                 <div class="modal-footer">
                   <Button 
                     v-if="editMode"
@@ -317,7 +276,6 @@
         </Transition>
       </Teleport>
 
-      <!-- Confirmation Dialog for Delete -->
       <Dialog 
         v-model:visible="deleteDialog" 
         header="Confirm Delete" 
@@ -325,7 +283,7 @@
         :style="{width: '450px'}"
       >
         <div class="confirmation-content">
-          <i class="pi pi-exclamation-triangle mr-3 text-yellow-500 text-2xl" style="vertical-align: middle;"></i>
+          <i class="pi pi-exclamation-triangle"></i>
           <span>Are you sure you want to delete this event?</span>
         </div>
         <template #footer>
@@ -334,40 +292,37 @@
         </template>
       </Dialog>
       
-      <!-- More Events Dialog -->
       <Dialog 
         v-model:visible="moreEventsDialog" 
         :header="moreEventsDate ? formatFullDate(moreEventsDate) : 'Events'" 
         :modal="true" 
         :style="{width: '500px'}"
       >
-        <div v-if="moreEventsDate && moreEventsList.length > 0" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar p-3">
+        <div v-if="moreEventsDate && moreEventsList.length > 0" class="more-events-list">
           <div 
             v-for="event in moreEventsList" 
             :key="event.id" 
-            class="p-3 rounded-lg hover:bg-surface-50 transition-all duration-300 ease-in-out border border-surface-100 cursor-pointer"
+            class="event-card"
             @click="openEditEventDialog(event); moreEventsDialog = false;"
           >
-            <div class="flex items-start gap-3">
-              <span :class="`${getEventTypeColor(event.type)} w-3 h-3 rounded-full mt-1.5`"></span>
-              <div>
-                <h3 class="font-medium text-surface-900">{{ event.title }}</h3>
-                <div class="flex items-center text-sm text-surface-500 mt-1">
-                  <i class="pi pi-clock mr-1 text-xs"></i>
+            <div class="event-card-content">
+              <span :class="getEventTypeColor(event.type) + ' event-dot'"></span>
+              <div class="event-details">
+                <h3 class="event-name">{{ event.title }}</h3>
+                <div class="event-datetime">
+                  <i class="pi pi-clock"></i>
                   {{ formatTime(event.date) }}
                 </div>
-                <div v-if="event.location" class="flex items-center text-sm text-surface-500 mt-1">
-                  <i class="pi pi-map-marker mr-1 text-xs"></i>
+                <div v-if="event.location" class="event-location">
+                  <i class="pi pi-map-marker"></i>
                   {{ event.location }}
                 </div>
-                <p v-if="event.description" class="text-sm text-surface-500 mt-1">{{ event.description }}</p>
+                <p v-if="event.description" class="event-description">{{ event.description }}</p>
               </div>
             </div>
           </div>
         </div>
-        <div v-else class="p-4 text-center text-surface-500">
-          No events for this day
-        </div>
+        <div v-else class="no-events">No events for this day</div>
       </Dialog>
     </div>
   </div>
@@ -376,12 +331,11 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, parseISO, addDays, getMonth, getYear, isToday as dateFnsIsToday, startOfWeek, endOfWeek } from 'date-fns';
-import { db } from '@/services/firebase'; // Ensure this points to your Firebase configuration
+import { db } from '@/services/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { useUserStore } from "@/stores/user"; 
 
-// Import PrimeVue components
-import DatePicker from 'primevue/datepicker'; // Changed from Calendar to DatePicker
+import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
@@ -400,7 +354,7 @@ const newEvent = ref({
   id: '',
   title: '',
   date: new Date(),
-  type: 'Meeting', // Default type
+  type: 'Meeting',
   isHoliday: false,
   description: '',
   location: '',
@@ -408,14 +362,11 @@ const newEvent = ref({
   barangay: ''
 });
 
-// For more events dialog
 const moreEventsDialog = ref(false);
 const moreEventsDate = ref(null);
 const moreEventsList = ref([]);
 
-// Weekday headers
 const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
 const selectedDateEvents = ref([]);
 
 const eventTypes = [
@@ -425,7 +376,6 @@ const eventTypes = [
   { value: 'Reminder', label: 'Reminder' }
 ];
 
-// Generate calendar days for the current month view
 const calendarDays = computed(() => {
   const currentMonth = date.value;
   const monthStart = startOfMonth(currentMonth);
@@ -442,37 +392,46 @@ const calendarDays = computed(() => {
   }));
 });
 
-// Function to check if a date is today
 const isToday = (dateToCheck) => {
   return dateFnsIsToday(dateToCheck);
 };
 
-// Function to select a date
 const selectDate = (selectedDate) => {
   date.value = selectedDate;
 };
 
-// Function to get events for a specific day
 const getDayEvents = (day) => {
-  return events.value.filter(event => isSameDay(new Date(event.date), day));
+  return activeCalendarEvents.value.filter(event => isSameDay(new Date(event.date), day));
 };
 
-// Function to show more events dialog
 const showMoreEvents = (dayDate) => {
   moreEventsDate.value = dayDate;
   moreEventsList.value = getDayEvents(dayDate);
   moreEventsDialog.value = true;
 };
 
-// Fetch events from Firestore on component mount
+const getCalendarDayClasses = (day) => {
+  return [
+    'calendar-day',
+    { 'current-month': day.currentMonth },
+    { 'today': isToday(day.date) },
+    { 'selected': isSameDay(day.date, date.value) }
+  ];
+};
+
+const getDayEventClasses = (event) => {
+  return [
+    'day-event',
+    getEventTypeColor(event.type).replace('bg-', '')
+  ];
+};
+
 const fetchEvents = async () => {
   try {
     console.log("Fetching events...");
     console.log("Current user:", user.value);
     
     const eventsCollection = collection(db, "announcements");
-    
-    // Create a basic query without filters first
     let q = query(eventsCollection, orderBy("date", "asc"));
     
     console.log("Executing query...");
@@ -480,13 +439,11 @@ const fetchEvents = async () => {
     
     console.log("Query results:", querySnapshot.size, "documents found");
     
-    // Process the results
     const fetchedEvents = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       console.log("Document data:", data);
       
-      // Handle different date formats
       let eventDate;
       if (data.date instanceof Timestamp) {
         eventDate = data.date.toDate();
@@ -496,10 +453,9 @@ const fetchEvents = async () => {
         eventDate = new Date();
       }
       
-      // Determine event type
       let eventType = data.type || 'Meeting';
       if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
-        eventType = 'Meeting'; // Default type
+        eventType = 'Meeting';
       }
       
       fetchedEvents.push({
@@ -518,7 +474,6 @@ const fetchEvents = async () => {
     console.log("Processed events:", fetchedEvents);
     events.value = fetchedEvents;
     
-    // Update calendar event indicators after events are loaded
     nextTick(() => {
       updateCalendarEventIndicators();
     });
@@ -527,7 +482,6 @@ const fetchEvents = async () => {
   }
 };
 
-// Set up real-time updates
 const setupRealtimeUpdates = () => {
   try {
     const eventsCollection = collection(db, "announcements");
@@ -537,10 +491,11 @@ const setupRealtimeUpdates = () => {
       console.log("Real-time update received");
       
       const updatedEvents = [];
+      const today = startOfDay(new Date());
+      
       snapshot.forEach((doc) => {
         const data = doc.data();
         
-        // Handle different date formats
         let eventDate;
         if (data.date instanceof Timestamp) {
           eventDate = data.date.toDate();
@@ -550,28 +505,28 @@ const setupRealtimeUpdates = () => {
           eventDate = new Date();
         }
         
-        // Determine event type
-        let eventType = data.type || 'Meeting';
-        if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
-          eventType = 'Meeting'; // Default type
+        if (isAfter(eventDate, today) || isSameDay(eventDate, today)) {
+          let eventType = data.type || 'Meeting';
+          if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
+            eventType = 'Meeting';
+          }
+          
+          updatedEvents.push({
+            id: doc.id,
+            title: data.title || 'Untitled Event',
+            date: eventDate,
+            type: eventType,
+            isHoliday: data.isHoliday || false,
+            description: data.description || '',
+            location: data.location || '',
+            createdBy: data.createdBy || '',
+            barangay: data.barangay || ''
+          });
         }
-        
-        updatedEvents.push({
-          id: doc.id,
-          title: data.title || 'Untitled Event',
-          date: eventDate,
-          type: eventType,
-          isHoliday: data.isHoliday || false,
-          description: data.description || '',
-          location: data.location || '',
-          createdBy: data.createdBy || '',
-          barangay: data.barangay || ''
-        });
       });
       
       events.value = updatedEvents;
       
-      // Update calendar event indicators after events are loaded
       nextTick(() => {
         updateCalendarEventIndicators();
       });
@@ -579,11 +534,10 @@ const setupRealtimeUpdates = () => {
       console.error("Error in real-time updates:", error);
     });
     
-    // Return the unsubscribe function
     return unsubscribe;
   } catch (error) {
     console.error("Error setting up real-time updates:", error);
-    return () => {}; // Return empty function if setup fails
+    return () => {};
   }
 };
 
@@ -592,43 +546,50 @@ onMounted(() => {
   fetchEvents();
   const unsubscribe = setupRealtimeUpdates();
   
-  // Clean up the subscription when the component is unmounted
   return () => {
     unsubscribe();
   };
 });
 
-// Watchers to update selected date events
 watch(date, updateSelectedDateEvents);
 watch(events, updateSelectedDateEvents, { deep: true });
 
-// Computed property for upcoming events
 const upcomingEvents = computed(() => {
   const today = startOfDay(new Date());
-  return events.value
+  const futureEvents = events.value
     .filter(event => {
       const eventDate = new Date(event.date);
       return isAfter(eventDate, today) || isSameDay(eventDate, today);
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5); // Limit to 5 upcoming events
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  return futureEvents.slice(5);
 });
 
-// Computed property to organize events by calendar day
+const activeCalendarEvents = computed(() => {
+  const today = startOfDay(new Date());
+  const futureEvents = events.value
+    .filter(event => {
+      const eventDate = new Date(event.date);
+      return isAfter(eventDate, today) || isSameDay(eventDate, today);
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  return futureEvents.slice(0, 5);
+});
+
 const calendarEventsByDay = computed(() => {
   const currentMonth = date.value;
   const firstDay = startOfMonth(currentMonth);
   const lastDay = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
   
-  // Initialize array with empty arrays for each day
   const eventsByDay = Array(daysInMonth.length).fill().map(() => []);
   
-  // Populate events for each day
   events.value.forEach(event => {
     const eventDate = new Date(event.date);
     if (isSameMonth(eventDate, currentMonth)) {
-      const dayOfMonth = getDate(eventDate) - 1; // Adjust for 0-based index
+      const dayOfMonth = getDate(eventDate) - 1;
       if (eventsByDay[dayOfMonth]) {
         eventsByDay[dayOfMonth].push(event);
       }
@@ -638,24 +599,28 @@ const calendarEventsByDay = computed(() => {
   return eventsByDay;
 });
 
-// Function to update selected date events
+const calendarEventsCount = computed(() => {
+  return activeCalendarEvents.value.length;
+});
+
+const queuedEventsCount = computed(() => {
+  return upcomingEvents.value.length;
+});
+
 function updateSelectedDateEvents() {
   selectedDateEvents.value = events.value.filter(event => 
     isSameDay(new Date(event.date), date.value)
   );
 }
 
-// Function to handle date selection
 function handleDateSelect(value) {
   date.value = value;
 }
 
-// Function to set date to today
 function setToday() {
   date.value = new Date();
 }
 
-// Functions to navigate between months
 function nextMonth() {
   date.value = addMonths(date.value, 1);
   nextTick(() => {
@@ -670,14 +635,10 @@ function previousMonth() {
   });
 }
 
-// Function to update calendar event indicators - simplified since we're using our custom calendar
 function updateCalendarEventIndicators() {
-  // We don't need this function anymore since we're showing events directly in our custom calendar
-  // But we'll keep it as a no-op for compatibility with existing code
   console.log("Calendar events updated");
 }
 
-// Open New Event Dialog
 const openNewEventDialog = () => {
   newEvent.value = { 
     id: '',
@@ -694,24 +655,20 @@ const openNewEventDialog = () => {
   eventDialog.value = true;
 };
 
-// Open Edit Event Dialog
 const openEditEventDialog = (event) => {
   newEvent.value = { ...event };
   editMode.value = true;
   eventDialog.value = true;
 };
 
-// Close Event Dialog
 const hideEventDialog = () => {
   eventDialog.value = false;
 };
 
-// Confirm Delete Event
 const confirmDeleteEvent = () => {
   deleteDialog.value = true;
 };
 
-// Delete Event
 const deleteEvent = async () => {
   try {
     await deleteDoc(doc(db, 'announcements', newEvent.value.id));
@@ -722,7 +679,6 @@ const deleteEvent = async () => {
   }
 };
 
-// Save Event to Firestore (Add or Update)
 const saveEvent = async () => {
   if (!newEvent.value.title.trim()) {
     alert("Please enter an event title");
@@ -730,12 +686,11 @@ const saveEvent = async () => {
   }
   
   if (!newEvent.value.type) {
-    newEvent.value.type = 'Meeting'; // Default type
+    newEvent.value.type = 'Meeting';
   }
 
   try {
     if (editMode.value) {
-      // Update existing event
       const eventRef = doc(db, 'announcements', newEvent.value.id);
       await updateDoc(eventRef, {
         title: newEvent.value.title,
@@ -747,7 +702,6 @@ const saveEvent = async () => {
       });
       console.log("Event updated successfully");
     } else {
-      // Add new event
       const eventsCollection = collection(db, 'announcements');
       const docRef = await addDoc(eventsCollection, {
         title: newEvent.value.title,
@@ -769,7 +723,6 @@ const saveEvent = async () => {
   }
 };
 
-// Format date functions
 const formatDate = (date) => {
   try {
     return format(new Date(date), 'MMM dd, yyyy');
@@ -815,7 +768,6 @@ const formatMonthYear = (date) => {
   }
 };
 
-// Get event type color
 const getEventTypeColor = (type) => {
   switch(type) {
     case 'Meeting': return 'bg-blue-500';
@@ -826,14 +778,12 @@ const getEventTypeColor = (type) => {
   }
 };
 
-// Get event type label
 const getEventTypeLabel = (value) => {
   const type = eventTypes.find(t => t.value === value);
   return type ? type.label : '';
 };
 
 const updateEventDate = (value) => {
-  // Preserve the time when updating just the date
   const currentTime = newEvent.value.date;
   const newDate = new Date(value);
   
@@ -850,39 +800,182 @@ const updateEventDate = (value) => {
 </script>
 
 <style scoped>
-/* Custom calendar styling */
-.custom-calendar {
-  width: 100%;
-  border-radius: 12px;
+.calendar-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.calendar-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.calendar-header {
+  margin-bottom: 2rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.calendar-title {
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-subtitle {
+  color: #64748b;
+  font-size: 1.125rem;
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  animation: fadeIn 0.5s ease-out 0.2s both;
+}
+
+.add-event-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  border: none !important;
+  color: white !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -4px rgba(79, 70, 229, 0.4) !important;
+  transition: all 0.3s ease !important;
+  transform: translateY(0);
+}
+
+.add-event-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4), 0 10px 10px -5px rgba(79, 70, 229, 0.2) !important;
+}
+
+.event-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.event-type-badge {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 9999px;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.event-type-badge:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.event-type-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.5rem;
+}
+
+.calendar-main {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  animation: fadeIn 0.5s ease-out 0.4s both;
+}
+
+.calendar-nav {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  padding: 1rem 1.5rem;
+}
+
+.calendar-nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-month {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: transparent !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.today-btn {
+  margin-left: 0.5rem;
+}
+
+.calendar-grid-container {
+  padding: 1rem;
   position: relative;
 }
 
-/* Calendar header with weekday names */
-.calendar-header {
+.custom-calendar {
+  width: 100%;
+  border-radius: 0.75rem;
+  position: relative;
+}
+
+.calendar-header-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
 .weekday {
-  padding: 8px;
+  padding: 0.5rem;
   font-weight: 600;
   color: #64748b;
   font-size: 0.875rem;
 }
 
-/* Calendar days grid */
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .calendar-day {
   aspect-ratio: 1;
-  padding: 4px;
-  border-radius: 8px;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
@@ -917,7 +1010,7 @@ const updateEventDate = (value) => {
   font-weight: 500;
   text-align: center;
   color: #334155;
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
 }
 
 .today .day-number {
@@ -925,18 +1018,17 @@ const updateEventDate = (value) => {
   font-weight: 600;
 }
 
-/* Events styling */
 .day-events {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
   overflow: hidden;
   flex: 1;
 }
 
 .day-event {
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
   font-size: 0.7rem;
   color: white;
   white-space: nowrap;
@@ -949,14 +1041,14 @@ const updateEventDate = (value) => {
   filter: brightness(1.1);
 }
 
-.day-event .event-title {
+.event-title {
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.day-event .event-time {
+.event-time {
   font-size: 0.6rem;
   opacity: 0.9;
 }
@@ -965,7 +1057,7 @@ const updateEventDate = (value) => {
   font-size: 0.7rem;
   color: #64748b;
   text-align: center;
-  padding: 2px;
+  padding: 0.125rem;
   cursor: pointer;
 }
 
@@ -973,7 +1065,26 @@ const updateEventDate = (value) => {
   text-decoration: underline;
 }
 
-/* Event colors */
+.bg-blue-500 {
+  background-color: #3b82f6;
+}
+
+.bg-purple-500 {
+  background-color: #8b5cf6;
+}
+
+.bg-red-500 {
+  background-color: #ef4444;
+}
+
+.bg-amber-500 {
+  background-color: #f59e0b;
+}
+
+.bg-gray-500 {
+  background-color: #6b7280;
+}
+
 .blue-500 {
   background-color: #3b82f6;
 }
@@ -994,105 +1105,157 @@ const updateEventDate = (value) => {
   background-color: #6b7280;
 }
 
-/* Original styles from your code */
-:deep(.p-datepicker) {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  border: none;
-  padding: 0.5rem;
+.calendar-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-:deep(.p-datepicker-header) {
-  background-color: transparent;
-  color: #1e293b;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
+.upcoming-events-card,
+.selected-date-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  animation: fadeIn 0.5s ease-out 0.6s both;
 }
 
-:deep(.p-datepicker-calendar) {
-  font-size: 0.95rem;
-}
-
-:deep(.p-datepicker-calendar th) {
-  color: #64748b;
+.sidebar-title {
+  font-size: 1.25rem;
   font-weight: 600;
-  padding: 0.5rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-:deep(.p-datepicker-calendar td) {
-  padding: 0.25rem;
-  position: relative;
+.sidebar-title i {
+  color: #4f46e5;
 }
 
-:deep(.p-datepicker-calendar td > span) {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 1;
-}
-
-:deep(.p-datepicker-calendar td > span.p-highlight) {
-  background-color: var(--primary-600, #4f46e5);
-  color: white;
-  font-weight: bold;
-}
-
-:deep(.p-datepicker-calendar td.p-datepicker-today > span) {
-  background-color: #f1f5f9;
-  color: #0f172a;
-  border-color: transparent;
-}
-
-:deep(.p-datepicker-calendar td.p-datepicker-today > span.p-highlight) {
-  background-color: var(--primary-600, #4f46e5);
-  color: white;
-}
-
-/* Custom scrollbar */
-.custom-scrollbar {
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9);
+  scrollbar-color: #4f46e5 #f1f5f9;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
+.events-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--surface-100, #f1f5f9);
+.events-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
   border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--primary-400, #818cf8);
+.events-list::-webkit-scrollbar-thumb {
+  background-color: #4f46e5;
   border-radius: 20px;
-  border: 2px solid var(--surface-100, #f1f5f9);
+  border: 2px solid #f1f5f9;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.event-card {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform: translateY(0);
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+.event-card:hover {
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
-/* CSS Variables for primary colors with RGB values for box-shadow */
-:root {
-  --primary-100-rgb: 224, 231, 255;
-  --primary-300-rgb: 165, 180, 252;
-  --primary-400-rgb: 129, 140, 248;
-  --primary-500-rgb: 99, 102, 241;
-  --primary-600-rgb: 79, 70, 229;
+.event-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
-/* Modern Modal Styling */
+.event-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-top: 0.375rem;
+  flex-shrink: 0;
+}
+
+.event-details {
+  flex: 1;
+}
+
+.event-name {
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+}
+
+.event-datetime,
+.event-location {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.event-datetime i,
+.event-location i {
+  font-size: 0.75rem;
+}
+
+.event-description {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.no-events {
+  color: #64748b;
+  text-align: center;
+  padding: 1rem;
+}
+
+.more-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: #4f46e5 #f1f5f9;
+}
+
+.more-events-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.more-events-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.more-events-list::-webkit-scrollbar-thumb {
+  background-color: #4f46e5;
+  border-radius: 20px;
+}
+
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -1111,7 +1274,7 @@ const updateEventDate = (value) => {
   width: 90%;
   max-width: 550px;
   max-height: 90vh;
-  border-radius: 16px;
+  border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   background-color: white;
@@ -1129,7 +1292,7 @@ const updateEventDate = (value) => {
 }
 
 .modal-header {
-  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8));
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
   color: white;
   padding: 1rem 1.5rem;
   display: flex;
@@ -1149,6 +1312,7 @@ const updateEventDate = (value) => {
   color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   background: transparent !important;
+  border-radius: 50% !important;
 }
 
 .close-button:hover {
@@ -1160,7 +1324,7 @@ const updateEventDate = (value) => {
   overflow-y: auto;
   flex: 1;
   scrollbar-width: thin;
-  scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9);
+  scrollbar-color: #4f46e5 #f1f5f9;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -1168,12 +1332,12 @@ const updateEventDate = (value) => {
 }
 
 .modal-body::-webkit-scrollbar-track {
-  background: var(--surface-100, #f1f5f9);
+  background: #f1f5f9;
   border-radius: 10px;
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-  background-color: var(--primary-400, #818cf8);
+  background-color: #4f46e5;
   border-radius: 20px;
 }
 
@@ -1215,8 +1379,8 @@ const updateEventDate = (value) => {
 }
 
 .form-control:focus {
-  border-color: var(--primary-400, #818cf8);
-  box-shadow: 0 0 0 3px rgba(var(--primary-400-rgb, 129, 140, 248), 0.2);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
 }
 
 .form-row {
@@ -1225,16 +1389,9 @@ const updateEventDate = (value) => {
   gap: 1rem;
 }
 
-.date-picker, .time-picker {
+.date-picker,
+.time-picker {
   width: 100%;
-}
-
-.event-type-indicator {
-  display: inline-block;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 9999px;
-  margin-right: 0.5rem;
 }
 
 .delete-button {
@@ -1258,19 +1415,29 @@ const updateEventDate = (value) => {
 }
 
 .save-button {
-  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8)) !important;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
   border: none !important;
   color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 2px 4px -2px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -2px rgba(79, 70, 229, 0.1) !important;
   transition: all 0.2s ease !important;
 }
 
 .save-button:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 4px 6px -4px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important;
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -4px rgba(79, 70, 229, 0.1) !important;
 }
 
-/* Modal transition animations */
+.confirmation-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.confirmation-content i {
+  color: #f59e0b;
+  font-size: 1.5rem;
+}
+
 .modal-fade-enter-active,
 .modal-fade-leave-active {
   transition: opacity 0.3s ease;
@@ -1311,10 +1478,39 @@ const updateEventDate = (value) => {
   }
 }
 
-/* Responsive adjustments */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
+  .calendar-wrapper {
+    padding: 1rem;
+  }
+  
+  .calendar-title {
+    font-size: 2rem;
+  }
+  
+  .calendar-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
   .calendar-day {
-    padding: 2px;
+    padding: 0.125rem;
   }
   
   .day-number {
@@ -1323,11 +1519,10 @@ const updateEventDate = (value) => {
   
   .day-event {
     font-size: 0.65rem;
-    padding: 1px 2px;
+    padding: 0.0625rem 0.125rem;
   }
 }
 
-/* Responsive adjustments for the modal */
 @media (max-width: 640px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -1347,30 +1542,9 @@ const updateEventDate = (value) => {
     width: 100%;
   }
   
-  .cancel-button, .save-button {
+  .cancel-button,
+  .save-button {
     flex: 1;
   }
 }
 </style>
-
-The key changes I made to clone the modal styles from barangayevents.vue:
-
-1. **Replaced PrimeVue Dialog** with custom modal using `Teleport` and `Transition`
-2. **Added modern modal styling** with:
-   - Backdrop blur effect
-   - Gradient header
-   - Scrollable body
-   - Modern form controls
-   - Enhanced button styling
-3. **Imported Teleport and Transition** from Vue
-4. **Added all the CSS classes** for the modern modal design
-5. **Maintained all existing functionality** while upgrading the visual design
-
-The modal now has the same modern, polished look as your barangayevents.vue file with:
-- Beautiful gradient header
-- Smooth animations
-- Better form styling
-- Responsive design
-- Custom scrollbars
-- Enhanced button interactions
-
