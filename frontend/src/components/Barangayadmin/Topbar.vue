@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full bg-purple-800 text-white px-10 py-8 flex justify-between items-center h-25">
+  <div class="fixed w-full bg-purple-800 text-white px-10 py-8 flex top-0 justify-between items-center h-25 z-50 shadow-lg">
     <div class="flex items-center gap-2">
       <!-- Menu button slot -->
       <slot name="menu-button"></slot>

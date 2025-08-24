@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between h-20 px-8 bg-purple-700 border-b border-purple-700 shadow-lg">
+  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-purple-700 border-b border-purple-700 shadow-lg">
     <div class="flex items-center">
       <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-purple-100 hover:bg-purple-500 transition md:hidden">
         <i class="pi pi-bars text-xl"></i>
@@ -574,13 +574,39 @@ watch(user, (newUser) => {
   overflow: hidden;
 }
 
+/* Z-index hierarchy:
+   - Sidebar (z-40) - highest priority, can overlap topbar
+   - Topbar (z-30) - medium priority, above regular content
+   - Regular content (z-1 to z-20) - lowest priority
+*/
+
 /* Ensure main content doesn't overlap with fixed topbar */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  padding-top: 5rem; /* 80px (h-20) */
+  padding-top: 5rem; /* Space for the fixed topbar */
 }
 
 /* Alternative: Add this class to your main content wrapper */
 .main-content {
-  margin-top: 5rem; /* 80px (h-20) */
+  margin-top: 5rem; /* Space for the fixed topbar */
+  min-height: calc(100vh - 5rem);
+  position: relative;
+  z-index: 1; /* Ensure it stays below topbar */
+}
+
+/* Ensure all content respects the topbar */
+.page-content {
+  padding-top: 1rem;
+  position: relative;
+  z-index: 1; /* Keep below topbar and sidebar */
+}
+
+/* Prevent other overlays from going above topbar (except sidebar) */
+.modal, .dropdown, .tooltip {
+  z-index: 25; /* Below topbar but above regular content */
 }
 </style>
