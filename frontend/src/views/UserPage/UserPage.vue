@@ -407,6 +407,7 @@ onMounted(async () => {
   margin: 0 auto;
   padding: 0;
   width: 100%;
+  top: 0;
 }
 
 /* Welcome Section */

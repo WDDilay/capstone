@@ -29,7 +29,7 @@ const toggleSidebar = () => {
 <style scoped>
 .dashboard-container {
   display: flex;
-  min-height: 100vh;
+  min-height: 150vh;
   background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
   position: relative;
 }
@@ -38,7 +38,7 @@ const toggleSidebar = () => {
   flex: 1;
   margin-left: 70px;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
   z-index: 1;
   display: flex;
@@ -52,11 +52,10 @@ const toggleSidebar = () => {
 .page-content {
   flex: 1;
   padding: 32px;
-  margin-top: 80px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -78,7 +77,7 @@ const toggleSidebar = () => {
   
   .page-content {
     padding: 20px 16px;
-    margin-top: 70px;
+    min-height: 100vh;
   }
   
   .content-wrapper {

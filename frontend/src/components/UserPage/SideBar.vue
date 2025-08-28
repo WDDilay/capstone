@@ -12,18 +12,7 @@
       <!-- Decorative gradient background -->
       <div class="sidebar-gradient"></div>
       
-      <!-- User profile summary - Only image, no text -->
-      <div class="sidebar-profile">
-        <div class="profile-image-wrapper">
-          <div class="profile-image">
-            <img 
-              :src="userStore.user?.photoURL || '/placeholder.svg?height=50&width=50'"
-              alt="Profile Image"
-            />
-            <div class="profile-status"></div>
-          </div>
-        </div>
-      </div>
+      
 
       <!-- Navigation menu -->
       <nav class="sidebar-nav">
@@ -248,15 +237,15 @@ onUnmounted(() => {
 .sidebar-container {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+  background: linear-gradient(180deg, #faf3ffff 0%, #fffeffff 100%);
   color: #2d3748;
-  height: 100vh;
+  height: 95vh;
   width: 280px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 10px 25px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(139, 92, 246, 0.05);
   position: fixed;
   left: 0;
-  top: 0;
+  top: 100;
   z-index: 0;
   border-right: 1px solid rgba(139, 92, 246, 0.1);
   backdrop-filter: blur(10px);
