@@ -155,6 +155,7 @@
         </div>
       </div>
 
+      <!-- Create/Edit Modal -->
       <Teleport to="body">
         <Transition name="modal-fade">
           <div v-if="eventDialog" class="modal-backdrop" @click="hideEventDialog">
@@ -190,10 +191,9 @@
                       <label for="eventDate">Date</label>
                       <DatePicker 
                         id="eventDate" 
-                        v-model="newEvent.date" 
+                        v-model="newEventDate" 
                         dateFormat="yy-mm-dd" 
                         showIcon 
-                        @date-select="updateEventDate"
                         class="date-picker"
                       />
                     </div>
@@ -202,7 +202,7 @@
                       <label for="eventTime">Time</label>
                       <DatePicker
                         id="eventTime" 
-                        v-model="newEvent.date" 
+                        v-model="newEventTime" 
                         timeOnly 
                         hourFormat="12"
                         showIcon
@@ -276,6 +276,7 @@
         </Transition>
       </Teleport>
 
+      <!-- Delete Dialog -->
       <Dialog 
         v-model:visible="deleteDialog" 
         header="Confirm Delete" 
@@ -292,6 +293,7 @@
         </template>
       </Dialog>
       
+      <!-- More events dialog -->
       <Dialog 
         v-model:visible="moreEventsDialog" 
         :header="moreEventsDate ? formatFullDate(moreEventsDate) : 'Events'" 
@@ -330,7 +332,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, parseISO, addDays, getMonth, getYear, isToday as dateFnsIsToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, isSameDay, isAfter, startOfDay, addMonths, subMonths, getDate, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addDays, date as dfnsDate, startOfWeek, endOfWeek } from 'date-fns';
 import { db } from '@/services/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { useUserStore } from "@/stores/user"; 
@@ -343,16 +345,21 @@ import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 import { Teleport, Transition } from 'vue';
 
+// ------------------ state ------------------
 const date = ref(new Date());
 const events = ref([]);
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
+
 const eventDialog = ref(false);
 const deleteDialog = ref(false);
 const editMode = ref(false);
+
+// main event object (without binding the datetime directly)
 const newEvent = ref({
   id: '',
   title: '',
+  // date is persisted in Firestore; we will compose this from newEventDate + newEventTime
   date: new Date(),
   type: 'Meeting',
   isHoliday: false,
@@ -362,6 +369,11 @@ const newEvent = ref({
   barangay: ''
 });
 
+// NEW: separate controls for date and time
+const newEventDate = ref(new Date()); // date-only (midnight base)
+const newEventTime = ref(new Date()); // time-only carrier (we'll read hours/minutes)
+
+// dialogs
 const moreEventsDialog = ref(false);
 const moreEventsDate = ref(null);
 const moreEventsList = ref([]);
@@ -376,15 +388,14 @@ const eventTypes = [
   { value: 'Reminder', label: 'Reminder' }
 ];
 
+// ------------------ calendar computed ------------------
 const calendarDays = computed(() => {
   const currentMonth = date.value;
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
-  
   const days = eachDayOfInterval({ start: startDate, end: endDate });
-  
   return days.map(day => ({
     date: day,
     dayNumber: getDate(day),
@@ -393,7 +404,7 @@ const calendarDays = computed(() => {
 });
 
 const isToday = (dateToCheck) => {
-  return dateFnsIsToday(dateToCheck);
+  return isSameDay(startOfDay(dateToCheck), startOfDay(new Date()));
 };
 
 const selectDate = (selectedDate) => {
@@ -426,40 +437,31 @@ const getDayEventClasses = (event) => {
   ];
 };
 
+// ------------------ firestore ------------------
 const fetchEvents = async () => {
   try {
-    console.log("Fetching events...");
-    console.log("Current user:", user.value);
-    
     const eventsCollection = collection(db, "announcements");
-    let q = query(eventsCollection, orderBy("date", "asc"));
-    
-    console.log("Executing query...");
+    const q = query(eventsCollection, orderBy("date", "asc"));
     const querySnapshot = await getDocs(q);
-    
-    console.log("Query results:", querySnapshot.size, "documents found");
-    
     const fetchedEvents = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      console.log("Document data:", data);
-      
+    querySnapshot.forEach((d) => {
+      const data = d.data();
       let eventDate;
       if (data.date instanceof Timestamp) {
         eventDate = data.date.toDate();
       } else if (data.date && typeof data.date === 'string') {
         eventDate = new Date(data.date);
+      } else if (data.date instanceof Date) {
+        eventDate = data.date;
       } else {
         eventDate = new Date();
       }
-      
       let eventType = data.type || 'Meeting';
       if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
         eventType = 'Meeting';
       }
-      
       fetchedEvents.push({
-        id: doc.id,
+        id: d.id,
         title: data.title || 'Untitled Event',
         date: eventDate,
         type: eventType,
@@ -470,13 +472,8 @@ const fetchEvents = async () => {
         barangay: data.barangay || ''
       });
     });
-    
-    console.log("Processed events:", fetchedEvents);
     events.value = fetchedEvents;
-    
-    nextTick(() => {
-      updateCalendarEventIndicators();
-    });
+    nextTick(() => updateCalendarEventIndicators());
   } catch (error) {
     console.error("Error fetching events:", error);
   }
@@ -486,33 +483,28 @@ const setupRealtimeUpdates = () => {
   try {
     const eventsCollection = collection(db, "announcements");
     const q = query(eventsCollection, orderBy("date", "asc"));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      console.log("Real-time update received");
-      
       const updatedEvents = [];
       const today = startOfDay(new Date());
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        
+      snapshot.forEach((d) => {
+        const data = d.data();
         let eventDate;
         if (data.date instanceof Timestamp) {
           eventDate = data.date.toDate();
         } else if (data.date && typeof data.date === 'string') {
           eventDate = new Date(data.date);
+        } else if (data.date instanceof Date) {
+          eventDate = data.date;
         } else {
           eventDate = new Date();
         }
-        
         if (isAfter(eventDate, today) || isSameDay(eventDate, today)) {
           let eventType = data.type || 'Meeting';
           if (!['Meeting', 'Workshop', 'Holiday', 'Reminder'].includes(eventType)) {
             eventType = 'Meeting';
           }
-          
           updatedEvents.push({
-            id: doc.id,
+            id: d.id,
             title: data.title || 'Untitled Event',
             date: eventDate,
             type: eventType,
@@ -524,16 +516,11 @@ const setupRealtimeUpdates = () => {
           });
         }
       });
-      
       events.value = updatedEvents;
-      
-      nextTick(() => {
-        updateCalendarEventIndicators();
-      });
+      nextTick(() => updateCalendarEventIndicators());
     }, (error) => {
       console.error("Error in real-time updates:", error);
     });
-    
     return unsubscribe;
   } catch (error) {
     console.error("Error setting up real-time updates:", error);
@@ -542,18 +529,15 @@ const setupRealtimeUpdates = () => {
 };
 
 onMounted(() => {
-  console.log("Component mounted");
   fetchEvents();
   const unsubscribe = setupRealtimeUpdates();
-  
-  return () => {
-    unsubscribe();
-  };
+  return () => unsubscribe();
 });
 
 watch(date, updateSelectedDateEvents);
 watch(events, updateSelectedDateEvents, { deep: true });
 
+// ------------------ computed helpers ------------------
 const upcomingEvents = computed(() => {
   const today = startOfDay(new Date());
   const futureEvents = events.value
@@ -562,7 +546,6 @@ const upcomingEvents = computed(() => {
       return isAfter(eventDate, today) || isSameDay(eventDate, today);
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
   return futureEvents.slice(5);
 });
 
@@ -574,37 +557,7 @@ const activeCalendarEvents = computed(() => {
       return isAfter(eventDate, today) || isSameDay(eventDate, today);
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
   return futureEvents.slice(0, 5);
-});
-
-const calendarEventsByDay = computed(() => {
-  const currentMonth = date.value;
-  const firstDay = startOfMonth(currentMonth);
-  const lastDay = endOfMonth(currentMonth);
-  const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
-  
-  const eventsByDay = Array(daysInMonth.length).fill().map(() => []);
-  
-  events.value.forEach(event => {
-    const eventDate = new Date(event.date);
-    if (isSameMonth(eventDate, currentMonth)) {
-      const dayOfMonth = getDate(eventDate) - 1;
-      if (eventsByDay[dayOfMonth]) {
-        eventsByDay[dayOfMonth].push(event);
-      }
-    }
-  });
-  
-  return eventsByDay;
-});
-
-const calendarEventsCount = computed(() => {
-  return activeCalendarEvents.value.length;
-});
-
-const queuedEventsCount = computed(() => {
-  return upcomingEvents.value.length;
 });
 
 function updateSelectedDateEvents() {
@@ -613,37 +566,34 @@ function updateSelectedDateEvents() {
   );
 }
 
-function handleDateSelect(value) {
-  date.value = value;
-}
-
+// ------------------ nav ------------------
 function setToday() {
   date.value = new Date();
 }
 
 function nextMonth() {
   date.value = addMonths(date.value, 1);
-  nextTick(() => {
-    updateCalendarEventIndicators();
-  });
+  nextTick(() => updateCalendarEventIndicators());
 }
 
 function previousMonth() {
   date.value = subMonths(date.value, 1);
-  nextTick(() => {
-    updateCalendarEventIndicators();
-  });
+  nextTick(() => updateCalendarEventIndicators());
 }
 
 function updateCalendarEventIndicators() {
-  console.log("Calendar events updated");
+  // hook to refresh badges if needed
 }
 
+// ------------------ dialog open/close ------------------
 const openNewEventDialog = () => {
+  // default to the selected day + current time
+  const base = new Date(date.value);
+  const now = new Date();
   newEvent.value = { 
     id: '',
     title: '', 
-    date: date.value, 
+    date: new Date(base),
     type: 'Meeting', 
     isHoliday: false,
     description: '',
@@ -651,12 +601,22 @@ const openNewEventDialog = () => {
     createdBy: user.value?.role || '',
     barangay: user.value?.barangay || ''
   };
+  // set separate pickers
+  newEventDate.value = startOfDay(base);
+  newEventTime.value = now; // carries current HH:mm
   editMode.value = false;
   eventDialog.value = true;
 };
 
 const openEditEventDialog = (event) => {
   newEvent.value = { ...event };
+  // split the stored event datetime into date & time pickers
+  const dt = new Date(event.date);
+  const dateOnly = startOfDay(dt);
+  const timeCarrier = new Date(); // any date; we only care about HH:mm
+  timeCarrier.setHours(dt.getHours(), dt.getMinutes(), dt.getSeconds(), dt.getMilliseconds());
+  newEventDate.value = dateOnly;
+  newEventTime.value = timeCarrier;
   editMode.value = true;
   eventDialog.value = true;
 };
@@ -669,6 +629,7 @@ const confirmDeleteEvent = () => {
   deleteDialog.value = true;
 };
 
+// ------------------ CRUD ------------------
 const deleteEvent = async () => {
   try {
     await deleteDoc(doc(db, 'announcements', newEvent.value.id));
@@ -679,33 +640,41 @@ const deleteEvent = async () => {
   }
 };
 
+// helper to compose final Date from date & time pickers
+function composeDateTime(dateOnly, timeOnly) {
+  const d = new Date(dateOnly);
+  const t = new Date(timeOnly);
+  d.setHours(t.getHours(), t.getMinutes(), t.getSeconds(), t.getMilliseconds());
+  return d;
+}
+
 const saveEvent = async () => {
   if (!newEvent.value.title.trim()) {
     alert("Please enter an event title");
     return;
   }
-  
   if (!newEvent.value.type) {
     newEvent.value.type = 'Meeting';
   }
+  // combine date & time safely
+  const combined = composeDateTime(newEventDate.value, newEventTime.value);
 
   try {
     if (editMode.value) {
       const eventRef = doc(db, 'announcements', newEvent.value.id);
       await updateDoc(eventRef, {
         title: newEvent.value.title,
-        date: newEvent.value.date,
+        date: combined,
         type: newEvent.value.type,
         isHoliday: newEvent.value.type === 'Holiday',
         description: newEvent.value.description,
         location: newEvent.value.location
       });
-      console.log("Event updated successfully");
     } else {
       const eventsCollection = collection(db, 'announcements');
-      const docRef = await addDoc(eventsCollection, {
+      await addDoc(eventsCollection, {
         title: newEvent.value.title,
-        date: newEvent.value.date,
+        date: combined,
         type: newEvent.value.type,
         isHoliday: newEvent.value.type === 'Holiday',
         description: newEvent.value.description,
@@ -714,7 +683,6 @@ const saveEvent = async () => {
         barangay: user.value?.barangay || '',
         createdAt: new Date()
       });
-      console.log("Event added successfully with ID:", docRef.id);
     }
     eventDialog.value = false;
   } catch (error) {
@@ -723,49 +691,22 @@ const saveEvent = async () => {
   }
 };
 
-const formatDate = (date) => {
-  try {
-    return format(new Date(date), 'MMM dd, yyyy');
-  } catch (e) {
-    console.error("Date formatting error:", e);
-    return "Invalid date";
-  }
+// ------------------ formatters ------------------
+const formatDateTime = (d) => {
+  try { return format(new Date(d), 'MMM dd, yyyy h:mm a'); }
+  catch { return "Invalid date/time"; }
 };
-
-const formatTime = (date) => {
-  try {
-    return format(new Date(date), 'h:mm a');
-  } catch (e) {
-    console.error("Time formatting error:", e);
-    return "Invalid time";
-  }
+const formatTime = (d) => {
+  try { return format(new Date(d), 'h:mm a'); }
+  catch { return "Invalid time"; }
 };
-
-const formatDateTime = (date) => {
-  try {
-    return format(new Date(date), 'MMM dd, yyyy h:mm a');
-  } catch (e) {
-    console.error("DateTime formatting error:", e);
-    return "Invalid date/time";
-  }
+const formatFullDate = (d) => {
+  try { return format(new Date(d), 'MMMM d, yyyy'); }
+  catch { return "Invalid date"; }
 };
-
-const formatFullDate = (date) => {
-  try {
-    return format(new Date(date), 'MMMM d, yyyy');
-  } catch (e) {
-    console.error("Full date formatting error:", e);
-    return "Invalid date";
-  }
-};
-
-const formatMonthYear = (date) => {
-  try {
-    return format(new Date(date), 'MMMM yyyy');
-  } catch (e) {
-    console.error("Month/year formatting error:", e);
-    return "Invalid date";
-  }
+const formatMonthYear = (d) => {
+  try { return format(new Date(d), 'MMMM yyyy'); }
+  catch { return "Invalid date"; }
 };
 
 const getEventTypeColor = (type) => {
@@ -776,26 +717,6 @@ const getEventTypeColor = (type) => {
     case 'Reminder': return 'bg-amber-500';
     default: return 'bg-gray-500';
   }
-};
-
-const getEventTypeLabel = (value) => {
-  const type = eventTypes.find(t => t.value === value);
-  return type ? type.label : '';
-};
-
-const updateEventDate = (value) => {
-  const currentTime = newEvent.value.date;
-  const newDate = new Date(value);
-  
-  if (currentTime) {
-    newDate.setHours(
-      currentTime.getHours(),
-      currentTime.getMinutes(),
-      currentTime.getSeconds()
-    );
-  }
-  
-  newEvent.value.date = newDate;
 };
 </script>
 

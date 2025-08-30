@@ -299,7 +299,7 @@
         
         <div id="print-content" class="print-section">
           <h1 class="text-2xl font-bold text-center mb-2">Pre-Registration Data</h1>
-          <p class="text-center text-gray-600 mb-6">Generated on {{ new Date().toLocaleDateString() }}</p>
+          <p class="text-center text-gray-600 mb-6">Generated on {{ new Date().toLocaleDateString() }} | Total Records: {{ filteredUsers.length }}</p>
           
           <table class="min-w-full border border-gray-200">
             <thead>
@@ -344,11 +344,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { db } from '@/services/firebase';
 import { 
   collection, 
-  getDocs, 
   Timestamp, 
   onSnapshot, 
   deleteDoc,
@@ -396,17 +395,10 @@ const sortDirection = ref('asc');
 // Format full name as "firstName middleName lastName nameExt"
 const formatFullName = (user) => {
   if (!user) return '';
-  
   let fullName = user.firstName || '';
-  if (user.middleName) {
-    fullName += ` ${user.middleName}`;
-  }
-  if (user.lastName) {
-    fullName += ` ${user.lastName}`;
-  }
-  if (user.nameExt && user.nameExt.trim() !== '') {
-    fullName += ` ${user.nameExt}`;
-  }
+  if (user.middleName) fullName += ` ${user.middleName}`;
+  if (user.lastName)  fullName += ` ${user.lastName}`;
+  if (user.nameExt && user.nameExt.trim() !== '') fullName += ` ${user.nameExt}`;
   return fullName.trim();
 };
 
@@ -418,12 +410,10 @@ const getRegistrationNumber = (index) => {
 // Format date
 const formatDate = (timestamp) => {
   if (!timestamp) return 'N/A';
-  
   try {
     const date = timestamp instanceof Timestamp 
       ? timestamp.toDate() 
       : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
-    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
@@ -431,8 +421,7 @@ const formatDate = (timestamp) => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error);
+  } catch {
     return 'Invalid Date';
   }
 };
@@ -440,28 +429,20 @@ const formatDate = (timestamp) => {
 // Show notification
 const showNotification = (message) => {
   notification.value = message;
-  setTimeout(() => {
-    notification.value = null;
-  }, 5000);
+  setTimeout(() => { notification.value = null; }, 5000);
 };
 
 // Fetch pre-registration data from Firestore
 const fetchUsers = async () => {
   try {
-    // Query preregistration collection ordered by timestamp
-    const preregistrationQuery = query(
-      collection(db, 'preregistration'),
-      orderBy('timestamp', 'asc')
-    );
-    
+    const preregistrationQuery = query(collection(db, 'preregistration'), orderBy('timestamp', 'asc'));
     const unsubscribe = onSnapshot(preregistrationQuery, (snapshot) => {
       users.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     });
-    
     return unsubscribe;
-  } catch (error) {
-    console.error('Error fetching pre-registration data:', error);
-    error.value = 'Error fetching pre-registration data: ' + error.message;
+  } catch (err) {
+    console.error('Error fetching pre-registration data:', err);
+    error.value = 'Error fetching pre-registration data: ' + err.message;
     return null;
   }
 };
@@ -474,17 +455,14 @@ const toggleSort = (field) => {
     sortField.value = field;
     sortDirection.value = 'asc';
   }
-  
   sortUsers();
 };
 
 const sortUsers = () => {
   const field = sortField.value;
   const direction = sortDirection.value;
-  
   users.value.sort((a, b) => {
     let valueA, valueB;
-    
     if (field === 'name') {
       valueA = formatFullName(a).toLowerCase();
       valueB = formatFullName(b).toLowerCase();
@@ -495,37 +473,25 @@ const sortUsers = () => {
       valueA = (a[field]?.toLowerCase?.() || '');
       valueB = (b[field]?.toLowerCase?.() || '');
     }
-    
-    if (direction === 'asc') {
-      return valueA > valueB ? 1 : -1;
-    } else {
-      return valueA < valueB ? 1 : -1;
-    }
+    return direction === 'asc' ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
   });
 };
 
 // Filtered users based on search
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value;
-  
-  const query = searchQuery.value.toLowerCase();
+  const q = searchQuery.value.toLowerCase();
   return users.value.filter(user => {
     const fullName = formatFullName(user).toLowerCase();
     const email = user.email?.toLowerCase() || '';
-    const contact = user.contactNumber || '';
+       const contact = user.contactNumber || '';
     const barangay = user.barangay?.toLowerCase() || '';
-    
-    return fullName.includes(query) || 
-           email.includes(query) || 
-           contact.includes(query) ||
-           barangay.includes(query);
+    return fullName.includes(q) || email.includes(q) || contact.includes(q) || barangay.includes(q);
   });
 });
 
 // Preview users (limited to 5 for the export preview)
-const previewUsers = computed(() => {
-  return filteredUsers.value.slice(0, 5);
-});
+const previewUsers = computed(() => filteredUsers.value.slice(0, 5));
 
 // Paginated users
 const paginatedUsers = computed(() => {
@@ -535,56 +501,33 @@ const paginatedUsers = computed(() => {
 });
 
 // Calculate total pages
-const totalPages = computed(() => {
-  return Math.ceil(filteredUsers.value.length / itemsPerPage) || 1;
-});
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage) || 1);
 
 // Pagination methods
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
 // View user details
-const viewUser = (user) => {
-  selectedUser.value = user;
-  showViewModal.value = true;
-};
+const viewUser = (user) => { selectedUser.value = user; showViewModal.value = true; };
 
 // Send email to user
 const sendEmail = (user) => {
-  if (!user.email) {
-    alert('This user does not have an email address.');
-    return;
-  }
-  
+  if (!user.email) return alert('This user does not have an email address.');
   window.location.href = `mailto:${user.email}?subject=Pre-Registration - Important Information`;
 };
 
 // Confirm delete user
-const confirmDelete = (user) => {
-  userToDelete.value = user;
-  showDeleteModal.value = true;
-};
+const confirmDelete = (user) => { userToDelete.value = user; showDeleteModal.value = true; };
 
 // Delete user
 const deleteUser = async () => {
   if (!userToDelete.value) return;
-  
   isProcessing.value = true;
-  
   try {
     const user = userToDelete.value;
-    
-    // Delete from preregistration collection
-    const userRef = doc(db, 'preregistration', user.id);
-    await deleteDoc(userRef);
-    
-    // Remove from local array to update UI immediately
+    await deleteDoc(doc(db, 'preregistration', user.id));
     users.value = users.value.filter(u => u.id !== user.id);
-    
-    // Show success notification
     showNotification(`${formatFullName(user)} has been deleted successfully`);
-    
-    // Close modal
     showDeleteModal.value = false;
     userToDelete.value = null;
   } catch (err) {
@@ -609,95 +552,93 @@ const confirmExport = () => {
     'Role': user.role || 'N/A',
     'Registration Date': user.timestamp ? formatDate(user.timestamp) : 'N/A'
   }));
-
   const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Pre-Registrations');
-
   XLSX.writeFile(wb, `pre-registrations-${new Date().toISOString().split('T')[0]}.xlsx`);
-  
   showExportPreview.value = false;
 };
 
-// Print functionality
-const confirmPrint = () => {
-  showPrintPreview.value = false;
-  
-  setTimeout(() => {
-    const tableRows = filteredUsers.value.map((user, index) => 
-      `<tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${formatFullName(user)}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.barangay || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.contactNumber || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.email || 'N/A'}</td>
-      </tr>`
-    ).join('');
+// Print functionality (DIRECT, no popup; prevents duplicates)
+const confirmPrint = async () => {
+  // Close the modal AFTER printing so #print-content stays in the DOM
+  const closeAfterPrint = () => {
+    showPrintPreview.value = false;
+    window.removeEventListener('afterprint', closeAfterPrint);
+  };
+  window.addEventListener('afterprint', closeAfterPrint);
 
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Pre-Registration Data</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            @media print {
-              body { margin: 0; padding: 20px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1 style="text-align: center; margin-bottom: 20px;">Pre-Registration Data</h1>
-          <p style="text-align: center; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #ddd; padding: 8px;">No.</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Full Name</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Barangay</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Contact</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              }
-            }
-          <\/script>
-        </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  }, 300);
+  // Make sure DOM is settled before printing
+  await nextTick();
+  window.print();
 };
 
 // Lifecycle hooks
 onMounted(() => {
   const unsubscribe = fetchUsers();
-  
-  return () => {
-    if (unsubscribe) unsubscribe();
-  };
+  return () => { if (unsubscribe) unsubscribe(); };
 });
 </script>
 
 <style>
 @media print {
-  .print-section {
-    margin: 0;
-    padding: 20px;
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only the print content */
+  #print-content, #print-content * {
+    visibility: visible !important;
+  }
+
+  /* Ensure overlays/backdrops don't eat space */
+  .fixed, .absolute, .modal, .backdrop, [role="dialog"] {
+    visibility: hidden !important;
+  }
+  #print-content {
+    visibility: visible !important;
+  }
+  
+  /* Position the print content at the top of the page */
+  #print-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: #fff !important;
+  }
+  
+  /* Ensure table prints properly */
+  #print-content table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+  
+  #print-content tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  #print-content th,
+  #print-content td {
+    border: 1px solid #000;
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  #print-content th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+  }
+  
+  /* Print page setup */
+  @page {
+    margin: 0.5in;
+    size: A4;
   }
 }
 </style>

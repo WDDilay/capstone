@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { db } from '@/services/firebase';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
@@ -62,14 +62,8 @@ const isImageFile = (filename) => {
 // Helper function to get attachment URL
 const getAttachmentUrl = (attachmentRef) => {
   if (!attachmentRef) return '';
-  
-  // If it's already a full URL, return as is
-  if (attachmentRef.startsWith('http')) {
-    return attachmentRef;
-  }
-  
-  // If it's a Firebase Storage reference, construct the URL
-  // Replace 'your-project-id' with your actual Firebase project ID
+  if (attachmentRef.startsWith('http')) return attachmentRef;
+  // Replace 'your-project-id' with your Firebase project ID if you actually construct URLs here
   return `https://firebasestorage.googleapis.com/v0/b/your-project-id.appspot.com/o/${encodeURIComponent(attachmentRef)}?alt=media`;
 };
 
@@ -86,15 +80,14 @@ const fetchUsers = async () => {
     users.value = querySnapshot.docs.map(doc => ({ 
       id: doc.id, 
       ...doc.data(),
-      name: formatFullName(doc.data()) // Add formatted name for easier access
+      name: formatFullName(doc.data())
     }));
-    sortUsers(); // Sort initially
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    error.value = 'Error fetching users: ' + error.message;
+    sortUsers();
+  } catch (e) {
+    console.error('Error fetching users:', e);
+    error.value = 'Error fetching users: ' + e.message;
   }
 };
-
 onMounted(fetchUsers);
 
 // Sorting functions
@@ -107,15 +100,11 @@ const handleSort = () => {
 
 const toggleSort = (field) => {
   if (sortField.value === field) {
-    // Toggle direction if same field
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
-    // New field, default to ascending
     sortField.value = field;
     sortDirection.value = 'asc';
   }
-  
-  // Update the select dropdown to match
   sortOption.value = `${sortField.value}-${sortDirection.value}`;
   sortUsers();
 };
@@ -123,10 +112,8 @@ const toggleSort = (field) => {
 const sortUsers = () => {
   const field = sortField.value;
   const direction = sortDirection.value;
-  
   users.value.sort((a, b) => {
     let valueA, valueB;
-    
     if (field === 'name') {
       valueA = formatFullName(a).toLowerCase();
       valueB = formatFullName(b).toLowerCase();
@@ -137,37 +124,28 @@ const sortUsers = () => {
       valueA = a[field]?.toLowerCase?.() || '';
       valueB = b[field]?.toLowerCase?.() || '';
     }
-    
-    // Handle numeric sorting for Solo Parent ID if needed
     if (field === 'soloParentId' && !isNaN(valueA) && !isNaN(valueB)) {
       valueA = Number(valueA);
       valueB = Number(valueB);
     }
-    
-    if (direction === 'asc') {
-      return valueA > valueB ? 1 : -1;
-    } else {
-      return valueA < valueB ? 1 : -1;
-    }
+    return direction === 'asc' ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
   });
 };
 
 // Filtered users based on search
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value;
-  const query = searchQuery.value.toLowerCase();
+  const q = searchQuery.value.toLowerCase();
   return users.value.filter(user => 
-    (formatFullName(user).toLowerCase().includes(query)) ||
-    (user.email?.toLowerCase().includes(query)) ||
-    (user.soloParentId?.toLowerCase().includes(query)) ||
-    (user.barangay?.toLowerCase().includes(query))
+    (formatFullName(user).toLowerCase().includes(q)) ||
+    (user.email?.toLowerCase().includes(q)) ||
+    (user.soloParentId?.toLowerCase().includes(q)) ||
+    (user.barangay?.toLowerCase().includes(q))
   );
 });
 
-// Preview users (limited to 5 for the export preview)
-const previewUsers = computed(() => {
-  return filteredUsers.value.slice(0, 5);
-});
+// Preview users for export
+const previewUsers = computed(() => filteredUsers.value.slice(0, 5));
 
 // Paginated users
 const paginatedUsers = computed(() => {
@@ -176,22 +154,15 @@ const paginatedUsers = computed(() => {
   return filteredUsers.value.slice(start, end);
 });
 
-// Calculate total pages
-const totalPages = computed(() => {
-  return Math.ceil(filteredUsers.value.length / itemsPerPage) || 1;
-});
-
-// Pagination methods
+// Pagination
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage) || 1);
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
-// View user details
-const viewUser = (user) => {
-  selectedUser.value = user;
-  showViewModal.value = true;
-};
+// View user
+const viewUser = (user) => { selectedUser.value = user; showViewModal.value = true; };
 
-// Edit Modal functions
+// Edit Modal
 const openEditModal = (user) => {
   editForm.value = { 
     id: user.id,
@@ -203,10 +174,7 @@ const openEditModal = (user) => {
     barangay: user.barangay || ''
   };
   showEditModal.value = true;
-  // Close view modal if it's open
-  if (showViewModal.value) {
-    showViewModal.value = false;
-  }
+  if (showViewModal.value) showViewModal.value = false;
 };
 
 const closeEditModal = () => {
@@ -219,9 +187,7 @@ const updateUser = async () => {
     alert('Please fill in all required fields');
     return;
   }
-  
   isUpdating.value = true;
-  
   try {
     const userRef = doc(db, 'users', editForm.value.id);
     await updateDoc(userRef, {
@@ -232,8 +198,6 @@ const updateUser = async () => {
       email: editForm.value.email,
       barangay: editForm.value.barangay
     });
-    
-    // Update local data
     const index = users.value.findIndex(u => u.id === editForm.value.id);
     if (index !== -1) {
       users.value[index] = { 
@@ -242,10 +206,9 @@ const updateUser = async () => {
         name: formatFullName(editForm.value)
       };
     }
-    
     closeEditModal();
-  } catch (error) {
-    console.error('Error updating user:', error);
+  } catch (e) {
+    console.error('Error updating user:', e);
     alert('Failed to update user. Please try again.');
   } finally {
     isUpdating.value = false;
@@ -258,98 +221,40 @@ const deleteUser = async (id) => {
     try {
       await deleteDoc(doc(db, 'users', id));
       users.value = users.value.filter(u => u.id !== id);
-    } catch (error) {
-      console.error('Error deleting user:', error);
+    } catch (e) {
+      console.error('Error deleting user:', e);
       alert('Failed to delete user. Please try again.');
     }
   }
 };
 
-// Export to Excel functionality with confirmation
+// Export to Excel
 const confirmExport = () => {
-  // Prepare data for export
   const exportData = filteredUsers.value.map(user => ({
     'Solo Parent ID': user.soloParentId || 'N/A',
     'Full Name': formatFullName(user) || 'N/A',
     'Email': user.email || 'N/A',
     'Barangay': user.barangay || 'N/A'
   }));
-
-  // Create worksheet
   const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Solo Parents');
-
-  // Save file
   XLSX.writeFile(wb, 'solo-parents-directory.xlsx');
-  
-  // Close the preview modal
   showExportPreview.value = false;
 };
 
-// Print functionality with preview
-const confirmPrint = () => {
-  // Close the preview modal first
-  showPrintPreview.value = false;
-  
-  // Wait for modal to close before printing
-  setTimeout(() => {
-    // Create table rows HTML
-    const tableRows = filteredUsers.value.map(user => 
-      `<tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.soloParentId || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${formatFullName(user) || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.email || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.barangay || 'N/A'}</td>
-      </tr>`
-    ).join('');
+// ------- PRINT (DIRECT, no popup; prevent duplicate first page) -------
+const confirmPrint = async () => {
+  // Close the preview AFTER printing so #print-content remains in DOM while printing
+  const closeAfterPrint = () => {
+    showPrintPreview.value = false;
+    window.removeEventListener('afterprint', closeAfterPrint);
+  };
+  window.addEventListener('afterprint', closeAfterPrint);
 
-    // Create HTML content
-    const htmlContent = 
-      `<html>
-        <head>
-          <title>Solo Parents Directory</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            @media print {
-              body { margin: 0; padding: 20px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1 style="text-align: center; margin-bottom: 20px;">Solo Parents Directory</h1>
-          <p style="text-align: center; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #ddd; padding: 8px;">Solo Parent ID</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Full Name</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Email</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Barangay</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              }
-            }
-        </body>
-      </html>`;
-
-    // Open new window and write content
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  }, 300);
+  // Ensure DOM is settled before printing
+  await nextTick();
+  window.print();
 };
 </script>
 
@@ -461,7 +366,6 @@ const confirmPrint = () => {
           </div>
         </div>
         
-        <!-- Empty State -->
         <div v-if="paginatedUsers.length === 0" class="py-8 text-center text-gray-500">
           No solo parents found
         </div>
@@ -487,7 +391,6 @@ const confirmPrint = () => {
           </div>
         </div>
         
-        <!-- Empty State -->
         <div v-if="paginatedUsers.length === 0" class="py-4 text-center text-gray-500">
           No solo parents found
         </div>
@@ -496,19 +399,11 @@ const confirmPrint = () => {
 
     <!-- Pagination -->
     <div v-if="paginatedUsers.length > 0" class="flex items-center justify-between px-6 py-4 border-t">
-      <button
-        @click="prevPage"
-        :disabled="currentPage === 1"
-        class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-      >
+      <button @click="prevPage" :disabled="currentPage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50">
         <ChevronLeft class="w-5 h-5" />
       </button>
       <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button
-        @click="nextPage"
-        :disabled="currentPage === totalPages"
-        class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-      >
+      <button @click="nextPage" :disabled="currentPage === totalPages" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50">
         <ChevronRight class="w-5 h-5" />
       </button>
     </div>
@@ -558,7 +453,6 @@ const confirmPrint = () => {
                 <p class="font-medium mb-2">Solo Parent ID Attachment:</p>
                 <div class="border border-gray-200 rounded-lg p-3 bg-white">
                   <p class="text-sm text-gray-600 mb-2">File Reference: {{ selectedUser.soloParentIdAttachment }}</p>
-                  <!-- If the attachment is an image, display it -->
                   <div v-if="isImageFile(selectedUser.soloParentIdAttachment)" class="mb-2">
                     <img 
                       :src="getAttachmentUrl(selectedUser.soloParentIdAttachment)" 
@@ -567,7 +461,6 @@ const confirmPrint = () => {
                       @error="handleImageError"
                     />
                   </div>
-                  <!-- Download/View link -->
                   <a 
                     :href="getAttachmentUrl(selectedUser.soloParentIdAttachment)" 
                     target="_blank" 
@@ -808,10 +701,58 @@ const confirmPrint = () => {
 </template>
 
 <style>
+/* Print only the #print-content, hide everything else (prevents duplicate first page) */
 @media print {
-  .print-section {
-    margin: 0;
-    padding: 20px;
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Hide common overlay/modal containers too */
+  .fixed, .absolute, .modal, .backdrop, [role="dialog"] {
+    visibility: hidden !important;
+  }
+
+  #print-content, #print-content * {
+    visibility: visible !important;
+  }
+
+  #print-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: #fff !important;
+  }
+
+  #print-content table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  #print-content tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  #print-content th,
+  #print-content td {
+    border: 1px solid #000;
+    padding: 8px;
+    font-size: 12px;
+    text-align: left;
+  }
+
+  #print-content thead th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+  }
+
+  @page {
+    size: A4;
+    margin: 0.5in;
   }
 }
 </style>
