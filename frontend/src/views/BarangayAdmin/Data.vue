@@ -374,8 +374,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { db, auth } from '@/services/firebase'; // Ensure Firebase is configured correctly
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { db, auth } from '@/services/firebase';
 import { 
   collection, 
   getDocs, 
@@ -414,7 +414,7 @@ const selectedUser = ref(null);
 const error = ref(null);
 const currentBarangay = ref('');
 const isProcessing = ref(false);
-const notification = ref(null); // New notification state
+const notification = ref(null);
 
 // Preview modals state
 const showExportPreview = ref(false);
@@ -431,7 +431,6 @@ const sortDirection = ref('asc');
 // Format full name as "lastName, firstName middleName nameExt"
 const formatFullName = (user) => {
   if (!user) return '';
-  
   let fullName = `${user.lastName || ''}, ${user.firstName || ''}`;
   if (user.middleName) {
     fullName += ` ${user.middleName}`;
@@ -445,13 +444,10 @@ const formatFullName = (user) => {
 // Format date
 const formatDate = (timestamp) => {
   if (!timestamp) return 'N/A';
-  
   try {
-    // Handle Firestore Timestamp
     const date = timestamp instanceof Timestamp 
       ? timestamp.toDate() 
       : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
-    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
@@ -459,244 +455,148 @@ const formatDate = (timestamp) => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error);
+  } catch (e) {
     return 'Invalid Date';
   }
 };
 
-// Show notification
+// Notification helper
 const showNotification = (message) => {
   notification.value = message;
-  
-  // Auto-hide after 5 seconds
-  setTimeout(() => {
-    notification.value = null;
-  }, 5000);
+  setTimeout(() => { notification.value = null; }, 5000);
 };
 
-// Check for restored member notification
-const checkForRestoredMemberNotification = () => {
-  const restoredMemberData = localStorage.getItem('restoredMember');
-  
-  if (restoredMemberData) {
-    try {
-      const restored = JSON.parse(restoredMemberData);
-      
-      // Check if notification is less than 10 minutes old
-      const now = new Date().getTime();
-      const tenMinutesInMs = 10 * 60 * 1000;
-      
-      if (now - restored.timestamp < tenMinutesInMs) {
-        // Show notification
-        showNotification(`Member ${restored.name} has been restored successfully`);
-        
-        // Remove from localStorage after showing
-        localStorage.removeItem('restoredMember');
-      } else {
-        // Clear old notification
-        localStorage.removeItem('restoredMember');
-      }
-    } catch (e) {
-      console.error('Error parsing restored member data:', e);
-      localStorage.removeItem('restoredMember');
-    }
-  }
-};
-
-// Fetch users from Firestore
+// Fetch users for current barangay (active members only)
 const fetchUsers = async () => {
   try {
-    // First, verify that the current user is in the barangay_presidents collection
     const user = auth.currentUser;
     if (!user) {
       throw new Error('No authenticated user found');
     }
-    
-    // Check if user is in barangay_presidents collection
-    const barangayPresidentDocRef = doc(db, 'barangay_presidents', user.uid);
-    const barangayPresidentDoc = await getDoc(barangayPresidentDocRef);
-    
-    if (!barangayPresidentDoc.exists()) {
-      console.error('User not found in barangay_presidents collection');
-      error.value = 'Your user account is not properly set up as a Barangay President. Please contact the system administrator.';
+    const presRef = doc(db, 'barangay_presidents', user.uid);
+    const presDoc = await getDoc(presRef);
+    if (!presDoc.exists()) {
+      error.value = 'Your account is not set up as a Barangay President. Please contact the administrator.';
       return null;
     }
-    
-    const barangayPresidentData = barangayPresidentDoc.data();
-    if (barangayPresidentData.role !== 'BarangayPresident') {
-      console.error('User does not have BarangayPresident role');
-      error.value = `Your role is set to "${barangayPresidentData.role}" instead of "BarangayPresident". Please contact the system administrator.`;
+    const pres = presDoc.data();
+    if (pres.role !== 'BarangayPresident') {
+      error.value = `Your role is "${pres.role}" instead of "BarangayPresident".`;
       return null;
     }
-    
-    // Store the barangay for filtering
-    currentBarangay.value = barangayPresidentData.barangay;
-    console.log('User verified as BarangayPresident for:', currentBarangay.value);
-    
-    // Now fetch users for this barangay only
+    currentBarangay.value = pres.barangay;
+
     const usersQuery = query(
       collection(db, 'users'),
       where('barangay', '==', currentBarangay.value),
       where('role', '==', 'Member'),
-      where('status', '==', 'Active') // Only get active members
+      where('status', '==', 'Active')
     );
-    
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
-      users.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      sortUsers(); // Sort initially
+      users.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      sortUsers();
     });
-    
-    return unsubscribe; // Return unsubscribe function for cleanup
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    error.value = 'Error fetching users: ' + error.message;
+    return unsubscribe;
+  } catch (e) {
+    console.error('Error fetching users:', e);
+    error.value = 'Error fetching users: ' + e.message;
     return null;
   }
 };
 
-// Sorting functions
+// Sorting
 const toggleSort = (field) => {
   if (sortField.value === field) {
-    // Toggle direction if same field
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
-    // New field, default to ascending
     sortField.value = field;
     sortDirection.value = 'asc';
   }
-  
   sortUsers();
 };
 
 const sortUsers = () => {
   const field = sortField.value;
   const direction = sortDirection.value;
-  
   users.value.sort((a, b) => {
-    let valueA, valueB;
-    
+    let A, B;
     if (field === 'name') {
-      valueA = formatFullName(a).toLowerCase();
-      valueB = formatFullName(b).toLowerCase();
+      A = formatFullName(a).toLowerCase();
+      B = formatFullName(b).toLowerCase();
+    } else if (field === 'status') {
+      A = (a.status || '').toLowerCase();
+      B = (b.status || '').toLowerCase();
     } else {
-      valueA = (a[field]?.toLowerCase?.() || '');
-      valueB = (b[field]?.toLowerCase?.() || '');
+      A = (a[field]?.toLowerCase?.() || '');
+      B = (b[field]?.toLowerCase?.() || '');
     }
-    
-    if (direction === 'asc') {
-      return valueA > valueB ? 1 : -1;
-    } else {
-      return valueA < valueB ? 1 : -1;
-    }
+    return direction === 'asc' ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
   });
 };
 
-// Filtered users based on search
+// Filtering / Pagination
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value;
-  
-  const query = searchQuery.value.toLowerCase();
-  return users.value.filter(user => {
-    const fullName = formatFullName(user).toLowerCase();
-    const email = user.email?.toLowerCase() || '';
-    const contact = user.contactNumber || '';
-    const address = user.address?.toLowerCase() || '';
-    
-    return fullName.includes(query) || 
-           email.includes(query) || 
-           contact.includes(query) ||
-           address.includes(query);
+  const q = searchQuery.value.toLowerCase();
+  return users.value.filter(u => {
+    const fullName = formatFullName(u).toLowerCase();
+    const email = u.email?.toLowerCase() || '';
+    const contact = u.contactNumber || '';
+    const address = u.address?.toLowerCase() || '';
+    return fullName.includes(q) || email.includes(q) || contact.includes(q) || address.includes(q);
   });
 });
 
-// Preview users (limited to 5 for the export preview)
-const previewUsers = computed(() => {
-  return filteredUsers.value.slice(0, 5);
-});
+const previewUsers = computed(() => filteredUsers.value.slice(0, 5));
 
-// Paginated users
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
   return filteredUsers.value.slice(start, end);
 });
 
-// Calculate total pages
-const totalPages = computed(() => {
-  return Math.ceil(filteredUsers.value.length / itemsPerPage) || 1;
-});
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage) || 1);
 
-// Pagination methods
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
-// View user details
-const viewUser = (user) => {
-  selectedUser.value = user;
-  showViewModal.value = true;
-};
+// View / actions
+const viewUser = (user) => { selectedUser.value = user; showViewModal.value = true; };
 
-// Send email to user
 const sendEmail = (user) => {
-  if (!user.email) {
-    alert('This user does not have an email address.');
-    return;
-  }
-  
-  // Open default email client
+  if (!user.email) return alert('This user does not have an email address.');
   window.location.href = `mailto:${user.email}?subject=Solo Parent Federation - Important Information`;
 };
 
-// Confirm delete (block) user
-const confirmDelete = (user) => {
-  userToDelete.value = user;
-  showDeleteModal.value = true;
-};
+const confirmDelete = (user) => { userToDelete.value = user; showDeleteModal.value = true; };
 
-// Block user (move to blocked_members collection)
 const blockUser = async () => {
   if (!userToDelete.value) return;
-  
   isProcessing.value = true;
-  
   try {
     const user = userToDelete.value;
-    
-    // Add to blocked_members collection
-    const blockedMembersCollection = collection(db, 'blocked_members');
-    await addDoc(blockedMembersCollection, {
+    await addDoc(collection(db, 'blocked_members'), {
       ...user,
       blockedAt: serverTimestamp(),
       blockedBy: auth.currentUser.uid,
-      previousId: user.id, // Store original ID for restoration
+      previousId: user.id,
       status: 'Blocked'
     });
-    
-    // Delete from users collection
-    const userRef = doc(db, 'users', user.id);
-    await deleteDoc(userRef);
-    
-    // Remove from local array to update UI immediately
+    await deleteDoc(doc(db, 'users', user.id));
     users.value = users.value.filter(u => u.id !== user.id);
-    
-    // Show success notification
     showNotification(`${formatFullName(user)} has been blocked successfully`);
-    
-    // Close modal
     showDeleteModal.value = false;
     userToDelete.value = null;
-  } catch (err) {
-    console.error('Error blocking user:', err);
-    error.value = 'Failed to block member: ' + err.message;
+  } catch (e) {
+    console.error('Error blocking user:', e);
+    error.value = 'Failed to block member: ' + e.message;
   } finally {
     isProcessing.value = false;
   }
 };
 
-// Export to Excel functionality with confirmation
+// Export
 const confirmExport = () => {
-  // Prepare data for export
   const exportData = filteredUsers.value.map(user => ({
     'Full Name': formatFullName(user),
     'Email': user.email || 'N/A',
@@ -708,105 +608,89 @@ const confirmExport = () => {
     'Status': user.status || 'N/A',
     'Registration Date': user.createdAt ? formatDate(user.createdAt) : 'N/A'
   }));
-
-  // Create worksheet
   const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Solo Parents');
-
-  // Save file
   XLSX.writeFile(wb, `solo-parents-${currentBarangay.value}.xlsx`);
-  
-  // Close the preview modal
   showExportPreview.value = false;
 };
 
-// Print functionality with preview
-const confirmPrint = () => {
-  // Close the preview modal first
-  showPrintPreview.value = false;
-  
-  // Wait for modal to close before printing
-  setTimeout(() => {
-    // Create table rows HTML
-    const tableRows = filteredUsers.value.map(user => 
-      `<tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${formatFullName(user)}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.contactNumber || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.address || 'N/A'}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${user.status || 'N/A'}</td>
-      </tr>`
-    ).join('');
+// PRINT: direct, non-duplicating (keeps modal open; closes after print)
+const confirmPrint = async () => {
+  const closeAfterPrint = () => {
+    showPrintPreview.value = false;
+    window.removeEventListener('afterprint', closeAfterPrint);
+  };
+  window.addEventListener('afterprint', closeAfterPrint);
 
-    // Create HTML content with properly closed script tag
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Solo Parents in ${currentBarangay.value}</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            @media print {
-              body { margin: 0; padding: 20px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1 style="text-align: center; margin-bottom: 20px;">Solo Parents in ${currentBarangay.value}</h1>
-          <p style="text-align: center; margin-bottom: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #ddd; padding: 8px;">Name</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Contact</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Address</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              }
-            }
-          <\/script>
-        </body>
-      </html>
-    `;
-
-    // Open new window and write content
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  }, 300);
+  // make sure DOM (including #print-content) is ready
+  await nextTick();
+  window.print();
 };
 
-// Lifecycle hooks
+// Lifecycle
 onMounted(() => {
   const unsubscribe = fetchUsers();
-  
-  // Check for restored member notification
-  checkForRestoredMemberNotification();
-  
-  // Cleanup on component unmount
-  return () => {
-    if (unsubscribe) unsubscribe();
-  };
+  return () => { if (unsubscribe) unsubscribe(); };
 });
 </script>
 
 <style>
 @media print {
-  .print-section {
-    margin: 0;
-    padding: 20px;
+  /* Hide everything by default to avoid duplicates / overlays */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Hide common overlay containers just in case */
+  .fixed, .absolute, .modal, .backdrop, [role="dialog"] {
+    visibility: hidden !important;
+  }
+
+  /* Only show the print content */
+  #print-content, #print-content * {
+    visibility: visible !important;
+  }
+
+  /* Position at the top-left, full width */
+  #print-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: #fff !important;
+  }
+
+  /* Table styling for print */
+  #print-content table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  #print-content tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  #print-content th,
+  #print-content td {
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+    font-size: 12px !important;
+    text-align: left !important;
+  }
+
+  #print-content thead th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0.5in;
   }
 }
 </style>
