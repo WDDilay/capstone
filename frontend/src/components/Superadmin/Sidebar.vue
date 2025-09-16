@@ -113,7 +113,7 @@ onUnmounted(() => {
 }
 
 .bg-maroon-50 {
-  background-color: #fef7f7; /* Very light maroon/cream for menu background */
+  background-color: #ffffffff; /* Very light maroon/cream for menu background */
 }
 
 .bg-maroon-200 {

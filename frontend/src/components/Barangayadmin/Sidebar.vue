@@ -21,7 +21,7 @@
         <router-link v-for="item in regularMenuItems"
                      :key="item.path"
                      :to="item.path"
-                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-maroon-500 hover:text-white transition-colors relative"
+                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-maroon-500 hover:text-black transition-colors relative"
                      :class="{'bg-maroon-500 text-white': isActive(item.path)}">
           <i :class="item.icon"></i>
           <span>{{ item.label }}</span>
@@ -207,7 +207,7 @@ onUnmounted(() => {
 }
 
 .hover\:bg-maroon-500:hover {
-  background-color: #f06363ff;
+  background-color: #fbff00ff;
 }
 
 .bg-cream-100 {
