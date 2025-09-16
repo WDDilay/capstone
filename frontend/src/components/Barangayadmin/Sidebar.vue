@@ -5,12 +5,12 @@
          class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
          @click="toggleSidebar"></div>
                  
-    <aside class="w-64 bg-purple-100 h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
+    <aside class="w-64 bg-cream-100 h-screen shadow-lg fixed left-0 top-0 z-30 transition-all duration-300 ease-in-out"
            :class="{
              'translate-x-0': isOpen,
              '-translate-x-full md:translate-x-0': !isOpen
            }">
-      <div class="p-4 border-b bg-purple-800">
+      <div class="p-4 border-b bg-maroon-800">
         <div class="flex items-center gap-2">
           <img :src="spfLogo" alt="Logo" class="w-8 h-8 rounded-full" />
           <h1 class="text-white text-lg font-semibold">Solo Parent Federation</h1>
@@ -21,8 +21,8 @@
         <router-link v-for="item in regularMenuItems"
                      :key="item.path"
                      :to="item.path"
-                     class="flex items-center gap-3 p-3 rounded-lg text-black-700 hover:bg-purple-500 hover:text-white transition-colors relative"
-                     :class="{'bg-purple-500 text-black': isActive(item.path)}">
+                     class="flex items-center gap-3 p-3 rounded-lg text-gray-700 hover:bg-maroon-500 hover:text-white transition-colors relative"
+                     :class="{'bg-maroon-500 text-white': isActive(item.path)}">
           <i :class="item.icon"></i>
           <span>{{ item.label }}</span>
                     
@@ -35,7 +35,7 @@
                         
         <!-- Logout button (separate from router-links) -->
         <div @click="confirmLogout"
-             class="flex items-center gap-3 p-3 rounded-lg text-red-700 hover:bg-red-200 hover:text-black transition-colors cursor-pointer">
+             class="flex items-center gap-3 p-3 rounded-lg text-red-700 hover:bg-red-100 hover:text-red-800 transition-colors cursor-pointer">
           <i class="pi pi-sign-out"></i>
           <span>Logout</span>
         </div>
@@ -55,7 +55,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { auth, db } from '@/services/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import ConfirmDialog from 'primevue/confirmdialog';
-import spfLogo from '@/assets/SPFLOGO.png';
+import spfLogo from '@/assets/solologo.jpg';
 
 const route = useRoute();
 const router = useRouter();
@@ -171,7 +171,7 @@ onUnmounted(() => {
 
 <style scoped>
 .notification-badge {
-  background-color: #ef4444;
+  background-color: #dc2626;
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -195,5 +195,30 @@ onUnmounted(() => {
   50% {
     opacity: 0.7;
   }
+}
+
+/* Custom maroon and cream colors */
+.bg-maroon-800 {
+  background-color: #7f1d1d;
+}
+
+.bg-maroon-500 {
+  background-color: #7f1d1d;
+}
+
+.hover\:bg-maroon-500:hover {
+  background-color: #f06363ff;
+}
+
+.bg-cream-100 {
+  background-color: #FEF7ED;
+}
+
+.hover\:bg-red-100:hover {
+  background-color: #FEF2F2;
+}
+
+.hover\:text-red-800:hover {
+  color: #991B1B;
 }
 </style>

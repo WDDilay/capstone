@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed w-full bg-purple-800 text-white px-10 py-8 flex top-0 justify-between items-center h-25 z-50 shadow-lg">
+  <div class="fixed w-full bg-maroon-800 text-white px-10 py-8 flex top-0 justify-between items-center h-25 z-50 shadow-lg">
     <div class="flex items-center gap-2">
       <!-- Menu button slot -->
       <slot name="menu-button"></slot>
@@ -12,12 +12,12 @@
                 text
                 severity="secondary"
                 aria-label="Notification"
-                class="p-button-rounded text-white hover:bg-primary-700"
+                class="p-button-rounded text-white hover:bg-maroon-700"
                 @click="toggleNotifications" />
                         
         <!-- Notification Badge -->
         <span v-if="unreadCount > 0"
-              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+              class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
           {{ unreadCount > 9 ? '9+' : unreadCount }}
         </span>
                 
@@ -31,7 +31,7 @@
                       label="Mark all as read"
                       link
                       size="small"
-                      class="text-primary-600 p-0"
+                      class="text-maroon-600 p-0 hover:text-maroon-800"
                       @click="markAllAsRead" />
             </div>
           </div>
@@ -61,8 +61,8 @@
             <div v-else>
               <div v-for="(notification, index) in notifications"
                    :key="notification.id"
-                   class="p-3 border-b hover:bg-gray-50 cursor-pointer transition-colors"
-                   :class="{'bg-primary-50 border-l-4 border-l-primary-500': !notification.read}"
+                   class="p-3 border-b hover:bg-cream-50 cursor-pointer transition-colors"
+                   :class="{'bg-maroon-50 border-l-4 border-l-maroon-500': !notification.read}"
                    @click="handleNotificationClick(notification)">
                 <div class="flex gap-3">
                   <div class="flex-shrink-0">
@@ -80,7 +80,7 @@
                       </span>
                     </div>
                   </div>
-                  <div v-if="!notification.read" class="w-2 h-2 bg-primary-600 rounded-full mt-1"></div>
+                  <div v-if="!notification.read" class="w-2 h-2 bg-maroon-600 rounded-full mt-1"></div>
                 </div>
               </div>
             </div>
@@ -89,7 +89,7 @@
           <div class="p-2 border-t text-center">
             <Button label="View all notifications"
                     link
-                    class="text-primary-600 w-full"
+                    class="text-maroon-600 w-full hover:text-maroon-800"
                     @click="handleViewAll" />
           </div>
         </div>
@@ -99,7 +99,7 @@
         <span class="hidden sm:inline">{{ userName }}</span>
         <div class="flex items-center gap-1">
           <i class="pi pi-user text-xl"></i>
-          <span v-if="currentUserBarangay" class="text-xs bg-primary-700 px-2 py-1 rounded">
+          <span v-if="currentUserBarangay" class="text-xs bg-maroon-700 px-2 py-1 rounded">
             {{ currentUserBarangay }}
           </span>
         </div>
@@ -115,10 +115,10 @@
   <!-- Notification Details Modal -->
   <div v-if="showNotificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-      <div class="p-4 border-b">
+      <div class="p-4 border-b bg-maroon-800 text-white rounded-t-lg">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-semibold">Resource Request Details</h3>
-          <button @click="showNotificationModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showNotificationModal = false" class="text-white hover:text-cream-200">
             <i class="pi pi-times"></i>
           </button>
         </div>
@@ -168,7 +168,7 @@
             
       <div class="p-4 border-t flex justify-end">
         <Button label="Close"
-                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                class="bg-maroon-600 text-white px-4 py-2 rounded hover:bg-maroon-700"
                 @click="showNotificationModal = false" />
       </div>
     </div>
@@ -269,7 +269,7 @@ const setupNotificationListener = () => {
     );
     const applicationsUnsubscribe = onSnapshot(applicationsQuery, (snapshot) => {
       const newApplications = snapshot.docs.map(doc => {
-        const data = doc.data();
+        const data = data();
         return {
           id: doc.id,
           type: 'application',
@@ -356,5 +356,62 @@ onMounted(() => {
   50% {
     opacity: .5;
   }
+}
+
+/* Custom maroon colors since they might not be in your Tailwind config */
+.bg-maroon-800 {
+  background-color: #7f1d1d;
+}
+
+.bg-maroon-700 {
+  background-color: #92400E;
+}
+
+.bg-maroon-600 {
+  background-color: #A16207;
+}
+
+.bg-maroon-500 {
+  background-color: #B45309;
+}
+
+.bg-maroon-50 {
+  background-color: #FEF7ED;
+}
+
+.text-maroon-600 {
+  color: #A16207;
+}
+
+.text-maroon-800 {
+  color: #7C2D12;
+}
+
+.border-l-maroon-500 {
+  border-left-color: #B45309;
+}
+
+.hover\:bg-maroon-700:hover {
+  background-color: #92400E;
+}
+
+.hover\:bg-maroon-600:hover {
+  background-color: #A16207;
+}
+
+.hover\:text-maroon-800:hover {
+  color: #7C2D12;
+}
+
+.bg-cream-50 {
+  background-color: #FFFBF5;
+}
+
+.text-cream-200 {
+  color: #FEF3E2;
+}
+
+.hover\:bg-cream-50:hover {
+  background-color: #FFFBF5;
 }
 </style>

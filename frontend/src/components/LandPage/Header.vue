@@ -1,10 +1,10 @@
 <template>
-  <header class="fixed top-0 left-0 w-full bg-gradient-to-r from-purple-700 to-purple-600 text-white shadow-md z-50">
+  <header class="fixed top-0 left-0 w-full bg-gradient-to-r from-red-900 to-red-800 text-white shadow-md z-50">
     <div class="container mx-auto px-4 py-3 flex items-center justify-between">
       
       <!-- Logo -->
       <router-link to="/" class="flex items-center space-x-3">
-        <img :src="logo" alt="Logo" class="w-12 h-12 rounded-full border-2 border-white" />
+        <img :src="logo" alt="Logo" class="w-12 h-12 rounded-full border-2 border-amber-300" />
         <div>
           <span class="text-xl font-bold">Solo Parent</span>
           <span class="block text-sm -mt-1">Federation</span>
@@ -13,25 +13,25 @@
 
       <!-- Desktop Navigation -->
       <nav class="hidden md:flex items-center space-x-6">
-        <router-link to="/" class="hover:text-purple-200 transition">Home</router-link>
-        <router-link to="/about" class="hover:text-purple-200 transition">About</router-link>
+        <router-link to="/" class="hover:text-amber-200 transition">Home</router-link>
+        <router-link to="/about" class="hover:text-amber-200 transition">About</router-link>
 
         <!-- Account Dropdown -->
         <div class="relative" ref="dropdownRef">
-          <button @click="toggleDropdown" class="flex items-center space-x-1 hover:text-purple-200 transition">
+          <button @click="toggleDropdown" class="flex items-center space-x-1 hover:text-amber-200 transition">
             <span>Account</span>
             <span :class="{'rotate-180': dropdownOpen}" class="transition-transform">&#9662;</span>
           </button>
 
-          <div v-if="dropdownOpen" class="absolute right-0 mt-2 w-36 bg-purple-700 shadow-lg rounded-lg overflow-hidden z-50">
-            <router-link to="/register" class="block px-4 py-2 hover:bg-purple-600 transition">Register</router-link>
-            <router-link to="/login" class="block px-4 py-2 hover:bg-purple-600 transition">Login</router-link>
+          <div v-if="dropdownOpen" class="absolute right-0 mt-2 w-36 bg-red-800 shadow-lg rounded-lg overflow-hidden z-50 border border-amber-300">
+            <router-link to="/register" class="block px-4 py-2 hover:bg-red-700 hover:text-amber-100 transition">Register</router-link>
+            <router-link to="/login" class="block px-4 py-2 hover:bg-red-700 hover:text-amber-100 transition">Login</router-link>
           </div>
         </div>
       </nav>
 
       <!-- Mobile Menu Button -->
-      <button @click="toggleMobileMenu" class="md:hidden text-white focus:outline-none">
+      <button @click="toggleMobileMenu" class="md:hidden text-white hover:text-amber-200 focus:outline-none transition">
         <Menu v-if="!mobileMenuOpen" class="h-6 w-6" />
         <X v-else class="h-6 w-6" />
       </button>
@@ -39,12 +39,12 @@
 
     <!-- Mobile Navigation -->
     <transition name="slide-fade">
-      <div v-if="mobileMenuOpen" class="md:hidden bg-purple-700 transition-all duration-300">
+      <div v-if="mobileMenuOpen" class="md:hidden bg-red-800 transition-all duration-300 border-t border-amber-300/30">
         <div class="flex flex-col items-center py-4 space-y-3">
-          <router-link to="/" class="hover:text-purple-200 transition">Home</router-link>
-          <router-link to="/about" class="hover:text-purple-200 transition">About</router-link>
-          <router-link to="/register" class="hover:text-purple-200 transition">Register</router-link>
-          <router-link to="/login" class="hover:text-purple-200 transition">Login</router-link>
+          <router-link to="/" class="hover:text-amber-200 transition">Home</router-link>
+          <router-link to="/about" class="hover:text-amber-200 transition">About</router-link>
+          <router-link to="/register" class="hover:text-amber-200 transition">Register</router-link>
+          <router-link to="/login" class="hover:text-amber-200 transition">Login</router-link>
         </div>
       </div>
     </transition>
@@ -54,7 +54,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Menu, X } from 'lucide-vue-next';
-import logo from '@/assets/SPFLOGO.png';
+import logo from '@/assets/solologo.jpg';
 
 const mobileMenuOpen = ref(false);
 const toggleMobileMenu = () => {

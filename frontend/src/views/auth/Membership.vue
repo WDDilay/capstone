@@ -11,8 +11,8 @@
 
       <div class="login-form-container">
         <h1 class="welcome-container">
-          <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
-          Application Form
+          <img src="@/assets/solologo.jpg" alt="Logo" class="logo-img" />
+          <span class="application-form-text">Application Form</span>
         </h1>
         <p class="subtitle">Please complete all required information to register as a solo parent</p>
         
@@ -700,6 +700,22 @@ const goToLogin = () => {
 </script>
 
 <style scoped>
+:root {
+  --primary-maroon: #800020;
+  --light-maroon: #a0002a;
+  --dark-maroon: #600018;
+  --maroon-light-bg: #f5c0ceff;
+  --maroon-medium-bg: #e6ccd1;
+  --secondary-gold: #d4af37;
+  --light-gold: #f4e4a6;
+  --accent-cream: #faf7f2;
+  --text-dark: #2c1810;
+  --text-medium: #5a4136;
+  --border-light: #d4c5c9;
+  --error-red: #dc3545;
+  --success-green: #28a745;
+}
+
 .login-container {
   position: relative;
   min-height: 100vh;
@@ -713,7 +729,7 @@ const goToLogin = () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #f0e6ff;
+  background: var(--maroon-light-bg);
   z-index: -1; /* Behind all content */
 }
 
@@ -737,12 +753,13 @@ const goToLogin = () => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #333;
+  color: var(--text-dark);
   z-index: 10;
+  transition: color 0.3s ease;
 }
 
 .back-button:hover {
-  color: #8b3dff;
+  color: var(--primary-maroon);
 }
 
 .login-form-container {
@@ -751,17 +768,18 @@ const goToLogin = () => {
   padding: 2rem;
   background: white;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.15);
   position: relative;
   z-index: 5;
+  border: 1px solid var(--border-light);
 }
 
 .welcome-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  color: #333;
+  gap: 15px;
+  color: var(--text-dark);
   text-align: center;
   margin-bottom: 0.5rem;
 }
@@ -769,27 +787,38 @@ const goToLogin = () => {
 .logo-img {
   width: 60px;
   height: 60px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+}
+
+.application-form-text {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--primary-maroon);
+  text-shadow: 1px 1px 2px rgba(128, 0, 32, 0.1);
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
   text-align: center;
-  color: #666;
+  color: var(--text-medium);
   margin-bottom: 2rem;
+  font-size: 1.1rem;
 }
 
 .development-note {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: var(--light-gold);
+  color: #8b6914;
   padding: 0.75rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-  border-left: 4px solid #ffeeba;
+  border-left: 4px solid var(--secondary-gold);
 }
 
 .form-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
 }
 
 /* Name fields specific styling */
@@ -830,13 +859,14 @@ const goToLogin = () => {
 }
 
 .form-label {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-dark);
   text-align: left;
+  font-size: 0.95rem;
 }
 
 .id-note {
-  color: #666;
+  color: var(--text-medium);
   font-size: 0.85rem;
   margin-top: 0.25rem;
   font-style: italic;
@@ -844,22 +874,24 @@ const goToLogin = () => {
 
 input, select {
   padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 2px solid var(--border-light);
+  border-radius: 6px;
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background-color: white;
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: #8b3dff;
-  box-shadow: 0 0 0 2px rgba(139, 61, 255, 0.1);
+  border-color: var(--primary-maroon);
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
 }
 
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23800020' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1em;
@@ -868,12 +900,18 @@ select {
 .gender-options {
   display: flex;
   gap: 2rem;
+  margin-top: 0.5rem;
 }
 
 .gender-option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.gender-option input[type="radio"] {
+  width: auto;
+  accent-color: var(--primary-maroon);
 }
 
 /* Children section styles */
@@ -896,11 +934,11 @@ select {
 }
 
 .add-child-btn {
-  background: #f0e6ff;
-  color: #8b3dff;
-  border: 1px dashed #8b3dff;
-  border-radius: 4px;
-  padding: 0.5rem;
+  background: var(--maroon-light-bg);
+  color: var(--primary-maroon);
+  border: 2px dashed var(--primary-maroon);
+  border-radius: 6px;
+  padding: 0.75rem;
   width: 100%;
   cursor: pointer;
   display: flex;
@@ -908,25 +946,31 @@ select {
   justify-content: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .add-child-btn:hover {
-  background: #e6d9ff;
+  background: var(--maroon-medium-bg);
+  transform: translateY(-1px);
 }
 
 .remove-child-btn {
   background: none;
   border: none;
-  color: #ff3d3d;
+  color: var(--error-red);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .remove-child-btn:hover {
-  color: #ff0000;
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
 }
 
 .password-input-container {
@@ -941,13 +985,14 @@ select {
   background: none;
   border: none;
   cursor: pointer;
-  color: #666;
+  color: var(--text-medium);
   display: flex;
   align-items: center;
+  transition: color 0.3s ease;
 }
 
 .toggle-password:hover {
-  color: #8b3dff;
+  color: var(--primary-maroon);
 }
 
 .toggle-password i {
@@ -955,37 +1000,45 @@ select {
 }
 
 .error-message {
-  color: #ff3d3d;
+  color: var(--error-red);
   font-size: 0.85rem;
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 .document-note {
-  color: #666;
+  color: var(--text-medium);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
 
 .login-button {
-  background: #8b3dff;
-  color: white;
-  border: none;
-  border-radius: 15px;
-  font-size: 1rem;
-  padding: 1rem !important;
-  width: 100%;
-  max-width: 250px;
-  margin: 1.5rem auto 0;
-  display: block;
+  background: #991b1b !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 25px !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 1rem 2rem !important;
+  width: 100% !important;
+  max-width: 300px !important;
+  margin: 2rem auto 0 !important;
+  display: block !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(128, 0, 32, 0.3) !important;
 }
 
-.login-button:hover {
-  background: #6e00ff;
+.login-button:hover:not(:disabled) {
+  background: var(--dark-maroon) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(128, 0, 32, 0.4) !important;
 }
 
 .login-button:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
+  background: #cccccc !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .form-footer {
@@ -997,22 +1050,28 @@ select {
 }
 
 .signup-prompt {
-  color: #666;
+  color: var(--text-medium);
   margin: 0;
 }
 
 .signup-link {
-  color: #8b3dff;
+  color: var(--primary-maroon);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.signup-link:hover {
+  color: var(--dark-maroon);
+  text-decoration: underline;
 }
 
 .attachment-item {
   margin-bottom: 1rem;
   padding: 1rem;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  background-color: #fafafa;
+  border: 2px solid var(--border-light);
+  border-radius: 6px;
+  background-color: var(--accent-cream);
 }
 
 .attachment-row {
@@ -1037,20 +1096,21 @@ select {
 .preview-image {
   width: 100%;
   height: auto;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+  border-radius: 6px;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(128, 0, 32, 0.1);
 }
 
 .loading-indicator {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: var(--text-medium);
   font-size: 0.9rem;
   padding: 0.75rem;
-  background: #f9f9f9;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+  background: var(--accent-cream);
+  border-radius: 6px;
+  border: 2px solid var(--border-light);
 }
 
 .loading-overlay {
@@ -1059,7 +1119,7 @@ select {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(44, 24, 16, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1074,7 +1134,7 @@ select {
   height: 50px;
   border: 4px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top-color: #fff;
+  border-top-color: var(--secondary-gold);
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 1rem;
 }
@@ -1094,13 +1154,13 @@ select {
 
 .verification-icon {
   font-size: 3rem;
-  color: #8b3dff;
+  color: var(--primary-maroon);
   margin-bottom: 1rem;
 }
 
 .verification-note {
   font-style: italic;
-  color: #666;
+  color: var(--text-medium);
   margin-top: 1rem;
 }
 
@@ -1122,7 +1182,7 @@ select {
 
 .success-icon {
   font-size: 3rem;
-  color: #4CAF50;
+  color: var(--success-green);
   margin-bottom: 1rem;
 }
 
@@ -1134,35 +1194,65 @@ select {
 /* Reference Code Styles */
 .reference-code-container {
   margin-top: 1.5rem;
-  padding: 1rem;
-  background: #f9f9f9;
+  padding: 1.5rem;
+  background: var(--accent-cream);
   border-radius: 8px;
   width: 100%;
   text-align: center;
+  border: 2px solid var(--border-light);
 }
 
 .reference-code-label {
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-dark);
 }
 
 .reference-code {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #8b3dff;
-  padding: 0.5rem;
-  background: #f0e6ff;
-  border-radius: 4px;
-  border: 1px dashed #8b3dff;
+  color: var(--primary-maroon);
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 2px dashed var(--primary-maroon);
   margin: 0.5rem 0;
   letter-spacing: 1px;
+  font-family: monospace;
 }
 
 .reference-code-note {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-medium);
   margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Dialog button overrides */
+:deep(.p-button-primary) {
+  background-color: var(--primary-maroon) !important;
+  border-color: var(--primary-maroon) !important;
+}
+
+:deep(.p-button-primary:hover) {
+  background-color: var(--dark-maroon) !important;
+  border-color: var(--dark-maroon) !important;
+}
+
+:deep(.p-button-secondary) {
+  background-color: var(--secondary-gold) !important;
+  border-color: var(--secondary-gold) !important;
+  color: var(--text-dark) !important;
+}
+
+:deep(.p-button-outlined) {
+  color: var(--primary-maroon) !important;
+  border-color: var(--primary-maroon) !important;
+}
+
+:deep(.p-button-outlined:hover) {
+  background-color: var(--maroon-light-bg) !important;
+  border-color: var(--primary-maroon) !important;
 }
 
 @media (max-width: 768px) {
@@ -1174,6 +1264,15 @@ select {
     margin: 1rem 0;
     padding: 1rem;
     max-width: 100%;
+  }
+  
+  .application-form-text {
+    font-size: 2.2rem;
+  }
+  
+  .welcome-container {
+    flex-direction: column;
+    gap: 10px;
   }
   
   .form-section {
@@ -1261,11 +1360,6 @@ select {
     padding: 0.6rem;
   }
   
-  .welcome-container {
-    flex-direction: column;
-    margin-bottom: 1rem;
-  }
-  
   .logo-img {
     margin-bottom: 0.25rem;
   }
@@ -1284,7 +1378,8 @@ select {
   }
   
   .login-button {
-    margin: 1rem auto 0;
+    margin: 1rem auto 0 !important;
+    max-width: 100% !important;
   }
   
   .verification-actions {
@@ -1308,13 +1403,16 @@ select {
     padding: 0.75rem;
   }
   
+  .application-form-text {
+    font-size: 1.8rem;
+  }
+  
   .gender-options {
     flex-direction: column;
     gap: 0.5rem;
   }
   
   .login-button {
-    max-width: 100%;
     padding: 0.75rem !important;
   }
 }

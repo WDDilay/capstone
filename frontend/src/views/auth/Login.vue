@@ -13,7 +13,7 @@
 
       <div class="login-form-container">
         <h1 class="welcome-container">
-          <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
+          <img src="@/assets/solologo.jpg" alt="Logo" class="logo-img" />
           Login
         </h1>
         <p class="subtitle">Join our community and access the support you need</p>
@@ -200,7 +200,7 @@ const togglePassword = () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #f0e6ff;
+  background: #fdf2f2;
   z-index: -1; /* Behind all content */
 }
 
@@ -228,7 +228,7 @@ const togglePassword = () => {
 }
 
 .back-button:hover {
-  color: #8b3dff;
+  color: #991b1b;
 }
 
 .login-form-container {
@@ -240,6 +240,17 @@ const togglePassword = () => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 5;
+}
+.login-form-container h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #333;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  font-weight: bold;
 }
 
 .welcome-container {
@@ -315,7 +326,7 @@ input {
 }
 
 .toggle-password:hover {
-  color: #8b3dff;
+  color: #991b1b;
 }
 
 .toggle-password i {
@@ -323,7 +334,7 @@ input {
 }
 
 .custom-login-button {
-  background: #8b3dff !important;
+  background: #991b1b !important;
   color: white !important;
   border: none !important;
   border-radius: 15px !important;
@@ -337,11 +348,11 @@ input {
 }
 
 .custom-login-button:hover {
-  background: #6e00ff !important;
+  background: #7f1d1d !important;
 }
 
 .signup-link {
-  color: #8b3dff;
+  color: #991b1b;
   text-decoration: none;
   font-weight: 500;
   transition: text-decoration 0.3s ease-in-out;
@@ -359,7 +370,7 @@ input {
 }
 
 .forgot-password, .signup-link {
-  color: #8b3dff;
+  color: #991b1b;
   text-decoration: none;
   font-weight: 500;
 }
@@ -367,6 +378,77 @@ input {
 @media (max-width: 768px) {
   .login-form-container {
     margin: 2rem 1rem;
+  }
+}
+/* Mobile phones (landscape) and small tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+  .login-form-container {
+    margin: 2rem 1rem;
+    padding: 1.8rem;
+  }
+  
+  .login-form-container h1 {
+    font-size: 2.2rem;
+    gap: 10px;
+  }
+  
+  .logo-img {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .back-button {
+    top: 18px;
+    left: 18px;
+    font-size: 1.4rem;
+  }
+}
+
+/* Tablets and small desktops */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .login-form-container {
+    max-width: 450px;
+    padding: 2.2rem;
+  }
+  
+  .login-form-container h1 {
+    font-size: 2.8rem;
+    gap: 12px;
+  }
+  
+  .logo-img {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+/* Large desktops */
+@media (min-width: 1025px) {
+  .login-form-container {
+    max-width: 500px;
+    padding: 2.5rem;
+  }
+  
+  .login-form-container h1 {
+    font-size: 3rem;
+    gap: 15px;
+  }
+  
+  .logo-img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .subtitle {
+    font-size: 1.2rem;
   }
 }
 </style>

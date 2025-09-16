@@ -8,8 +8,8 @@
   
       <div class="register-form-container">
         <h1 class="welcome-container">
-          <img src="@/assets/SPFLOGO.png" alt="Logo" class="logo-img" />
-          Pre-register Now!
+          <img src="@/assets/solologo.jpg" alt="Logo" class="logo-img" />
+          <span class="preregister-text">Pre-register Now!</span>
         </h1>
         <p class="subtitle">Join our community and access the support you need</p>
         
@@ -214,19 +214,35 @@ const goToLogin = () => {
 </script>
   
 <style scoped>
+:root {
+  --primary-maroon: #800020;
+  --light-maroon: #a0002a;
+  --dark-maroon: #600018;
+  --maroon-light-bg: #f5e6ea;
+  --maroon-medium-bg: #e6ccd1;
+  --secondary-gold: #d4af37;
+  --light-gold: #f4e4a6;
+  --accent-cream: #faf7f2;
+  --text-dark: #2c1810;
+  --text-medium: #5a4136;
+  --border-light: #d4c5c9;
+  --error-red: #dc3545;
+  --success-green: #28a745;
+}
+
 /* Layout */
 .register-container {
-  height: 100vh;               /* Full viewport height */
-  width: 100vw;                /* Full viewport width */
-  background-color: #f5f0ff;   /* Your purple background */
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--maroon-light-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;     /* Centers form vertically */
-  position: fixed;             /* Fixed in place, won't scroll */
+  justify-content: center;
+  position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden;            /* Prevent page scroll */
+  overflow: hidden;
 }
 
 /* Back Button */
@@ -238,12 +254,13 @@ const goToLogin = () => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #5a5a5a;
-  transition: color 0.3s;
+  color: var(--text-dark);
+  transition: color 0.3s ease;
+  z-index: 10;
 }
 
 .back-button:hover {
-  color: #8b3dff;
+  color: var(--primary-maroon);
 }
 
 /* Form Container */
@@ -253,9 +270,9 @@ const goToLogin = () => {
   padding: 2rem;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  /* Remove max-height and overflow-y */
-   max-height: calc(100vh - 2rem);
+  box-shadow: 0 4px 20px rgba(128, 0, 32, 0.15);
+  border: 1px solid var(--border-light);
+  max-height: calc(100vh - 2rem);
   overflow-y: auto;
 }
 
@@ -264,24 +281,32 @@ const goToLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  color: #333;
+  gap: 15px;
+  color: var(--text-dark);
   text-align: center;
-  font-size: 1.5rem;
-  font-weight: bold;
   margin-bottom: 0.5rem;
 }
 
 .logo-img {
   width: 50px;
   height: 50px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+}
+
+.preregister-text {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--primary-maroon);
+  text-shadow: 1px 1px 2px rgba(128, 0, 32, 0.1);
+  letter-spacing: -0.3px;
 }
 
 .subtitle {
   text-align: center;
-  color: #666;
+  color: var(--text-medium);
   margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 /* Form Groups */
@@ -292,9 +317,9 @@ const goToLogin = () => {
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
-  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 /* Input Fields */
@@ -308,35 +333,49 @@ const goToLogin = () => {
 .input-icon {
   position: absolute;
   left: 12px;
-  color: #777;
+  color: var(--text-medium);
   font-size: 1.2rem;
   z-index: 1;
+  transition: color 0.3s ease;
 }
 
 input, .select-input {
   padding: 0.8rem;
   padding-left: 2.8rem;
-  border: 1px solid #ddd;
+  border: 2px solid var(--border-light);
   border-radius: 6px;
   font-size: 1rem;
   width: 100%;
-  transition: border 0.3s ease-in-out;
+  transition: all 0.3s ease;
   background: white;
+  box-sizing: border-box;
 }
 
 input:focus, .select-input:focus {
-  border-color: #8b3dff;
+  border-color: var(--primary-maroon);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+}
+
+input:focus + .input-icon,
+.select-input:focus + .input-icon {
+  color: var(--primary-maroon);
 }
 
 .select-input {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23800020' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
   background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
+  background-size: 1.2em;
   padding-right: 2.5rem;
+}
+
+.select-input:disabled {
+  background-color: var(--accent-cream);
+  color: var(--text-medium);
+  cursor: not-allowed;
 }
 
 /* Password Toggle */
@@ -346,32 +385,37 @@ input:focus, .select-input:focus {
   background: none;
   border: none;
   cursor: pointer;
-  color: #777;
+  color: var(--text-medium);
   font-size: 1.2rem;
   z-index: 1;
+  transition: color 0.3s ease;
 }
 
 .toggle-password:hover {
-  color: #8b3dff;
+  color: var(--primary-maroon);
 }
 
 /* Register Button */
 .register-button {
-  background: #8b3dff !important;
+  background: #991b1b !important;
   color: white !important;
   border: none !important;
-  border-radius: 12px !important;
-  font-size: 1rem !important;
-  padding: 0.9rem !important;
+  border-radius: 20px !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 1rem 2rem !important;
   width: 100% !important;
-  max-width: 200px !important;
-  margin: 1.5rem auto !important;
+  max-width: 250px !important;
+  margin: 2rem auto !important;
   display: block !important;
-  transition: background 0.3s ease-in-out !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(128, 0, 32, 0.3) !important;
 }
 
 .register-button:hover {
-  background: #6e00ff !important;
+  background: var(--dark-maroon) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(128, 0, 32, 0.4) !important;
 }
 
 /* Footer */
@@ -382,16 +426,19 @@ input:focus, .select-input:focus {
 
 .signup-prompt {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-medium);
+  margin: 0;
 }
 
 .login-link {
-  color: #8b3dff;
-  font-weight: bold;
+  color: var(--primary-maroon);
+  font-weight: 600;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .login-link:hover {
+  color: var(--dark-maroon);
   text-decoration: underline;
 }
 
@@ -412,24 +459,51 @@ input:focus, .select-input:focus {
   }
   
   .welcome-container {
-    font-size: 1.3rem;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .preregister-text {
+    font-size: 1.8rem;
   }
   
   .logo-img {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
   }
 
   .form-row {
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
   }
+  
+  .register-button {
+    max-width: 100% !important;
+  }
 }
 
 @media (max-width: 480px) {
+  .register-form-container {
+    padding: 1rem;
+  }
+  
+  .preregister-text {
+    font-size: 1.5rem;
+  }
+  
   .form-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+  
+  input, .select-input {
+    padding: 0.7rem;
+    padding-left: 2.5rem;
+  }
+  
+  .input-icon {
+    left: 10px;
+    font-size: 1.1rem;
   }
 }
 </style>

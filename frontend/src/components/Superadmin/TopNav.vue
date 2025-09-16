@@ -1,7 +1,7 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-purple-700 border-b border-purple-700 shadow-lg">
+  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-maroon-700 border-b border-maroon-700 shadow-lg">
     <div class="flex items-center">
-      <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-purple-100 hover:bg-purple-500 transition md:hidden">
+      <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-maroon-100 hover:bg-maroon-500 transition md:hidden">
         <i class="pi pi-bars text-xl"></i>
       </button>
     
@@ -9,9 +9,9 @@
         
     <div class="flex items-center gap-6">
       <div class="relative">
-        <button @click="toggleNotifications" class="p-3 rounded-full text-purple-100 hover:bg-purple-500 focus:outline-none transition-colors">
+        <button @click="toggleNotifications" class="p-3 rounded-full text-maroon-100 hover:bg-maroon-500 focus:outline-none transition-colors">
           <i class="pi pi-bell text-xl"></i>
-          <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full">
+          <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-600 rounded-full">
             {{ unreadCount > 9 ? '9+' : unreadCount }}
           </span>
         </button>
@@ -21,7 +21,7 @@
             <button 
               v-if="unreadCount > 0"
               @click="markAllAsRead"
-              class="text-xs text-purple-600 hover:text-purple-800"
+              class="text-xs text-maroon-600 hover:text-maroon-800"
             >
               Mark all as read
             </button>
@@ -34,7 +34,7 @@
                 href="#"
                 @click.prevent="handleNotificationClick(notification)"
                 class="block px-4 py-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                :class="{ 'bg-purple-50': !notification.read }"
+                :class="{ 'bg-maroon-50': !notification.read }"
               >
                 <div class="flex items-start">
                   <div class="flex-shrink-0">
@@ -43,7 +43,7 @@
                   <div class="ml-3 flex-1">
                     <div class="flex justify-between">
                       <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
-                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-purple-500 rounded-full"></span>
+                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-maroon-500 rounded-full"></span>
                     </div>
                     <p v-if="notification.message" class="text-xs text-gray-700 mt-1 line-clamp-2">{{ notification.message }}</p>
                     <p class="text-xs text-gray-500 mt-1">{{ formatRelativeTime(notification.timestamp) }}</p>
@@ -56,23 +56,23 @@
               <p>No notifications</p>
             </div>
           </div>
-          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-purple-600 bg-gray-50 p-2 hover:bg-gray-100">
+          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-maroon-600 bg-gray-50 p-2 hover:bg-gray-100">
             View all notifications
           </a>
         </div>
       </div>
       
       <div class="relative">
-        <button @click="toggleUserMenu" class="flex items-center text-lg font-medium text-white hover:bg-purple-500 px-4 py-3 rounded-lg transition-colors">
+        <button @click="toggleUserMenu" class="flex items-center text-lg font-medium text-white hover:bg-maroon-500 px-4 py-3 rounded-lg transition-colors">
           <span>{{ userName }}</span>
           <i class="pi pi-chevron-down ml-2 text-lg"></i>
         </button>
         <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
-            <i class="pi pi-user mr-2 text-purple-600"></i> Profile
+          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-maroon-50 transition">
+            <i class="pi pi-user mr-2 text-maroon-600"></i> Profile
           </a>
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
-            <i class="pi pi-cog mr-2 text-purple-600"></i> Settings
+          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-maroon-50 transition">
+            <i class="pi pi-cog mr-2 text-maroon-600"></i> Settings
           </a>
           <div class="border-t border-gray-100"></div>
           <button @click="handleSignOut" class="relative block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition group">
@@ -432,13 +432,15 @@ const getNotificationIcon = (notification) => {
 const getNotificationColor = (type) => {
   switch (type) {
     case 'announcement':
-      return 'text-purple-500';
+      return 'text-maroon-500';
     case 'event':
       return 'text-green-500';
     case 'application':
-      return 'text-yellow-500';
-    default:
+      return 'text-amber-500';
+    case 'preregistration':
       return 'text-blue-500';
+    default:
+      return 'text-maroon-500';
   }
 };
 
@@ -469,6 +471,69 @@ watch(user, (newUser) => {
 </script>
 
 <style>
+/* Custom Maroon Color Variables */
+:root {
+  --maroon-50: #fdf2f3;
+  --maroon-100: #fce7e9;
+  --maroon-200: #f9d0d7;
+  --maroon-300: #f5a8b5;
+  --maroon-400: #f0758d;
+  --maroon-500: #e6455a;
+  --maroon-600: #d2304a;
+  --maroon-700: #7f1d1d;
+  --maroon-800: #9f1a39;
+  --maroon-900: #881a37;
+}
+
+/* Maroon Utility Classes */
+.bg-maroon-50 { background-color: var(--maroon-50); }
+.bg-maroon-100 { background-color: var(--maroon-100); }
+.bg-maroon-200 { background-color: var(--maroon-200); }
+.bg-maroon-300 { background-color: var(--maroon-300); }
+.bg-maroon-400 { background-color: var(--maroon-400); }
+.bg-maroon-500 { background-color: var(--maroon-500); }
+.bg-maroon-600 { background-color: var(--maroon-600); }
+.bg-maroon-700 { background-color: var(--maroon-700); }
+.bg-maroon-800 { background-color: var(--maroon-800); }
+.bg-maroon-900 { background-color: var(--maroon-900); }
+
+.text-maroon-50 { color: var(--maroon-50); }
+.text-maroon-100 { color: var(--maroon-100); }
+.text-maroon-200 { color: var(--maroon-200); }
+.text-maroon-300 { color: var(--maroon-300); }
+.text-maroon-400 { color: var(--maroon-400); }
+.text-maroon-500 { color: var(--maroon-500); }
+.text-maroon-600 { color: var(--maroon-600); }
+.text-maroon-700 { color: var(--maroon-700); }
+.text-maroon-800 { color: var(--maroon-800); }
+.text-maroon-900 { color: var(--maroon-900); }
+
+.border-maroon-50 { border-color: var(--maroon-50); }
+.border-maroon-100 { border-color: var(--maroon-100); }
+.border-maroon-200 { border-color: var(--maroon-200); }
+.border-maroon-300 { border-color: var(--maroon-300); }
+.border-maroon-400 { border-color: var(--maroon-400); }
+.border-maroon-500 { border-color: var(--maroon-500); }
+.border-maroon-600 { border-color: var(--maroon-600); }
+.border-maroon-700 { border-color: var(--maroon-700); }
+.border-maroon-800 { border-color: var(--maroon-800); }
+.border-maroon-900 { border-color: var(--maroon-900); }
+
+.hover\:bg-maroon-50:hover { background-color: var(--maroon-50); }
+.hover\:bg-maroon-100:hover { background-color: var(--maroon-100); }
+.hover\:bg-maroon-200:hover { background-color: var(--maroon-200); }
+.hover\:bg-maroon-300:hover { background-color: var(--maroon-300); }
+.hover\:bg-maroon-400:hover { background-color: var(--maroon-400); }
+.hover\:bg-maroon-500:hover { background-color: var(--maroon-500); }
+.hover\:bg-maroon-600:hover { background-color: var(--maroon-600); }
+.hover\:bg-maroon-700:hover { background-color: var(--maroon-700); }
+.hover\:bg-maroon-800:hover { background-color: var(--maroon-800); }
+.hover\:bg-maroon-900:hover { background-color: var(--maroon-900); }
+
+.hover\:text-maroon-600:hover { color: var(--maroon-600); }
+.hover\:text-maroon-700:hover { color: var(--maroon-700); }
+.hover\:text-maroon-800:hover { color: var(--maroon-800); }
+
 /* Enhanced Styling for PrimeVue ConfirmDialog */
 .p-dialog {
   border-radius: 12px !important;
@@ -506,28 +571,28 @@ watch(user, (newUser) => {
 /* Icon styling */
 .p-confirm-dialog-icon {
   font-size: 1.5rem !important;
-  color: #ef4444 !important;
+  color: var(--maroon-600) !important;
   margin-right: 0.75rem !important;
-  background-color: rgba(239, 68, 68, 0.1) !important;
+  background-color: var(--maroon-100) !important;
   padding: 0.75rem !important;
   border-radius: 50% !important;
 }
 
 /* Customize Buttons */
 .p-confirm-dialog-accept {
-  background-color: #ef4444 !important; /* Red for danger */
+  background-color: var(--maroon-600) !important; /* Maroon for primary action */
   border: none !important;
   padding: 0.625rem 1.25rem !important;
   font-weight: 500 !important;
   border-radius: 0.375rem !important;
   transition: all 0.2s ease !important;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 2px 4px rgba(210, 48, 74, 0.2) !important;
 }
 
 .p-confirm-dialog-accept:hover {
-  background-color: #dc2626 !important; /* Darker red on hover */
+  background-color: var(--maroon-700) !important; /* Darker maroon on hover */
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.25) !important;
+  box-shadow: 0 4px 6px rgba(210, 48, 74, 0.25) !important;
 }
 
 .p-confirm-dialog-reject {

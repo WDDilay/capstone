@@ -2,8 +2,8 @@
   <div class="fixed top-0 left-0 z-40 h-screen transition-all duration-300"
        :class="{ 'w-72': !sidebarStore.collapsed, 'w-16': sidebarStore.collapsed }">
     <div class="h-full flex flex-col overflow-y-auto">
-      <!-- Header section with darker purple -->
-      <div class="bg-purple-700 px-3 py-4 flex-shrink-0">
+      <!-- Header section with dark maroon -->
+      <div class="bg-maroon-800 px-3 py-4 flex-shrink-0">
         <div class="flex items-center justify-between mb-5">
           <div class="flex items-center gap-3">
             <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
@@ -13,19 +13,19 @@
             <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
           </div>
           <button @click="sidebarStore.toggle" 
-                  class="p-1 rounded-lg hover:bg-purple-600 focus:outline-none text-white flex-shrink-0"
+                  class="p-1 rounded-lg hover:bg-maroon-700 focus:outline-none text-white flex-shrink-0"
                   :class="{ 'absolute top-4 right-2': sidebarStore.collapsed }">
             <i :class="sidebarStore.collapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'" class="text-xl"></i>
           </button>
         </div>
       </div>
       
-      <!-- Menu section with light purple - takes remaining height -->
-      <div class="bg-purple-200 px-3 py-4 flex-1 h-full">
+      <!-- Menu section with light maroon/cream - takes remaining height -->
+      <div class="bg-maroon-50 px-3 py-4 flex-1 h-full">
         <ul class="space-y-2 font-medium">
           <li v-for="(item, index) in menuItems" :key="index">
             <router-link :to="item.route"
-                         class="flex items-center p-2 rounded-lg hover:bg-purple-300 hover:text-black group relative transition-colors duration-200 text-purple-800"
+                         class="flex items-center p-2 rounded-lg hover:bg-maroon-200 hover:text-maroon-900 group relative transition-colors duration-200 text-maroon-700"
                          :class="{ 'justify-center': sidebarStore.collapsed }">
               <i :class="item.icon" class="text-xl"></i>
               <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
@@ -49,7 +49,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { auth, db } from '@/services/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import spfLogo from '@/assets/SPFLOGO.png';
+import spfLogo from '@/assets/solologo.jpg';
 
 const sidebarStore = useSidebarStore();
 
@@ -87,8 +87,7 @@ const menuItems = ref([
   { name: 'Resources', icon: 'pi pi-envelope', route: '/super-admin/resources' },
   { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
   { name: 'Messages', icon: 'pi pi-comments', route: '/super-admin/Messages' },
-  { name: 'Support', icon: 'pi pi-question-circle', route: '/super-admin/support' },
-  { name: 'Backup & Recovery', icon: 'pi pi-database', route: '/superadmin/backup' },
+  
 ]);
 
 // Lifecycle
@@ -104,8 +103,45 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Custom maroon color definitions */
+.bg-maroon-800 {
+  background-color: #7f1d1d; /* Dark maroon for header */
+}
+
+.bg-maroon-700 {
+  background-color: #991b1b; /* Medium maroon for hover states */
+}
+
+.bg-maroon-50 {
+  background-color: #fef7f7; /* Very light maroon/cream for menu background */
+}
+
+.bg-maroon-200 {
+  background-color: #fecaca; /* Light maroon for hover */
+}
+
+.text-maroon-700 {
+  color: #b91c1c; /* Medium maroon for text */
+}
+
+.text-maroon-900 {
+  color: #7f1d1d; /* Dark maroon for hover text */
+}
+
+.hover\:bg-maroon-700:hover {
+  background-color: #991b1b;
+}
+
+.hover\:bg-maroon-200:hover {
+  background-color: #fecaca;
+}
+
+.hover\:text-maroon-900:hover {
+  color: #7f1d1d;
+}
+
 .notification-badge {
-  background-color: #ef4444;
+  background-color: #dc2626; /* Red for notifications (complementary to maroon) */
   color: white;
   font-size: 10px;
   font-weight: bold;

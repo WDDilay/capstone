@@ -13,7 +13,7 @@
               Join our thriving community and access the support, resources, and connections you need to flourish as a
               solo parent.
             </p>
-            <button class="bg-purple-700 text-white hover:bg-purple-800 font-semibold px-8 py-4 text-lg rounded-lg transition-colors">
+            <button class="bg-red-900 text-white hover:bg-red-800 font-semibold px-8 py-4 text-lg rounded-lg transition-colors">
               Get Started Today
             </button>
           </div>
@@ -52,7 +52,7 @@
             class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 border-0"
           >
             <div class="text-center pb-4 pt-8 px-6">
-              <div class="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
+              <div class="mx-auto w-16 h-16 bg-gradient-to-br from-red-800 to-amber-500 rounded-full flex items-center justify-center mb-4">
                 <component :is="feature.icon" class="w-8 h-8 text-white" />
               </div>
               <h3 class="text-xl font-semibold text-gray-900 mb-4">{{ feature.title }}</h3>
@@ -97,7 +97,7 @@
                     </div>
                     <div class="md:w-1/2 p-8">
                       <div class="flex items-center gap-2 mb-3">
-                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                        <span class="bg-amber-100 text-red-900 px-3 py-1 rounded-full text-sm font-medium">
                           {{ post.category }}
                         </span>
                         <div class="flex items-center text-gray-500 text-sm">
@@ -142,7 +142,7 @@
               v-for="(_, index) in federationPosts"
               :key="index"
               @click="currentSlide = index"
-              :class="[ 'w-3 h-3 rounded-full transition-colors', index === currentSlide ? 'bg-purple-600' : 'bg-gray-300' ]"
+              :class="[ 'w-3 h-3 rounded-full transition-colors', index === currentSlide ? 'bg-red-800' : 'bg-gray-300' ]"
             />
           </div>
         </div>
@@ -150,7 +150,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-20">
+    <section class="bg-gradient-to-r from-red-900 to-red-800 text-white py-20">
       <div class="container mx-auto px-6 text-center">
         <h2 class="text-4xl font-bold mb-6">Ready to Join Our Solo Parent Federation?</h2>
         <p class="text-xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
@@ -159,7 +159,7 @@
         </p>
        <button
     @click="$router.push('/pre-member')"
-        class="bg-white text-purple-700 hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-lg transition-colors"
+        class="bg-white text-red-900 hover:bg-gray-100 font-semibold px-8 py-4 text-lg rounded-lg transition-colors"
           >
           Sign Up Now
             </button>
