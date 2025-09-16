@@ -2,7 +2,7 @@
   <div class="bg-gradient-to-br from-surface-50 to-surface-100 min-h-screen overflow-hidden">
     <div class="max-w-7xl mx-auto p-6 md:p-8">
       <header class="mb-8 animate-fade-in">
-        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-500 mb-2">
+        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black to-red-900 mb-2">
           Barangay Events Calendar
         </h1>
         <p class="text-surface-600 text-lg">Stay updated with important events in your barangay</p>
@@ -24,7 +24,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- CALENDAR -->
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl overflow-hidden border border-surface-200 animate-fade-in" style="animation-delay: 0.4s;">
-          <div class="p-4 bg-gradient-to-r from-primary-600 to-primary-400 text-white">
+          <div class="p-4 bg-gradient-to-r from-red-900 to-red-800 text-white">
             <div class="flex justify-between items-center">
               <h2 class="text-xl font-semibold">
                 {{ formatMonthYear(date) }}
@@ -108,7 +108,7 @@
           <!-- Upcoming Events (overflow beyond 5) -->
           <div class="bg-white rounded-2xl shadow-xl p-6 border border-surface-200 animate-fade-in" style="animation-delay: 0.6s;">
             <h2 class="text-xl font-semibold mb-4 text-surface-800 flex items-center">
-              <i class="pi pi-calendar mr-2 text-primary-600"></i>
+              <i class="pi pi-calendar mr-2 text-red-900"></i>
               Upcoming Events
             </h2>
 
@@ -191,7 +191,7 @@
           <div v-if="eventDetailsDialog" class="modal-backdrop" @click="hideEventDetailsDialog">
             <div class="modal-container" @click.stop>
               <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header bg-gradient-to-r from-red-900 to-red-800">
                   <h2 class="modal-title">Event Details</h2>
                   <Button
                     icon="pi pi-times"
@@ -528,6 +528,7 @@ const getEventTypeColor = (type) => {
     case 'Workshop': return 'bg-purple-500';
     case 'Holiday': return 'bg-red-500';
     case 'Reminder': return 'bg-amber-500';
+    case 'Announcement': return 'bg-maroon-500';
     default: return 'bg-gray-500';
   }
 };
@@ -569,12 +570,13 @@ const getEventTypeLabel = (value) => eventTypes.find(t => t.value === value)?.la
 .red-500 { background-color: #ef4444; }
 .amber-500 { background-color: #f59e0b; }
 .gray-500 { background-color: #6b7280; }
+.maroon-500 { background-color: #800000; }
 
 /* Custom scrollbar */
-.custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9); }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: #800000 var(--surface-100, #f1f5f9); }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: var(--surface-100, #f1f5f9); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--primary-400, #818cf8); border-radius: 20px; border: 2px solid var(--surface-100, #f1f5f9); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #800000; border-radius: 20px; border: 2px solid var(--surface-100, #f1f5f9); }
 
 /* Animations */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -584,11 +586,11 @@ const getEventTypeLabel = (value) => eventTypes.find(t => t.value === value)?.la
 .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal-container { width: 90%; max-width: 550px; max-height: 90vh; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); background-color: white; display: flex; flex-direction: column; transform: translateY(0); transition: transform 0.3s ease-out; }
 .modal-content { display: flex; flex-direction: column; height: 100%; max-height: 90vh; }
-.modal-header { background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8)); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative; flex-shrink: 0; }
-.modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9); }
+.modal-header { background: linear-gradient(to right, #800000, #8b0000); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative; flex-shrink: 0; }
+.modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: #800000 var(--surface-100, #f1f5f9); }
 .modal-body::-webkit-scrollbar { width: 6px; }
 .modal-body::-webkit-scrollbar-track { background: var(--surface-100, #f1f5f9); border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb { background-color: var(--primary-400, #818cf8); border-radius: 20px; }
+.modal-body::-webkit-scrollbar-thumb { background-color: #800000; border-radius: 20px; }
 .modal-footer { padding: 1rem 1.5rem; display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid #e2e8f0; background-color: #f8fafc; flex-shrink: 0; }
 
 /* Event details styling */

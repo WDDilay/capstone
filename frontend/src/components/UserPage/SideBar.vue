@@ -1,38 +1,65 @@
 <template>
   <div>
+    <!-- Added hamburger menu button for mobile devices -->
+    <button 
+      v-if="isMobile"
+      @click="toggleSidebar"
+      class="mobile-menu-btn fixed top-4 left-4 z-50 md:hidden"
+      :class="{ 'menu-open': !isSidebarCollapsed }"
+    >
+      <div class="hamburger-lines">
+        <span class="line line1"></span>
+        <span class="line line2"></span>
+        <span class="line line3"></span>
+      </div>
+    </button>
+
     <!-- Mobile overlay -->
     <div v-if="!isSidebarCollapsed && isMobile"
-         class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+         class="fixed inset-0 bg-black bg-opacity-50 z-30"
          @click="toggleSidebar"></div>
          
     <div
       class="sidebar-container transition-all duration-300 ease-in-out"
-      :class="{ 'sidebar-collapsed': isSidebarCollapsed }"
+      :class="{ 
+        'sidebar-collapsed': isSidebarCollapsed,
+        'mobile-open': !isSidebarCollapsed && isMobile 
+      }"
     >
+      <!-- Added mobile header with close button -->
+      <div v-if="isMobile" class="mobile-header">
+        <h3 class="mobile-title">Solo Parent Federation</h3>
+        <button @click="toggleSidebar" class="mobile-close-btn">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
       <!-- Decorative gradient background -->
       <div class="sidebar-gradient"></div>
       
-      
-
       <!-- Navigation menu -->
       <nav class="sidebar-nav">
         <ul>
           <li v-for="item in navItems" :key="item.path">
+            <!-- Added click handler to close mobile menu on navigation -->
             <router-link 
               :to="item.path"
               class="nav-link"
               :class="{ active: currentRoute.includes(item.path) }"
+              @click="handleNavClick"
             >
               <div class="nav-item-content">
                 <div class="nav-icon-wrapper">
                   <component :is="item.icon" class="nav-icon" />
                 </div>
-                <span v-if="!isSidebarCollapsed" class="nav-text">{{ item.title }}</span>
+                <span v-if="!isSidebarCollapsed || isMobile" class="nav-text">{{ item.title }}</span>
                 
                 <!-- Enhanced notification badge -->
                 <div v-if="item.path === '/user-dashboard/UseMessage' && totalUnreadCount > 0"
                      class="notification-badge"
-                     :class="{ 'badge-collapsed': isSidebarCollapsed }">
+                     :class="{ 'badge-collapsed': isSidebarCollapsed && !isMobile }">
                   <span>{{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}</span>
                   <div class="badge-pulse"></div>
                 </div>
@@ -45,12 +72,12 @@
           <li>
             <div @click="confirmLogout"
                  class="nav-link logout-link cursor-pointer"
-                :class="{ 'justify-center': isSidebarCollapsed }">
+                :class="{ 'justify-center': isSidebarCollapsed && !isMobile }">
               <div class="nav-item-content">
                 <div class="nav-icon-wrapper logout-icon-wrapper">
                   <LogOut class="nav-icon" />
                 </div>
-                <span v-if="!isSidebarCollapsed" class="nav-text">Logout</span>
+                <span v-if="!isSidebarCollapsed || isMobile" class="nav-text">Logout</span>
               </div>
               <div class="nav-link-glow logout-glow"></div>
             </div>
@@ -59,7 +86,7 @@
       </nav>
 
       <!-- Enhanced sidebar footer -->
-      <div class="sidebar-footer">
+      <div class="sidebar-footer" v-if="!isMobile">
         <button @click="toggleSidebar" class="collapse-btn">
           <div class="collapse-btn-inner">
             <ChevronLeft v-if="!isSidebarCollapsed" class="collapse-icon" />
@@ -109,7 +136,7 @@ const currentUser = ref(null);
 const totalUnreadCount = ref(0);
 let unsubscribeMessages = null;
 
-// Remove Profile from navigation items
+// Navigation items
 const navItems = [
   {
     title: 'Dashboard',
@@ -145,9 +172,21 @@ const navItems = [
 
 const currentRoute = computed(() => route.path);
 
-// Handle window resize
 const handleResize = () => {
-  isMobile.value = window.innerWidth <= 768;
+  const newIsMobile = window.innerWidth <= 768;
+  const wasDesktop = !isMobile.value;
+  
+  isMobile.value = newIsMobile;
+  
+  // Auto-collapse on mobile, expand on desktop
+  if (newIsMobile) {
+    isSidebarCollapsed.value = true;
+  } else if (wasDesktop) {
+    isSidebarCollapsed.value = false;
+  }
+};
+
+const handleNavClick = () => {
   if (isMobile.value) {
     isSidebarCollapsed.value = true;
   }
@@ -221,8 +260,8 @@ const handleLogout = async () => {
 
 // Lifecycle
 onMounted(() => {
-  setupMessageNotifications();
   window.addEventListener('resize', handleResize);
+  setupMessageNotifications();
 });
 
 onUnmounted(() => {
@@ -234,20 +273,96 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Enhanced mobile-first responsive design */
+.mobile-menu-btn {
+  background: linear-gradient(135deg, #800000 0%, #8b0000 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(128, 0, 0, 0.4);
+}
+
+.hamburger-lines {
+  width: 24px;
+  height: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.line {
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.menu-open .line1 {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-open .line2 {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-open .line3 {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(128, 0, 0, 0.1);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.05) 0%, rgba(139, 0, 0, 0.03) 100%);
+}
+
+.mobile-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #800000;
+  margin: 0;
+}
+
+.mobile-close-btn {
+  background: none;
+  border: none;
+  color: #800000;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.mobile-close-btn:hover {
+  background: rgba(128, 0, 0, 0.1);
+}
+
 .sidebar-container {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #faf3ffff 0%, #fffeffff 100%);
+  background: linear-gradient(180deg, #fdf2f2 0%, #fffeff 100%);
   color: #2d3748;
-  height: 95vh;
+  height: calc(100vh - 80px); /* Reduced height to account for topbar */
   width: 280px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(139, 92, 246, 0.05);
+  box-shadow: 0 10px 25px rgba(128, 0, 0, 0.1), 0 4px 12px rgba(128, 0, 0, 0.05);
   position: fixed;
   left: 0;
-  top: 100;
-  z-index: 0;
-  border-right: 1px solid rgba(139, 92, 246, 0.1);
+  top: 80px; /* Added top margin to avoid covering topbar */
+  z-index: 40;
+  border-right: 1px solid rgba(128, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   overflow: hidden;
 }
@@ -258,57 +373,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 200px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.05) 0%, rgba(139, 0, 0, 0.03) 100%);
   pointer-events: none;
 }
 
 .sidebar-collapsed {
   width: 70px;
-}
-
-.sidebar-profile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 20px;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
-  position: relative;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(168, 85, 247, 0.01) 100%);
-}
-
-.profile-image-wrapper {
-  position: relative;
-}
-
-.profile-image {
-  position: relative;
-}
-
-.profile-image img {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  object-fit: cover;
-  border: 3px solid rgba(139, 92, 246, 0.2);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
-  transition: all 0.3s ease;
-}
-
-.profile-image img:hover {
-  transform: scale(1.05);
-  border-color: rgba(139, 92, 246, 0.4);
-}
-
-.profile-status {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-nav {
@@ -354,18 +424,18 @@ onUnmounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(139, 92, 246, 0.05);
+  background: rgba(128, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
 
 .nav-link:hover .nav-icon-wrapper {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(128, 0, 0, 0.1);
   transform: translateY(-1px);
 }
 
 .nav-link.active .nav-icon-wrapper {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, #800000 0%, #8b0000 100%);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.3);
 }
 
 .nav-icon {
@@ -384,7 +454,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.05) 0%, rgba(139, 0, 0, 0.05) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 12px;
@@ -395,15 +465,15 @@ onUnmounted(() => {
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-  color: #8b5cf6;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.1) 0%, rgba(139, 0, 0, 0.1) 100%);
+  color: #800000;
+  border: 1px solid rgba(128, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.1);
 }
 
 .nav-link.active .nav-link-glow {
   opacity: 1;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.1) 0%, rgba(139, 0, 0, 0.1) 100%);
 }
 
 .nav-text {
@@ -480,11 +550,11 @@ onUnmounted(() => {
 
 .sidebar-footer {
   padding: 20px;
-  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  border-top: 1px solid rgba(128, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(168, 85, 247, 0.01) 100%);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.02) 0%, rgba(139, 0, 0, 0.01) 100%);
 }
 
 .collapse-btn {
@@ -516,7 +586,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(128, 0, 0, 0.1) 0%, rgba(139, 0, 0, 0.1) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 12px;
@@ -529,7 +599,7 @@ onUnmounted(() => {
 .collapse-icon {
   width: 20px;
   height: 20px;
-  color: #8b5cf6;
+  color: #800000;
   transition: all 0.3s ease;
 }
 
@@ -537,19 +607,80 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
+/* Enhanced responsive breakpoints and mobile styles */
+@media (max-width: 1024px) {
+  .sidebar-container {
+    width: 260px;
+    top: 80px; /* Maintain top spacing on tablet */
+    height: calc(100vh - 80px);
+  }
+  
+  .sidebar-collapsed {
+    width: 65px;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar-container {
     transform: translateX(-100%);
-    z-index: 50;
+    z-index: 40;
+    width: 280px;
+    height: 100vh; /* Full height on mobile since topbar behavior may differ */
+    top: 0; /* Reset to top on mobile for full overlay */
   }
   
-  .sidebar-container:not(.sidebar-collapsed) {
+  /* Added mobile-open class to show sidebar on mobile */
+  .sidebar-container.mobile-open {
     transform: translateX(0);
-    width: 280px;
+  }
+  
+  .mobile-header {
+    padding: 16px 20px;
+  }
+  
+  .mobile-title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-container {
+    width: 100vw;
+  }
+  
+  .mobile-header {
+    padding: 16px 20px;
+  }
+  
+  .mobile-title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 320px) {
+  .nav-link {
+    padding: 14px 16px;
+    margin: 3px 8px;
   }
   
   .nav-text {
-    display: block;
+    font-size: 13px;
+  }
+}
+
+/* Enhanced touch interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .nav-link {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .nav-link:active {
+    transform: scale(0.98);
+    background: rgba(128, 0, 0, 0.15);
+  }
+  
+  .mobile-menu-btn:active {
+    transform: scale(0.95);
   }
 }
 
@@ -559,16 +690,16 @@ onUnmounted(() => {
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
-  background: rgba(139, 92, 246, 0.05);
+  background: rgba(128, 0, 0, 0.05);
   border-radius: 2px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(128, 0, 0, 0.2);
   border-radius: 2px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(128, 0, 0, 0.3);
 }
 </style>

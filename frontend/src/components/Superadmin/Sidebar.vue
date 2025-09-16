@@ -133,7 +133,7 @@ onUnmounted(() => {
 }
 
 .hover\:bg-maroon-200:hover {
-  background-color: #fecaca;
+  background-color: #fef5caff;
 }
 
 .hover\:text-maroon-900:hover {

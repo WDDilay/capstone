@@ -2,7 +2,8 @@
   <div class="bg-gradient-to-br from-surface-50 to-surface-100 min-h-screen overflow-hidden">
     <div class="max-w-7xl mx-auto p-6 md:p-8">
       <header class="mb-8 animate-fade-in">
-        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-500 mb-2">
+        <!-- Updated header gradient to black and maroon -->
+        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black to-red-900 mb-2">
           Barangay Events Calendar
         </h1>
         <p class="text-surface-600 text-lg">Stay updated with important events in your barangay</p>
@@ -11,13 +12,12 @@
       <div class="mb-6 flex flex-wrap justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.2s;">
         <!-- Add Event Button - Only visible to BarangayPresident or FederationPresident -->
         <Button 
-          v-if="canAddEvents"
           @click="openNewEventDialog" 
           icon="pi pi-plus" 
           label="Add Event" 
-          class="p-button-rounded bg-gradient-to-r from-primary-600 to-primary-400 border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 px-6 py-3 text-white font-medium"
+          class="p-button-rounded bg-gradient-to-r from-black to-red-900 border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 px-6 py-3 text-white font-medium"
           :style="{
-            boxShadow: '0 10px 15px -3px rgba(var(--primary-600-rgb), 0.3), 0 4px 6px -4px rgba(var(--primary-600-rgb), 0.4)'
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(139, 0, 0, 0.4)'
           }"
         >
           <template #icon>
@@ -35,7 +35,8 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl overflow-hidden border border-surface-200 animate-fade-in" style="animation-delay: 0.4s;">
-          <div class="p-4 bg-gradient-to-r from-primary-600 to-primary-400 text-white">
+          <!-- Updated calendar header background to black and maroon gradient -->
+          <div class="p-4 bg-gradient-to-r from-black to-red-900 text-white">
             <div class="flex justify-between items-center">
               <h2 class="text-xl font-semibold">
                 {{ formatMonthYear(date) }}
@@ -818,7 +819,7 @@ const updateEventDate = (value) => {
 
 .calendar-day.today {
   background-color: #eff6ff;
-  border: 1px solid #3b82f6;
+  border: 1px solid #5e1414ff;
 }
 
 .calendar-day.selected {
@@ -915,20 +916,20 @@ const updateEventDate = (value) => {
   width: 2.5rem; height: 2.5rem; border-radius: 9999px; transition: all 0.2s ease; position: relative; z-index: 1;
 }
 :deep(.p-datepicker-calendar td > span.p-highlight) {
-  background-color: var(--primary-600, #4f46e5); color: white; font-weight: bold;
+  background-color: #8b0000; color: white; font-weight: bold;
 }
 :deep(.p-datepicker-calendar td.p-datepicker-today > span) {
   background-color: #f1f5f9; color: #0f172a; border-color: transparent;
 }
 :deep(.p-datepicker-calendar td.p-datepicker-today > span.p-highlight) {
-  background-color: var(--primary-600, #4f46e5); color: white;
+  background-color: #000000; color: white;
 }
 
 /* Custom scrollbar */
-.custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9); }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: #8b0000 #f1f5f9; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: var(--surface-100, #f1f5f9); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--primary-400, #818cf8); border-radius: 20px; border: 2px solid var(--surface-100, #f1f5f9); }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #8b0000; border-radius: 20px; border: 2px solid #f1f5f9; }
 
 /* Animations */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -949,16 +950,16 @@ const updateEventDate = (value) => {
 }
 .modal-content { display: flex; flex-direction: column; height: 100%; max-height: 90vh; }
 .modal-header {
-  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8));
+  background: linear-gradient(to right, #000000, #8b0000);
   color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative; flex-shrink: 0;
 }
 .modal-body {
   padding: 1.5rem; overflow-y: auto; flex: 1;
-  scrollbar-width: thin; scrollbar-color: var(--primary-400, #818cf8) var(--surface-100, #f1f5f9);
+  scrollbar-width: thin; scrollbar-color: #8b0000 #f1f5f9;
 }
 .modal-body::-webkit-scrollbar { width: 6px; }
-.modal-body::-webkit-scrollbar-track { background: var(--surface-100, #f1f5f9); border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb { background-color: var(--primary-400, #818cf8); border-radius: 20px; }
+.modal-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+.modal-body::-webkit-scrollbar-thumb { background-color: #8b0000; border-radius: 20px; }
 .modal-footer {
   padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;
   border-top: 1px solid #e2e8f0; background-color: #f8fafc; flex-shrink: 0;
@@ -970,7 +971,7 @@ const updateEventDate = (value) => {
 .form-control {
   width: 100%; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.625rem; font-size: 0.875rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-.form-control:focus { border-color: var(--primary-400, #818cf8); box-shadow: 0 0 0 3px rgba(var(--primary-400-rgb, 129, 140, 248), 0.2); }
+.form-control:focus { border-color: #8b0000; box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.2); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .date-picker, .time-picker { width: 100%; }
 .event-type-indicator { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 9999px; margin-right: 0.5rem; }
@@ -981,12 +982,12 @@ const updateEventDate = (value) => {
 .cancel-button { background-color: transparent !important; color: #64748b !important; border: 1px solid #e2e8f0 !important; }
 .cancel-button:hover { background-color: #f1f5f9 !important; }
 .save-button {
-  background: linear-gradient(to right, var(--primary-600, #4f46e5), var(--primary-400, #818cf8)) !important;
+  background: linear-gradient(to right, #000000, #8b0000) !important;
   border: none !important; color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 2px 4px -2px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important;
+  box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.2), 0 2px 4px -2px rgba(139, 0, 0, 0.1) !important;
   transition: all 0.2s ease !important;
 }
-.save-button:hover { transform: translateY(-2px) !important; box-shadow: 0 10px 15px -3px rgba(var(--primary-600-rgb, 79, 70, 229), 0.2), 0 4px 6px -4px rgba(var(--primary-600-rgb, 79, 70, 229), 0.1) !important; }
+.save-button:hover { transform: translateY(-2px) !important; box-shadow: 0 10px 15px -3px rgba(139, 0, 0, 0.2), 0 4px 6px -4px rgba(139, 0, 0, 0.1) !important; }
 
 /* Read-only notice styling */
 .read-only-notice { background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1.25rem; display: flex; align-items: center; font-size: 0.875rem; }

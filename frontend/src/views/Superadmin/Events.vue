@@ -667,10 +667,10 @@ const getEventTypeColor = (type) => {
 }
 .calendar-wrapper { max-width: 1400px; margin: 0 auto; padding: 2rem; }
 .calendar-header { margin-bottom: 2rem; animation: fadeIn 0.5s ease-out; }
-.calendar-title { font-size: 3rem; font-weight: bold; background: linear-gradient(135deg, #4f46e5, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+.calendar-title { font-size: 3rem; font-weight: bold; background: linear-gradient(135deg, #000000ff, #7d1313ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
 .calendar-subtitle { color: #64748b; font-size: 1.125rem; }
 .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; animation: fadeIn 0.5s ease-out 0.2s both; }
-.add-event-btn { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; border: none !important; color: white !important; padding: 0.75rem 1.5rem !important; border-radius: 0.75rem !important; font-weight: 600 !important; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -4px rgba(79, 70, 229, 0.4) !important; transition: all 0.3s ease !important; transform: translateY(0); }
+.add-event-btn { background: linear-gradient(135deg, #000000ff, #7d1313ff) !important; border: none !important; color: white !important; padding: 0.75rem 1.5rem !important; border-radius: 0.75rem !important; font-weight: 600 !important; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -4px rgba(79, 70, 229, 0.4) !important; transition: all 0.3s ease !important; transform: translateY(0); }
 .add-event-btn:hover { transform: translateY(-2px) !important; box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4), 0 10px 10px -5px rgba(79, 70, 229, 0.2) !important; }
 .event-types { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; font-weight: 500; }
 .event-type-badge { display: flex; align-items: center; background: white; border-radius: 9999px; padding: 0.5rem 0.75rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
@@ -678,7 +678,7 @@ const getEventTypeColor = (type) => {
 .event-type-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; margin-right: 0.5rem; }
 .calendar-layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
 .calendar-main { background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); overflow: hidden; border: 1px solid #e2e8f0; animation: fadeIn 0.5s ease-out 0.4s both; }
-.calendar-nav { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 1rem 1.5rem; }
+.calendar-nav { background: linear-gradient(135deg, #000000ff, #7d1313ff); color: white; padding: 1rem 1.5rem; }
 .calendar-nav-content { display: flex; justify-content: space-between; align-items: center; }
 .calendar-month { font-size: 1.25rem; font-weight: 600; margin: 0; }
 .nav-buttons { display: flex; gap: 0.5rem; }
@@ -692,12 +692,12 @@ const getEventTypeColor = (type) => {
 .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; }
 .calendar-day { aspect-ratio: 1; padding: 0.25rem; border-radius: 0.5rem; cursor: pointer; position: relative; transition: all 0.2s ease; display: flex; flex-direction: column; overflow: hidden; }
 .calendar-day:hover { background-color: #f1f5f9; }
-.calendar-day.current-month { background-color: #ffffff; }
-.calendar-day:not(.current-month) { background-color: #f8fafc; }
-.calendar-day.today { background-color: #eff6ff; border: 1px solid #3b82f6; }
+.calendar-day.current-month { background-color: #ffffffff; }
+.calendar-day:not(.current-month) { background-color: #f8f8f8ff; }
+.calendar-day.today { background-color: #c5c5c5ff; border: 1px solid #b11919ff; }
 .calendar-day.selected { background-color: #dbeafe; }
 .day-number { font-size: 1.25rem; font-weight: 500; text-align: center; color: #334155; margin-bottom: 0.25rem; }
-.today .day-number { color: #3b82f6; font-weight: 600; }
+.today .day-number { color: #950b0bff; font-weight: 600; }
 .day-events { display: flex; flex-direction: column; gap: 0.125rem; overflow: hidden; flex: 1; }
 .day-event { padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.7rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .day-event:hover { filter: brightness(1.1); }
@@ -705,65 +705,65 @@ const getEventTypeColor = (type) => {
 .event-time { font-size: 0.6rem; opacity: 0.9; }
 .more-events { font-size: 0.7rem; color: #64748b; text-align: center; padding: 0.125rem; cursor: pointer; }
 .more-events:hover { text-decoration: underline; }
-.bg-blue-500 { background-color: #3b82f6; }
-.bg-purple-500 { background-color: #8b5cf6; }
+.bg-blue-500 { background-color: #990b0bff; }
+.bg-purple-500 { background-color: #641088ff; }
 .bg-red-500 { background-color: #ef4444; }
-.bg-amber-500 { background-color: #f59e0b; }
+.bg-amber-500 { background-color: #eccd00ff; }
 .bg-gray-500 { background-color: #6b7280; }
-.blue-500 { background-color: #3b82f6; }
-.purple-500 { background-color: #8b5cf6; }
+.blue-500 { background-color: #034891ff; }
+.purple-500 { background-color: #830a0aff; }
 .red-500 { background-color: #ef4444; }
 .amber-500 { background-color: #f59e0b; }
 .gray-500 { background-color: #6b7280; }
 .calendar-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
 .upcoming-events-card, .selected-date-card { background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); padding: 1.5rem; border: 1px solid #e2e8f0; animation: fadeIn 0.5s ease-out 0.6s both; }
 .sidebar-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem; }
-.sidebar-title i { color: #4f46e5; }
+.sidebar-title i { color: #770909ff; }
 .events-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #4f46e5 #f1f5f9; }
 .events-list::-webkit-scrollbar { width: 6px; }
 .events-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-.events-list::-webkit-scrollbar-thumb { background-color: #4f46e5; border-radius: 20px; border: 2px solid #f1f5f9; }
+.events-list::-webkit-scrollbar-thumb { background-color: #770909ff; border-radius: 20px; border: 2px solid #f1f5f9; }
 .event-card { padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s ease; transform: translateY(0); }
 .event-card:hover { background-color: #f8fafc; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
 .event-card-content { display: flex; align-items: flex-start; gap: 0.75rem; }
 .event-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; margin-top: 0.375rem; flex-shrink: 0; }
 .event-details { flex: 1; }
 .event-name { font-weight: 500; color: #1e293b; margin: 0 0 0.25rem 0; }
-.event-datetime, .event-location { display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem; }
+.event-datetime, .event-location { display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: #615e5eff; margin-bottom: 0.25rem; }
 .event-datetime i, .event-location i { font-size: 0.75rem; }
 .event-description { font-size: 0.75rem; color: #64748b; margin: 0.25rem 0 0 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .no-events { color: #64748b; text-align: center; padding: 1rem; }
 .more-events-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding: 0.75rem; scrollbar-width: thin; scrollbar-color: #4f46e5 #f1f5f9; }
 .more-events-list::-webkit-scrollbar { width: 6px; }
-.more-events-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-.more-events-list::-webkit-scrollbar-thumb { background-color: #4f46e5; border-radius: 20px; }
+.more-events-list::-webkit-scrollbar-track { background: #0080ffff; border-radius: 10px; }
+.more-events-list::-webkit-scrollbar-thumb { background-color: #770909ff; border-radius: 20px; }
 .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal-container { width: 90%; max-width: 550px; max-height: 90vh; border-radius: 1rem; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); background-color: white; display: flex; flex-direction: column; transform: translateY(0); transition: transform 0.3s ease-out; }
 .modal-content { display: flex; flex-direction: column; height: 100%; max-height: 90vh; }
-.modal-header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative; flex-shrink: 0; }
+.modal-header { background: linear-gradient(135deg, #000000ff, #7d1313ff); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: relative; flex-shrink: 0; }
 .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
 .close-button { color: white !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; background: transparent !important; border-radius: 50% !important; }
 .close-button:hover { background: rgba(255, 255, 255, 0.2) !important; }
-.modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: #4f46e5 #f1f5f9; }
+.modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: #770909ff #f1f5f9; }
 .modal-body::-webkit-scrollbar { width: 6px; }
 .modal-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb { background-color: #4f46e5; border-radius: 20px; }
+.modal-body::-webkit-scrollbar-thumb { background-color: #770909ff; border-radius: 20px; }
 .modal-footer { padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; background-color: #f8fafc; flex-shrink: 0; }
 .action-buttons { display: flex; gap: 0.75rem; }
 .form-group { margin-bottom: 1.25rem; }
 .form-group label { display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 0.5rem; }
 .form-control { width: 100%; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.625rem; font-size: 0.875rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-.form-control:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+.form-control:focus { border-color: #770909ff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .date-picker, .time-picker { width: 100%; }
 .delete-button { background-color: transparent !important; color: #ef4444 !important; border: 1px solid #ef4444 !important; }
 .delete-button:hover { background-color: #fef2f2 !important; }
 .cancel-button { background-color: transparent !important; color: #64748b !important; border: 1px solid #e2e8f0 !important; }
 .cancel-button:hover { background-color: #f1f5f9 !important; }
-.save-button { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; border: none !important; color: white !important; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -2px rgba(79, 70, 229, 0.1) !important; transition: all 0.2s ease !important; }
+.save-button { background: linear-gradient(135deg, #000000ff, #7d1313ff) !important; border: none !important; color: white !important; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -2px rgba(79, 70, 229, 0.1) !important; transition: all 0.2s ease !important; }
 .save-button:hover { transform: translateY(-2px) !important; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -4px rgba(79, 70, 229, 0.1) !important; }
 .confirmation-content { display: flex; align-items: center; gap: 0.75rem; }
-.confirmation-content i { color: #f59e0b; font-size: 1.5rem; }
+.confirmation-content i { color: #7a694bff; font-size: 1.5rem; }
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 .modal-fade-enter-active .modal-container { animation: modal-in 0.3s ease-out forwards; }

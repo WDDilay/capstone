@@ -125,9 +125,15 @@
             v-for="announcement in recentAnnouncements" 
             :key="announcement.id" 
             class="announcement-card"
+            :class="{ 'priority-high': announcement.priority === 'high' }"
           >
             <div class="announcement-header">
-              <h3>{{ announcement.title }}</h3>
+              <div class="announcement-title-section">
+                <h3>{{ announcement.title }}</h3>
+                <span class="announcement-type" :class="`type-${announcement.type}`">
+                  {{ announcement.type || 'General' }}
+                </span>
+              </div>
               <span class="announcement-date">{{ formatDate(announcement.date) }}</span>
             </div>
             <p class="announcement-content">{{ announcement.content }}</p>
@@ -225,93 +231,87 @@ const checkAuth = async () => {
 const fetchEvents = async (userBarangay) => {
   try {
     const currentDate = new Date()
+    console.log("[v0] Fetching events from announcements collection")
 
-    // First try with visibility filter
-    try {
-      const eventsQuery = query(
-        collection(db, "events"),
-        where("date", ">=", currentDate),
-        where("visibility", "array-contains-any", ["all", userBarangay]),
-        orderBy("date", "asc"),
-        limit(3),
-      )
+    // Use same query as calendar - fetch from announcements collection with createdBy filter
+    const eventsQuery = query(
+      collection(db, "announcements"),
+      where("createdBy", "in", ["BarangayPresident", "FederationPresident"]),
+      where("date", ">=", currentDate),
+      orderBy("date", "asc"),
+      limit(3)
+    )
 
-      const eventsSnapshot = await getDocs(eventsQuery)
-      return eventsSnapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
-        }
-      })
-    } catch (err) {
-      console.warn("Visibility filter failed, trying without filter:", err)
-
-      // Fallback: try without visibility filter
-      const eventsQuery = query(
-        collection(db, "events"),
-        where("date", ">=", currentDate),
-        orderBy("date", "asc"),
-        limit(3),
-      )
-
-      const eventsSnapshot = await getDocs(eventsQuery)
-      return eventsSnapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
-        }
-      })
-    }
+    const eventsSnapshot = await getDocs(eventsQuery)
+    console.log("[v0] Found events:", eventsSnapshot.size)
+    
+    const events = eventsSnapshot.docs.map((doc) => {
+      const data = doc.data()
+      console.log("[v0] Event data:", data)
+      return {
+        id: doc.id,
+        title: data.title || 'Untitled Event',
+        date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
+        location: data.location || 'Location TBD',
+        description: data.description || '',
+        type: data.type || 'Meeting',
+        createdBy: data.createdBy || '',
+        barangay: data.barangay || ''
+      }
+    }).filter((event) => {
+      // Apply same barangay filtering as calendar
+      if (event.createdBy === 'BarangayPresident' && userBarangay && event.barangay !== userBarangay) {
+        return false
+      }
+      return true
+    })
+    
+    console.log("[v0] Processed events:", events)
+    return events
   } catch (err) {
-    console.error("Error fetching events:", err)
+    console.error("[v0] Error fetching events:", err)
     error.value = "Failed to load events. Please try again later."
     return []
   }
 }
 
 // Fetch announcements with error handling
-const fetchAnnouncements = async (userBarangay) => {
+const fetchAnnouncements = async (userBarangay, user) => {
   try {
-    // First try with visibility filter
-    try {
-      const announcementsQuery = query(
-        collection(db, "announcements"),
-        where("visibility", "array-contains-any", ["all", userBarangay]),
-        orderBy("date", "desc"),
-        limit(3),
-      )
+    console.log("[v0] Fetching announcements for barangay:", userBarangay)
+    
+    const announcementsQuery = query(
+      collection(db, "announcements"),
+      where("createdBy", "in", ["BarangayPresident", "FederationPresident"]),
+      orderBy("date", "desc"),
+      limit(10)
+    )
 
-      const announcementsSnapshot = await getDocs(announcementsQuery)
-      return announcementsSnapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
-        }
-      })
-    } catch (err) {
-      console.warn("Visibility filter failed, trying without filter:", err)
-
-      // Fallback: try without visibility filter
-      const announcementsQuery = query(collection(db, "announcements"), orderBy("date", "desc"), limit(3))
-
-      const announcementsSnapshot = await getDocs(announcementsQuery)
-      return announcementsSnapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          ...data,
-          date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
-        }
-      })
-    }
+    const announcementsSnapshot = await getDocs(announcementsQuery)
+    console.log("[v0] Found announcements:", announcementsSnapshot.size)
+    
+    const announcements = announcementsSnapshot.docs.map((doc) => {
+      const data = doc.data()
+      console.log("[v0] Announcement data:", data)
+      return {
+        id: doc.id,
+        ...data,
+        date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
+        type: data.type || 'general',
+        priority: data.priority || 'normal',
+        author: data.createdBy || 'Unknown'
+      }
+    }).filter((announcement) => {
+      if (announcement.createdBy === 'BarangayPresident' && user?.barangay && announcement.barangay !== user.barangay) {
+        return false
+      }
+      return true
+    })
+    
+    console.log("[v0] Processed announcements:", announcements)
+    return announcements
   } catch (err) {
-    console.error("Error fetching announcements:", err)
+    console.error("[v0] Error fetching announcements:", err)
     error.value = "Failed to load announcements. Please try again later."
     return []
   }
@@ -360,40 +360,33 @@ const fetchCounts = async (userId, announcements) => {
 }
 
 onMounted(async () => {
-  try {
-    const user = await checkAuth()
-    if (!user) return
+  const user = await checkAuth()
+  if (!user) return
 
-    const userBarangay = user.barangay
-    const userId = user.userId
+  const userBarangay = user.barangay
+  const userId = user.userId
 
-    if (!userBarangay) {
-      console.warn("User does not have a barangay assigned")
-    }
-
-    console.log(`Fetching data for user in barangay: ${userBarangay}`)
-
-    // Fetch data in parallel
-    const [events, announcements] = await Promise.all([fetchEvents(userBarangay), fetchAnnouncements(userBarangay)])
-
-    upcomingEvents.value = events
-    recentAnnouncements.value = announcements
-
-    console.log(`Found ${upcomingEvents.value.length} upcoming events`)
-    console.log(`Found ${recentAnnouncements.value.length} recent announcements`)
-
-    // Fetch counts after initial data load
-    if (userId) {
-      await fetchCounts(userId, recentAnnouncements.value)
-    } else {
-      console.warn("User ID is not available. Skipping count fetches.")
-    }
-  } catch (err) {
-    console.error("Error in dashboard initialization:", err)
-    error.value = "Failed to load dashboard data. Please try again later."
-  } finally {
-    loading.value = false
+  if (!userBarangay) {
+    console.warn("User does not have a barangay assigned")
   }
+
+  console.log(`Fetching data for user in barangay: ${userBarangay}`)
+
+  const [events, announcements] = await Promise.all([fetchEvents(userBarangay), fetchAnnouncements(userBarangay, user)])
+
+  upcomingEvents.value = events
+  recentAnnouncements.value = announcements
+
+  console.log(`Found ${upcomingEvents.value.length} upcoming events`)
+  console.log(`Found ${recentAnnouncements.value.length} recent announcements`)
+
+  // Fetch counts after initial data load
+  if (userId) {
+    await fetchCounts(userId, recentAnnouncements.value)
+  } else {
+    console.warn("User ID is not available. Skipping count fetches.")
+  }
+  loading.value = false
 })
 </script>
 
@@ -705,6 +698,49 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.announcement-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.announcement-type {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.type-general {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+
+.type-urgent {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.type-event {
+  background-color: rgba(133, 40, 216, 0.1);
+  color: #8528d8;
+}
+
+.type-community {
+  background-color: rgba(40, 199, 111, 0.1);
+  color: #28c76f;
+}
+
+.priority-high {
+  border-left: 4px solid #dc3545;
+  background-color: rgba(220, 53, 69, 0.02);
+}
+
 .announcement-header h3 {
   font-size: 1.1rem;
   font-weight: 600;
@@ -804,7 +840,6 @@ onMounted(async () => {
     align-self: flex-start;
   }
   
-  
   .welcome-section h2 {
     font-size: 1.5rem;
   }
@@ -831,7 +866,7 @@ onMounted(async () => {
     font-size: 1.5rem;
   }
   
-  .announcement-header,
+  .announcement-title-section,
   .announcement-footer {
     flex-direction: column;
     align-items: flex-start;

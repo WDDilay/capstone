@@ -493,7 +493,7 @@ onUnmounted(() => {
 .logo {
   width: 3rem;
   height: 3rem;
-  background: linear-gradient(135deg, #8528d8, #6d28d9);
+  background: linear-gradient(135deg, #871717ff, #891919ff);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -514,7 +514,7 @@ onUnmounted(() => {
   font-weight: 700;
   color: #0f172a;
   margin-bottom: 0.25rem;
-  background: linear-gradient(135deg, #0f172a, #8528d8);
+  background: linear-gradient(135deg, #0f172a, #730606ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -533,7 +533,7 @@ onUnmounted(() => {
 }
 
 .refresh-btn {
-  background: linear-gradient(135deg, #8528d8, #6d28d9);
+  background: linear-gradient(135deg, #791515ff, #861a1aff);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -772,7 +772,7 @@ onUnmounted(() => {
   font-size: 1.25rem;
   font-weight: 700;
   color: #0f172a;
-  background: linear-gradient(135deg, #0f172a, #8528d8);
+  background: linear-gradient(135deg, #0f172a, #730606ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -802,13 +802,13 @@ onUnmounted(() => {
 
 .chart-type-btn:hover {
   background: #f8fafc;
-  border-color: #8528d8;
+  border-color: #730606ff;
   transform: scale(1.05);
 }
 
 .chart-type-btn.active {
-  background: linear-gradient(135deg, #8528d8, #6d28d9);
-  border-color: #8528d8;
+  background: linear-gradient(135deg, #8b1919ff, #7a1313ff);
+  border-color: #730606ff;
   color: white;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
@@ -857,13 +857,13 @@ onUnmounted(() => {
 
 .filter-btn:hover {
   background: #f8fafc;
-  border-color: #8528d8;
+  border-color: #730606ff;
   transform: translateY(-1px);
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #8528d8, #6d28d9);
-  border-color: #8528d8;
+  background: linear-gradient(135deg, #8b1919ff, #7a1313ff);
+  border-color: #730606ff;
   color: white;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
@@ -887,7 +887,7 @@ onUnmounted(() => {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(135deg, #8528d8, #6d28d9);
+  background: linear-gradient(135deg, #8c1a1aff, #951313ff);
   transform: scaleY(0);
   transition: transform 0.3s ease;
 }
@@ -1016,7 +1016,7 @@ onUnmounted(() => {
 
 .loading-spinner {
   text-align: center;
-  color: #8528d8;
+  color: #a31e1eff;
 }
 
 .loading-spinner i {
