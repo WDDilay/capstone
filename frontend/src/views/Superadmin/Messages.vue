@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden z-60">
+  <div class="h-screen flex bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden z-0">
     <!-- Mobile Overlay -->
     <div 
       v-if="showMobileSidebar"

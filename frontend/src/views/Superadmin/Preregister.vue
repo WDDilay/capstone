@@ -31,7 +31,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search by name, email, contact, or barangay..."
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-300"
         />
       </div>
 
@@ -39,14 +39,14 @@
       <div class="flex gap-2 flex-wrap justify-center">
         <button
           @click="showExportPreview = true"
-          class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          class="flex items-center gap-2 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors"
         >
           <FileSpreadsheet class="w-5 h-5" />
           <span>Export to Excel</span>
         </button>
         <button
           @click="showPrintPreview = true"
-          class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          class="flex items-center gap-2 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors"
         >
           <Printer class="w-5 h-5" />
           <span>Print Data</span>
@@ -84,7 +84,7 @@
           <div class="whitespace-nowrap">{{ user.contactNumber }}</div>
           <div class="truncate">{{ user.email }}</div>
           <div class="flex gap-2">
-            <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="viewUser(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Eye class="w-5 h-5" />
             </button>
             <button @click="confirmDelete(user)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
@@ -104,13 +104,13 @@
         <div v-for="(user, index) in paginatedUsers" :key="user.id" class="bg-gray-50 p-4 rounded-lg">
           <div class="flex justify-between items-start mb-2">
             <p class="text-lg font-semibold">{{ formatFullName(user) }}</p>
-            <span class="text-sm font-medium text-primary-600">No. {{ getRegistrationNumber(index) }}</span>
+            <span class="text-sm font-medium text-red-800">No. {{ getRegistrationNumber(index) }}</span>
           </div>
           <p class="text-sm text-gray-600">Barangay: {{ user.barangay }}</p>
           <p class="text-sm text-gray-600">Contact: {{ user.contactNumber }}</p>
           <p class="text-sm text-gray-600">Email: {{ user.email }}</p>
           <div class="flex justify-end gap-2 mt-3">
-            <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="viewUser(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Eye class="w-5 h-5" />
             </button>
             <button @click="confirmDelete(user)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
@@ -185,7 +185,7 @@
             </button>
             <button
               @click="sendEmail(selectedUser)"
-              class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+              class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900"
             >
               Send Email
             </button>
@@ -278,7 +278,7 @@
           </button>
           <button
             @click="confirmExport"
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+            class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 flex items-center gap-2"
           >
             <FileSpreadsheet class="w-5 h-5" />
             <span>Download Excel</span>
@@ -332,7 +332,7 @@
           </button>
           <button 
             @click="confirmPrint" 
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center justify-center"
+            class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 flex items-center justify-center"
           >
             <Printer class="w-5 h-5" />
             <span>Print</span>
@@ -484,7 +484,7 @@ const filteredUsers = computed(() => {
   return users.value.filter(user => {
     const fullName = formatFullName(user).toLowerCase();
     const email = user.email?.toLowerCase() || '';
-       const contact = user.contactNumber || '';
+    const contact = user.contactNumber || '';
     const barangay = user.barangay?.toLowerCase() || '';
     return fullName.includes(q) || email.includes(q) || contact.includes(q) || barangay.includes(q);
   });

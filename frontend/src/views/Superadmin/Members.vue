@@ -283,7 +283,7 @@ const confirmPrint = async () => {
           v-model="searchQuery"
           type="text"
           placeholder="Search by name, email, or Solo Parent ID..."
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-300"
         />
       </div>
       
@@ -293,7 +293,7 @@ const confirmPrint = async () => {
         <select 
           v-model="sortOption" 
           @change="handleSort"
-          class="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-100"
+          class="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-100"
         >
           <option value="name-asc">Name (A-Z)</option>
           <option value="name-desc">Name (Z-A)</option>
@@ -309,14 +309,14 @@ const confirmPrint = async () => {
       <div class="flex gap-2 flex-wrap justify-center">
         <button
           @click="showExportPreview = true"
-          class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          class="flex items-center gap-2 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors"
         >
           <FileSpreadsheet class="w-5 h-5" />
           <span>Export to Excel</span>
         </button>
         <button
           @click="showPrintPreview = true"
-          class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          class="flex items-center gap-2 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors"
         >
           <Printer class="w-5 h-5" />
           <span>Print Data</span>
@@ -354,10 +354,10 @@ const confirmPrint = async () => {
           <div>{{ user.barangay || 'N/A' }}</div>
           <div>{{ user.email || 'N/A' }}</div>
           <div class="flex gap-2">
-            <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="viewUser(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Eye class="w-5 h-5" />
             </button>
-            <button @click="openEditModal(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="openEditModal(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Pencil class="w-5 h-5" />
             </button>
             <button @click="deleteUser(user.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
@@ -376,13 +376,13 @@ const confirmPrint = async () => {
         <div v-for="user in paginatedUsers" :key="user.id" class="bg-gray-50 p-4 rounded-lg">
           <p class="text-lg font-semibold">{{ formatFullName(user) || 'N/A' }}</p>
           <p class="text-sm text-gray-600">Solo Parent ID: {{ user.soloParentId || 'N/A' }}</p>
-          <p class="text-sm text-gray-600">Email: {{ user.email || 'N/A' }}</p>
+          <p class="text-sm text-gray-600">Email: {{ user.email }}</p>
           <p class="text-sm text-gray-600">Barangay: {{ user.barangay || 'N/A' }}</p>
           <div class="flex gap-2 mt-2">
-            <button @click="viewUser(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="viewUser(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Eye class="w-5 h-5" />
             </button>
-            <button @click="openEditModal(user)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+            <button @click="openEditModal(user)" class="p-2 text-red-800 hover:bg-red-50 rounded-lg">
               <Pencil class="w-5 h-5" />
             </button>
             <button @click="deleteUser(user.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
@@ -494,7 +494,7 @@ const confirmPrint = async () => {
             </button>
             <button
               @click="openEditModal(selectedUser)"
-              class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+              class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900"
             >
               Edit
             </button>
@@ -519,7 +519,7 @@ const confirmPrint = async () => {
             <input 
               v-model="editForm.soloParentId" 
               type="text" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
           
@@ -529,7 +529,7 @@ const confirmPrint = async () => {
               v-model="editForm.firstName" 
               type="text" 
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
           
@@ -539,7 +539,7 @@ const confirmPrint = async () => {
               v-model="editForm.lastName" 
               type="text" 
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
           
@@ -548,7 +548,7 @@ const confirmPrint = async () => {
             <input 
               v-model="editForm.middleName" 
               type="text" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
           
@@ -558,7 +558,7 @@ const confirmPrint = async () => {
               v-model="editForm.email" 
               type="email" 
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
           
@@ -567,7 +567,7 @@ const confirmPrint = async () => {
             <input 
               v-model="editForm.barangay" 
               type="text" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-300"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
             />
           </div>
         </div>
@@ -581,7 +581,7 @@ const confirmPrint = async () => {
           </button>
           <button 
             @click="updateUser" 
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+            class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900"
             :disabled="isUpdating"
           >
             {{ isUpdating ? 'Saving...' : 'Save Changes' }}
@@ -637,7 +637,7 @@ const confirmPrint = async () => {
           </button>
           <button
             @click="confirmExport"
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+            class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 flex items-center gap-2"
           >
             <FileSpreadsheet class="w-5 h-5" />
             <span>Download Excel</span>
@@ -689,7 +689,7 @@ const confirmPrint = async () => {
           </button>
           <button 
             @click="confirmPrint" 
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+            class="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 flex items-center gap-2"
           >
             <Printer class="w-5 h-5" />
             <span>Print</span>
