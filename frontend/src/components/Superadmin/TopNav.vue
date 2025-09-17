@@ -71,7 +71,8 @@
           <i class="pi pi-chevron-down ml-1 sm:ml-2 text-sm sm:text-lg flex-shrink-0"></i>
         </button>
         <!-- Made user dropdown responsive with proper mobile positioning -->
-        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-24 sm:w-48 bg-white rounded-lg shadow-lg overflow-hidden z-[9999] border border-gray-200">
+        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-44 sm:w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
+
           <div class="border-t border-gray-100"></div>
           <button @click="handleSignOut" class="relative flex items-center w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-sm text-red-600 hover:bg-red-50 transition group touch-manipulation">
             <i class="pi pi-sign-out mr-2 text-sm"></i> 

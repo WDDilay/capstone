@@ -36,7 +36,7 @@
       </div>
       
       <!-- Search Bar - Fixed -->
-      <div class="sticky top-16 sm:top-20 lg:top-24 z-20 p-3 sm:p-4 lg:p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 via-white to-gray-50 shadow-sm">
+      <div class="sticky top-16 sm:top-20 lg:top-24 z-60 p-3 sm:p-4 lg:p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 via-white to-gray-50 shadow-sm">
         <div class="relative">
           <Search class="absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 text-maroon-500 h-4 w-4 lg:h-5 lg:w-5" />
           <input
@@ -119,17 +119,7 @@
         </div>
       </div>
 
-      <!-- Mobile Header with Menu Button -->
-      <div class="md:hidden sticky top-0 z-60 bg-gradient-to-r from-white via-gray-50 to-white border-b-2 border-maroon-200 p-3 lg:p-4 flex items-center justify-between shadow-xl backdrop-blur-lg bg-opacity-95">
-        <button 
-          @click="openMobileSidebar"
-          class="p-2 lg:p-3 text-maroon-700 hover:bg-maroon-100 rounded-xl transition-all duration-200 transform hover:scale-110 shadow-md"
-        >
-          <Menu class="h-6 w-6" />
-        </button>
-        <h1 class="text-lg lg:text-xl font-bold text-maroon-800 drop-shadow-sm">Messages</h1>
-        <div class="w-10 lg:w-12"></div>
-      </div>
+     
 
       <div v-if="!selectedChat" class="flex-1 flex items-center justify-center bg-transparent p-4 lg:p-8 relative z-10">
         <div class="text-center max-w-sm lg:max-w-md bg-gradient-to-br from-maroon via-gray-50 to-white bg-opacity-95 backdrop-blur-xl rounded-3xl p-8 lg:p-12 shadow-2xl border-2 border-maroon-200">
@@ -253,7 +243,7 @@
             <button
               type="submit"
               :disabled="!newMessage.trim()"
-              class="px-4 py-3 lg:px-6 lg:py-4 bg-gradient-to-r from-maroon-600 to-maroon-700 text-white rounded-full hover:from-maroon-700 hover:to-maroon-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-shrink-0 shadow-xl transform hover:scale-105 disabled:hover:scale-100 border border-maroon-500"
+              class="px-4 py-3 lg:px-6 lg:py-4 bg-gradient-to-r from-maroon-600 to-maroon-700 text-black rounded-full hover:from-maroon-700 hover:to-maroon-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-shrink-0 shadow-xl transform hover:scale-105 disabled:hover:scale-100 border border-maroon-500"
             >
               <Send class="h-5 w-5 lg:h-6 lg:w-6" />
             </button>
