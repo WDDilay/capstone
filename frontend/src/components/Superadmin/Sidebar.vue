@@ -1,16 +1,16 @@
 <template>
   <div class="fixed top-0 left-0 z-40 h-screen transition-all duration-300"
        :class="{ 'w-72': !sidebarStore.collapsed, 'w-16': sidebarStore.collapsed }">
-    <div class="h-full flex flex-col overflow-y-auto">
+    <div class="h-full flex flex-col overflow-hidden">
       <!-- Header section with dark maroon -->
-      <div class="bg-maroon-800 px-3 py-4 flex-shrink-0">
-        <div class="flex items-center justify-between mb-5">
+      <div class="bg-maroon-800 px-3 py-3 md:py-4 flex-shrink-0">
+        <div class="flex items-center justify-between mb-3 md:mb-5">
           <div class="flex items-center gap-3">
-            <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
-            <span class="text-xl font-semibold whitespace-nowrap text-white">Solo Parent</span>
+            <img :src="spfLogo" alt="Logo" class="w-6 h-6 md:w-8 md:h-8" />
+            <span class="text-lg md:text-xl font-semibold whitespace-nowrap text-white">Solo Parent</span>
           </div>
           <div class="flex items-center justify-center w-full" v-if="sidebarStore.collapsed">
-            <img :src="spfLogo" alt="Logo" class="w-8 h-8" />
+            <img :src="spfLogo" alt="Logo" class="w-6 h-6 md:w-8 md:h-8" />
           </div>
           <button @click="sidebarStore.toggle" 
                   class="p-1 rounded-lg hover:bg-maroon-700 focus:outline-none text-white flex-shrink-0"
@@ -21,24 +21,27 @@
       </div>
       
       <!-- Menu section with light maroon/cream - takes remaining height -->
-      <div class="bg-maroon-50 px-3 py-4 flex-1 h-full">
-        <ul class="space-y-2 font-medium">
-          <li v-for="(item, index) in menuItems" :key="index">
-            <router-link :to="item.route"
-                         class="flex items-center p-2 rounded-lg hover:bg-maroon-200 hover:text-maroon-900 group relative transition-colors duration-200 text-maroon-700"
-                         :class="{ 'justify-center': sidebarStore.collapsed }">
-              <i :class="item.icon" class="text-xl"></i>
-              <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
-              
-              <!-- Notification badge for messages -->
-              <div v-if="item.route === '/super-admin/Messages' && totalUnreadCount > 0"
-                   class="notification-badge"
-                   :class="{ 'badge-collapsed': sidebarStore.collapsed }">
-                {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
-              </div>
-            </router-link>
-          </li>
-        </ul>
+      <div class="bg-maroon-50 px-3 py-4 flex-1 overflow-hidden">
+        <div class="h-full overflow-hidden">
+          <ul class="space-y-2 font-medium h-full flex flex-col">
+            <li v-for="(item, index) in menuItems" :key="index" class="flex-shrink-0">
+              <router-link :to="item.route"
+                           @click="handleMenuItemClick"
+                           class="flex items-center p-2 rounded-lg hover:bg-maroon-200 hover:text-maroon-900 group relative transition-colors duration-200 text-maroon-700"
+                           :class="{ 'justify-center': sidebarStore.collapsed }">
+                <i :class="item.icon" class="text-xl"></i>
+                <span class="ml-3" v-if="!sidebarStore.collapsed">{{ item.name }}</span>
+                
+                <!-- Notification badge for messages -->
+                <div v-if="item.route === '/super-admin/Messages' && totalUnreadCount > 0"
+                     class="notification-badge"
+                     :class="{ 'badge-collapsed': sidebarStore.collapsed }">
+                  {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
+                </div>
+              </router-link>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -57,6 +60,14 @@ const sidebarStore = useSidebarStore();
 const currentUser = ref(null);
 const totalUnreadCount = ref(0);
 let unsubscribeMessages = null;
+
+const handleMenuItemClick = () => {
+  // Check if we're on mobile (screen width less than 768px)
+  if (window.innerWidth < 768) {
+    // Close the sidebar by setting it to collapsed state
+    sidebarStore.collapsed = true;
+  }
+};
 
 // Setup message notifications
 const setupMessageNotifications = () => {
@@ -83,11 +94,10 @@ const menuItems = ref([
   { name: 'Events', icon: 'pi pi-calendar', route: '/super-admin/events' },
   { name: 'Applications', icon: 'pi pi-file', route: '/super-admin/application' },
   { name: 'Pre-Register', icon: 'pi pi-file', route: '/super-admin/pre-register' },
-   { name: 'AdminPosting', icon: 'pi pi-file', route: '/super-admin/admin-posting' },
+  { name: 'AdminPosting', icon: 'pi pi-file', route: '/super-admin/admin-posting' },
   { name: 'Resources', icon: 'pi pi-envelope', route: '/super-admin/resources' },
   { name: 'Accounts', icon: 'pi pi-user', route: '/super-admin/accounts' },
   { name: 'Messages', icon: 'pi pi-comments', route: '/super-admin/Messages' },
-  
 ]);
 
 // Lifecycle
@@ -117,7 +127,7 @@ onUnmounted(() => {
 }
 
 .bg-maroon-200 {
-  background-color: #fecaca; /* Light maroon for hover */
+  background-color: #fef5caff; /* Light maroon for hover */
 }
 
 .text-maroon-700 {

@@ -197,7 +197,7 @@
       <!-- Chat Area -->
       <div class="flex-1 flex flex-col min-w-0 md:flex-shrink bg-white">
         <!-- Mobile Header -->
-        <div class="md:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/60 p-4 flex items-center justify-between relative z-30 shadow-sm sticky top-0">
+        <div class="md:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/60 p-4 flex items-center justify-between relative z-0 shadow-sm sticky top-0">
           <button 
             @click="openMobileSidebar"
             class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95"
@@ -218,7 +218,7 @@
             <p class="text-slate-500 text-sm leading-relaxed mb-6">Choose a contact from the sidebar to begin messaging</p>
             <button 
               @click="openMobileSidebar"
-              class="md:hidden px-6 py-3 bg-gradient-to-r from-maroon-600 to-maroon-700 text-white rounded-xl hover:from-maroon-700 hover:to-maroon-800 transition-all duration-200 font-semibold shadow-lg active:scale-95"
+              class="md:hidden px-6 py-3 bg-gradient-to-r from-maroon-600 to-maroon-700 text-black rounded-xl hover:from-maroon-700 hover:to-maroon-800 transition-all duration-200 font-semibold shadow-lg active:scale-95"
             >
               View Contacts
             </button>

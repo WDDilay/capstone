@@ -10,7 +10,8 @@
       />
       <!-- Title with responsive text and truncation on mobile -->
       <h2 class="text-white text-xs sm:text-sm md:text-lg font-semibold truncate max-w-32 sm:max-w-none">
-        Solo Parent Federation
+        <span class="text-xl font-bold">Solo Parent</span>
+          <span class="block text-sm -mt-1">Federation - Calapan City</span>
       </h2>
     </div>
     
