@@ -138,7 +138,7 @@
           <p class="text-maroon-600 text-sm lg:text-base mb-6 font-medium">Choose a barangay president to start messaging</p>
           <button 
             @click="openMobileSidebar"
-            class="md:hidden px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-maroon-600 to-maroon-700 text-white rounded-xl hover:from-maroon-700 hover:to-maroon-800 transition-all duration-200 transform hover:scale-105 shadow-xl font-bold border border-maroon-500"
+            class="md:hidden px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-maroon-600 to-maroon-700 text-black rounded-xl hover:from-maroon-700 hover:to-maroon-800 transition-all duration-200 transform hover:scale-105 shadow-xl font-bold border border-maroon-500"
           >
             View Contacts
           </button>

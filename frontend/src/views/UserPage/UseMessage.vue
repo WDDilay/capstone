@@ -172,7 +172,7 @@
             <p class="text-muted-foreground text-sm leading-relaxed mb-6">Choose a contact from the sidebar to begin messaging</p>
             <button 
               @click="openMobileSidebar"
-              class="md:hidden px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/70 transition-all duration-200 font-semibold shadow-lg active:scale-95"
+              class="md:hidden px-6 py-3 bg-gradient-to-r from-maroon to-maroon/80 text-primary-foreground rounded-xl hover:from-maroon/90 hover:to-maroon/70 transition-all duration-200 font-semibold shadow-lg active:scale-95"
             >
               View Contacts
             </button>

@@ -459,8 +459,8 @@ onMounted(async () => {
 }
 
 .stat-icon.upcoming {
-  background-color: rgba(134, 40, 216, 0.07);
-  color: #8528d8;
+  background-color: rgba(128, 0, 32, 0.1);
+  color: #800020;
 }
 
 .stat-icon.announcements {
@@ -528,7 +528,7 @@ onMounted(async () => {
 }
 
 .view-all {
-  color: #8528d8;
+  color: #800020;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -540,7 +540,7 @@ onMounted(async () => {
 }
 
 .view-all:hover {
-  color: #7020b9;
+  color: #5c0017;
   text-decoration: underline;
 }
 
@@ -559,7 +559,7 @@ onMounted(async () => {
 .loading-container i,
 .empty-state i {
   font-size: 2rem;
-  color: #8528d8;
+  color: #800020;
 }
 
 /* Events List */
@@ -580,7 +580,7 @@ onMounted(async () => {
 
 .event-card:hover {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  border-color: #8528d8;
+  border-color: #800020;
 }
 
 .event-date {
@@ -590,7 +590,7 @@ onMounted(async () => {
   justify-content: center;
   min-width: 60px;
   padding: 0.5rem;
-  background-color: #8528d8;
+  background-color: #800020;
   color: white;
   border-radius: 8px;
   flex-shrink: 0;
@@ -652,22 +652,22 @@ onMounted(async () => {
 }
 
 .btn-rsvp {
-  background-color: #8528d8;
+  background-color: #800020;
   color: white;
 }
 
 .btn-rsvp:hover {
-  background-color: #7020b9;
+  background-color: #5c0017;
 }
 
 .btn-details {
   background-color: transparent;
-  color: #8528d8;
-  border: 1px solid #8528d8;
+  color: #800020;
+  border: 1px solid #800020;
 }
 
 .btn-details:hover {
-  background-color: rgba(133, 40, 216, 0.1);
+  background-color: rgba(128, 0, 32, 0.1);
 }
 
 /* Announcements List */
@@ -686,7 +686,7 @@ onMounted(async () => {
 
 .announcement-card:hover {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  border-color: #8528d8;
+  border-color: #800020;
 }
 
 .announcement-header {
@@ -727,8 +727,8 @@ onMounted(async () => {
 }
 
 .type-event {
-  background-color: rgba(133, 40, 216, 0.1);
-  color: #8528d8;
+  background-color: rgba(128, 0, 32, 0.1);
+  color: #800020;
 }
 
 .type-community {
@@ -781,7 +781,7 @@ onMounted(async () => {
 
 .btn-read-more {
   background-color: transparent;
-  color: #8528d8;
+  color: #800020;
   border: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -793,7 +793,7 @@ onMounted(async () => {
 }
 
 .btn-read-more:hover {
-  background-color: rgba(133, 40, 216, 0.1);
+  background-color: rgba(128, 0, 32, 0.1);
 }
 
 /* Responsive Design */
@@ -890,7 +890,7 @@ onMounted(async () => {
 .btn-rsvp:focus,
 .btn-details:focus,
 .btn-read-more:focus {
-  outline: 2px solid #8528d8;
+  outline: 2px solid #800020;
   outline-offset: 2px;
   border-radius: 4px;
 }
