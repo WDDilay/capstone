@@ -98,7 +98,11 @@ const userStore = useUserStore(); // Access Pinia store
 
 const handleLogin = async () => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
+    const userCredential = await signInWithEmailAndPassword(
+  auth,
+  email.value.trim(),
+  password.value.trim()
+);
     const user = userCredential.user;
 
     console.log("✅ User Logged In:", user.uid); // Debugging
