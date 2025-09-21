@@ -207,7 +207,7 @@ onUnmounted(() => {
 }
 
 .hover\:bg-maroon-500:hover {
-  background-color: #fbff00ff;
+  background-color: #f18989ff;
 }
 
 .bg-cream-100 {
@@ -215,7 +215,7 @@ onUnmounted(() => {
 }
 
 .hover\:bg-red-100:hover {
-  background-color: #FEF2F2;
+  background-color: #be4545ff;
 }
 
 .hover\:text-red-800:hover {

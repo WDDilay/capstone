@@ -1,49 +1,50 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 bg-maroon-700 border-b border-maroon-700 shadow-lg">
+  <div class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-maroon-700 border-b border-maroon-700 shadow-lg">
     <div class="flex items-center">
       <button @click="sidebarStore.toggle" class="p-2 rounded-lg text-maroon-100 hover:bg-maroon-500 transition md:hidden">
-        <i class="pi pi-bars text-xl"></i>
+        <i class="pi pi-bars text-lg sm:text-xl"></i>
       </button>
-    
     </div>
         
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
+      <!-- Notifications -->
       <div class="relative">
-        <button @click="toggleNotifications" class="p-3 rounded-full text-maroon-100 hover:bg-maroon-500 focus:outline-none transition-colors">
-          <i class="pi pi-bell text-xl"></i>
-          <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-600 rounded-full">
+        <button @click="toggleNotifications" class="p-2 sm:p-3 rounded-full text-maroon-100 hover:bg-maroon-500 focus:outline-none transition-colors">
+          <i class="pi pi-bell text-lg sm:text-xl"></i>
+          <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 text-xs font-bold text-white bg-red-600 rounded-full">
             {{ unreadCount > 9 ? '9+' : unreadCount }}
           </span>
         </button>
-        <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50">
+        <!-- Made notifications dropdown responsive with proper mobile sizing -->
+        <div v-if="showNotifications" class="absolute right-0 mt-2 w-72 sm:w-80 lg:w-96 bg-white rounded-md shadow-lg overflow-hidden z-50 max-w-[calc(100vw-2rem)]">
           <div class="p-3 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-sm font-semibold text-gray-700">Notifications</h3>
             <button 
               v-if="unreadCount > 0"
               @click="markAllAsRead"
-              class="text-xs text-maroon-600 hover:text-maroon-800"
+              class="text-xs text-maroon-600 hover:text-maroon-800 px-2 py-1 rounded hover:bg-maroon-50 transition-colors"
             >
               Mark all as read
             </button>
           </div>
-          <div class="max-h-64 overflow-y-auto">
+          <div class="max-h-64 sm:max-h-80 overflow-y-auto">
             <template v-if="notifications.length > 0">
               <a 
                 v-for="notification in notifications"
                 :key="notification.id"
                 href="#"
                 @click.prevent="handleNotificationClick(notification)"
-                class="block px-4 py-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                class="block px-3 sm:px-4 py-3 border-b border-gray-200 hover:bg-gray-50 transition-colors touch-manipulation"
                 :class="{ 'bg-maroon-50': !notification.read }"
               >
-                <div class="flex items-start">
-                  <div class="flex-shrink-0">
-                    <i :class="['pi', getNotificationIcon(notification), 'text-lg', getNotificationColor(notification.type)]"></i>
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 mt-1">
+                    <i :class="['pi', getNotificationIcon(notification), 'text-base sm:text-lg', getNotificationColor(notification.type)]"></i>
                   </div>
-                  <div class="ml-3 flex-1">
-                    <div class="flex justify-between">
-                      <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
-                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-maroon-500 rounded-full"></span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-start gap-2">
+                      <p class="text-sm font-medium text-gray-900 truncate">{{ notification.title }}</p>
+                      <span v-if="!notification.read" class="inline-block w-2 h-2 bg-maroon-500 rounded-full flex-shrink-0 mt-1"></span>
                     </div>
                     <p v-if="notification.message" class="text-xs text-gray-700 mt-1 line-clamp-2">{{ notification.message }}</p>
                     <p class="text-xs text-gray-500 mt-1">{{ formatRelativeTime(notification.timestamp) }}</p>
@@ -52,33 +53,32 @@
               </a>
             </template>
             <div v-else class="py-8 text-center text-gray-500">
-              <i class="pi pi-inbox text-3xl mb-2"></i>
-              <p>No notifications</p>
+              <i class="pi pi-inbox text-2xl sm:text-3xl mb-2"></i>
+              <p class="text-sm">No notifications</p>
             </div>
           </div>
-          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-maroon-600 bg-gray-50 p-2 hover:bg-gray-100">
+          <a href="#" @click.prevent="router.push('/super-admin/notification')" class="block text-center text-sm font-medium text-maroon-600 bg-gray-50 p-3 hover:bg-gray-100 transition-colors">
             View all notifications
           </a>
         </div>
       </div>
       
+      <!-- User Menu -->
       <div class="relative">
-        <button @click="toggleUserMenu" class="flex items-center text-lg font-medium text-white hover:bg-maroon-500 px-4 py-3 rounded-lg transition-colors">
-          <span>{{ userName }}</span>
-          <i class="pi pi-chevron-down ml-2 text-lg"></i>
+        <!-- Made user menu button more responsive with better mobile sizing -->
+        <button @click="toggleUserMenu" class="flex items-center text-sm sm:text-base lg:text-lg font-medium text-white hover:bg-maroon-500 px-2 sm:px-3 lg:px-4 py-2 sm:py-3 rounded-lg transition-colors min-w-0">
+          <span class="truncate max-w-[120px] sm:max-w-none">{{ userName }}</span>
+          <i class="pi pi-chevron-down ml-1 sm:ml-2 text-sm sm:text-lg flex-shrink-0"></i>
         </button>
-        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-maroon-50 transition">
-            <i class="pi pi-user mr-2 text-maroon-600"></i> Profile
-          </a>
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-maroon-50 transition">
-            <i class="pi pi-cog mr-2 text-maroon-600"></i> Settings
-          </a>
+        <!-- Made user dropdown responsive with proper mobile positioning -->
+        <div v-if="showUserMenu" class="absolute right-0 mt-2 w-44 sm:w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200">
+
           <div class="border-t border-gray-100"></div>
-          <button @click="handleSignOut" class="relative block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition group">
-            <i class="pi pi-sign-out mr-2"></i> Sign out
+          <button @click="handleSignOut" class="relative flex items-center w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-sm text-red-600 hover:bg-red-50 transition group touch-manipulation">
+            <i class="pi pi-sign-out mr-2 text-sm"></i> 
+            <span>Sign out</span>
             <span class="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <i class="pi pi-arrow-right text-red-500"></i>
+              <i class="pi pi-arrow-right text-red-500 text-xs"></i>
             </span>
           </button>
         </div>
@@ -673,5 +673,59 @@ body {
 /* Prevent other overlays from going above topbar (except sidebar) */
 .modal, .dropdown, .tooltip {
   z-index: 25; /* Below topbar but above regular content */
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 640px) {
+  .p-dialog {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem !important;
+  }
+  
+  .p-dialog .p-dialog-header {
+    padding: 1rem 1rem 0.5rem !important;
+    font-size: 1.125rem !important;
+  }
+  
+  .p-dialog .p-dialog-content {
+    padding: 0.5rem 1rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .p-dialog .p-dialog-footer {
+    padding: 0.75rem 1rem 1rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  .p-confirm-dialog-accept,
+  .p-confirm-dialog-reject {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Improved touch targets for mobile */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Better mobile spacing */
+@media (max-width: 480px) {
+  body {
+    padding-top: 4rem; /* Reduced space for smaller topbar on mobile */
+  }
+  
+  .main-content {
+    margin-top: 4rem;
+    min-height: calc(100vh - 4rem);
+  }
+}
+
+/* Ensure dropdowns don't go off-screen on mobile */
+@media (max-width: 640px) {
+  .absolute.right-0 {
+    right: 0.5rem;
+  }
 }
 </style>

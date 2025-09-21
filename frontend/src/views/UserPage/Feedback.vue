@@ -8,9 +8,9 @@
         </div>
         <h2 class="text-2xl font-bold text-surface-900 mb-2">Thank You!</h2>
         <p class="text-surface-600 mb-2">
-  Detected sentiment:
-  <span class="font-semibold capitalize text-primary">{{ sentiment }}</span>
-</p>
+          Detected sentiment:
+          <span class="font-semibold capitalize text-primary">{{ sentiment }}</span>
+        </p>
 
         <p class="text-surface-600 mb-4">
           Your feedback has been submitted successfully. Your input helps us improve our events for the Solo Parent
@@ -131,31 +131,31 @@ const resetForm = () => {
 
 <style scoped>
 .bg-gradient-to-br {
-  background: linear-gradient(to bottom right, rgba(133, 40, 216, 0.05), #f8fafc);
+  background: linear-gradient(to bottom right, rgba(128, 0, 32, 0.05), #f8fafc);
 }
 
 .text-primary {
-  color: #8528d8;
+  color: #800020;
 }
 
 .bg-primary {
-  background-color: #8528d8;
+  background-color: #800020;
 }
 
 .bg-primary\/10 {
-  background-color: rgba(133, 40, 216, 0.1);
+  background-color: rgba(128, 0, 32, 0.1);
 }
 
 .bg-primary\/90 {
-  background-color: rgba(133, 40, 216, 0.9);
+  background-color: rgba(128, 0, 32, 0.9);
 }
 
 .hover\:bg-primary\/90:hover {
-  background-color: rgba(133, 40, 216, 0.9);
+  background-color: rgba(128, 0, 32, 0.9);
 }
 
 .focus\:ring-primary:focus {
-  --tw-ring-color: #8528d8;
+  --tw-ring-color: #800020;
 }
 
 .text-surface-900 {
@@ -179,7 +179,7 @@ const resetForm = () => {
 }
 
 .from-primary\/5 {
-  --tw-gradient-from: rgba(133, 40, 216, 0.05);
+  --tw-gradient-from: rgba(128, 0, 32, 0.05);
 }
 
 .to-surface-50 {

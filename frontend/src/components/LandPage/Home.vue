@@ -124,18 +124,19 @@
             </div>
           </div>
 
-          <button
-            @click="prevSlide"
-            class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors"
-          >
-            <ChevronLeft class="w-6 h-6 text-gray-600" />
-          </button>
-          <button
-            @click="nextSlide"
-            class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors"
-          >
-            <ChevronRight class="w-6 h-6 text-gray-600" />
-          </button>
+          <button 
+  @click="prevSlide" 
+  class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors hidden md:block"
+>
+  <ChevronLeft class="w-6 h-6 text-gray-600" />
+</button>
+
+<button 
+  @click="nextSlide" 
+  class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors hidden md:block"
+>
+  <ChevronRight class="w-6 h-6 text-gray-600" />
+</button>
 
           <div class="flex justify-center mt-8 gap-2">
             <button

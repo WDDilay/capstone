@@ -7,7 +7,7 @@
         <img :src="logo" alt="Logo" class="w-12 h-12 rounded-full border-2 border-amber-300" />
         <div>
           <span class="text-xl font-bold">Solo Parent</span>
-          <span class="block text-sm -mt-1">Federation</span>
+          <span class="block text-sm -mt-1">Federation - Calapan City</span>
         </div>
       </router-link>
 
